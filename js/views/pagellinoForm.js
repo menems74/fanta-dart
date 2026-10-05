@@ -20,6 +20,7 @@ export default async function view([matchId, playerId]) {
   const otherMvp = match.mvpPlayerId && match.mvpPlayerId !== playerId ? await getPlayer(match.mvpPlayerId) : null;
 
   let voto = card?.voto ?? null;
+  let mvp = match.mvpPlayerId === playerId;
   const v = {
     singoliGiocati: card?.singoliGiocati ?? MAX_SINGOLI,
     singoliVinti: card?.singoliVinti ?? 0,
@@ -29,13 +30,17 @@ export default async function view([matchId, playerId]) {
 
   return {
     html: html`
-      ${topbar(fullName(player), { back: card ? `/pagellino/${matchId}/${playerId}` : back })}
+      ${topbar(fullName(player), {
+        back: card ? `/pagellino/${matchId}/${playerId}` : back,
+        right: html`<button type="button" class="mvpbtn" id="mvp" aria-pressed="${String(mvp)}">${icon('star', 16)} MVP</button>`,
+      })}
       <p class="muted small">vs ${match.avversario} · ${match.puntiNoi} – ${match.puntiLoro}</p>
+      ${otherMvp ? html`<p class="muted small" id="mvpnote">MVP attuale della serata: ${fullName(otherMvp)}. Attivandolo qui lo sostituisci.</p>` : ''}
       <form id="f" class="form" novalidate>
         <div class="field">Voto
           <div class="chips" id="chips" role="radiogroup" aria-label="Voto">
             ${Array.from({ length: 10 }, (_, i) => i + 1).map((n) =>
-              html`<button type="button" role="radio" data-v="${n}" aria-checked="${n === voto}" class="${n === voto ? 'sel' : ''}">${n}</button>`)}
+              html`<button type="button" role="radio" data-v="${n}" aria-checked="${String(n === voto)}" class="${n === voto ? 'sel' : ''}">${n}</button>`)}
           </div>
         </div>
         <div class="field">Singoli (massimo ${MAX_SINGOLI})
@@ -54,19 +59,16 @@ export default async function view([matchId, playerId]) {
         <label class="field">Commento
           <textarea name="testo" rows="5" maxlength="600" placeholder="Come è andata stasera?">${card?.testo || ''}</textarea>
         </label>
-        <label class="switch">
-          <span class="grow">${icon('star', 18)} MVP della serata
-            ${otherMvp ? html`<small class="muted block">Oggi è assegnato a ${fullName(otherMvp)}: attivandolo lo sostituisci.</small>` : ''}
-          </span>
-          <input type="checkbox" name="mvp" ${match.mvpPlayerId === playerId ? 'checked' : ''}>
-          <span class="knob" aria-hidden="true"></span>
-        </label>
         <p class="error" id="err" role="alert"></p>
         <button class="btn primary" id="save">Salva pagellino</button>
         ${card ? html`<button type="button" class="btn danger" id="del">${icon('trash', 18)} Elimina pagellino</button>` : ''}
       </form>`,
     mount(root) {
       const err = $(root, '#err');
+      $(root, '#mvp').addEventListener('click', (e) => {
+        mvp = !mvp;
+        e.currentTarget.setAttribute('aria-pressed', mvp);
+      });
       const show = () => Object.entries(v).forEach(([k, val]) => { $(root, `#v-${k}`).textContent = val; });
 
       $(root, '#chips').addEventListener('click', (e) => {
@@ -111,7 +113,7 @@ export default async function view([matchId, playerId]) {
             voto, ...v, testo: f.testo.value.trim(),
             pubblicata: !!match.pubblicata,
           });
-          const wantsMvp = f.mvp.checked;
+          const wantsMvp = mvp;
           if (wantsMvp && match.mvpPlayerId !== playerId) await setMvp(matchId, playerId);
           if (!wantsMvp && match.mvpPlayerId === playerId) await setMvp(matchId, null);
           toast('Pagellino salvato');

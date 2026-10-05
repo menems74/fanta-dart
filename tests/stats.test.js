@@ -4,7 +4,7 @@ import { esito, recordStagione, playerStats, ranking, fmtMedia, fmtPerc, suggest
 
 const m = (id, noi, loro, mvp = null) => ({ id, puntiNoi: noi, puntiLoro: loro, mvpPlayerId: mvp });
 // c(matchId, playerId, voto, singoli vinti/giocati, doppi vinti/giocati)
-const c = (matchId, playerId, voto, sv = 0, dv = 0, sg = 4, dg = 2) =>
+const c = (matchId, playerId, voto, sv = 0, dv = 0, sg = 4, dg = 1) =>
   ({ matchId, playerId, voto, singoliVinti: sv, singoliGiocati: sg, doppiVinti: dv, doppiGiocati: dg });
 const P = (id, cognome) => ({ id, nome: 'X', cognome });
 
@@ -18,16 +18,16 @@ test('record di stagione', () => {
   assert.deepEqual(recordStagione([m('1', 6, 4), m('2', 1, 9), m('3', 5, 5), m('4', 7, 0)]), { w: 2, l: 1, d: 1 });
 });
 
-test('statistiche giocatore: esempio 3/4 singoli e 1/2 doppi', () => {
+test('statistiche giocatore: esempio 3/4 singoli e 1/1 doppi', () => {
   const matches = [m('1', 6, 4, 'p1'), m('2', 3, 7, 'p2'), m('3', 5, 5, 'p1')];
-  const cards = [c('1', 'p1', 9, 3, 1), c('2', 'p1', 6, 1, 0), c('3', 'p1', 6, 2, 2), c('1', 'p2', 4)];
+  const cards = [c('1', 'p1', 9, 3, 1), c('2', 'p1', 6, 1, 0), c('3', 'p1', 6, 2, 1), c('1', 'p2', 4)];
   const s = playerStats('p1', matches, cards);
   assert.equal(s.serate, 3);
   assert.equal(s.media, 7);
-  assert.equal(s.vinte, 4 + 1 + 4);
-  assert.equal(s.giocate, 18);
+  assert.equal(s.vinte, 4 + 1 + 3);
+  assert.equal(s.giocate, 15);
   assert.equal(s.sv, 6);
-  assert.equal(s.dv, 3);
+  assert.equal(s.dv, 2);
   assert.equal(s.mvp, 2);
 });
 
@@ -60,9 +60,9 @@ test('formato media con la virgola', () => {
 });
 
 test('punteggio suggerito: i doppi contano una volta sola', () => {
-  // 4 giocatori: singoli vinti 3+2+1+2 = 8 su 16; doppi vinti 1+1+0+0 = 2 su 8 (4 doppi)
+  // 4 giocatori: singoli vinti 3+2+1+2 = 8 su 16; doppi vinti 1+1+0+0 = 2 su 4 (2 doppi)
   const cards = [c('1', 'a', 8, 3, 1), c('1', 'b', 7, 2, 1), c('1', 'c', 6, 1, 0), c('1', 'd', 6, 2, 0)];
-  assert.deepEqual(suggestedScore(cards), { noi: 9, loro: 11 });
+  assert.deepEqual(suggestedScore(cards), { noi: 9, loro: 9 });
 });
 
 test('punteggio suggerito: avvisa se i doppi non quadrano', () => {

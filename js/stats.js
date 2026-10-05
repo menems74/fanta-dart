@@ -1,8 +1,8 @@
 /** Calcoli puri su partite e pagellini (usare solo dati pubblicati). */
 
-// A serata ogni giocatore gioca al massimo 4 singoli e 2 doppi. Un doppio vale 1 partita per ciascun compagno.
+// A serata ogni giocatore gioca al massimo 4 singoli e 1 doppio. Un doppio vale 1 partita per ciascun compagno.
 export const MAX_SINGOLI = 4;
-export const MAX_DOPPI = 2;
+export const MAX_DOPPI = 1;
 
 export function esito(m) {
   if (m.puntiNoi > m.puntiLoro) return { key: 'w', label: 'Vinta' };

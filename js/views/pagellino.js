@@ -23,25 +23,26 @@ export default async function view([matchId, playerId]) {
         right: session.isAdmin ? html`<a class="iconbtn" href="#/pagellino/${matchId}/${playerId}/modifica" aria-label="Modifica pagellino">${icon('edit')}</a>` : '',
       })}
       ${card.pubblicata ? '' : html`<p class="notice">Bozza: i giocatori non lo vedono ancora.</p>`}
-      <article class="pcard ${isMvp ? 'gold' : ''}" id="card">
-        <div class="pcard-head">
-          <img src="assets/logo-320.png" width="34" height="34" alt="">
-          <span class="muted grow">${season?.squadra || 'Fanta Dart'} · ${fmtDate(match.data)}</span>
-          ${isMvp ? html`<span class="tag gold">${icon('star', 12)} MVP</span>` : ''}
+      <article class="fig ${isMvp ? 'gold' : ''}" id="card">
+        <div class="fig-top">
+          <img src="assets/logo-320.png" width="38" height="38" alt="">
+          <div class="grow"><b>${season?.squadra || 'Fanta Dart'}</b><span>${fmtDate(match.data)}</span></div>
+          ${isMvp ? html`<span class="fig-mvp">${icon('star', 13)} MVP</span>` : ''}
         </div>
-        <div class="pcard-main">
-          <span class="avatar xl">${initials(player)}</span>
-          <div class="grow">
-            <h2>${fullName(player)}</h2>
-            <p class="muted">vs ${match.avversario} · ${match.puntiNoi} – ${match.puntiLoro}</p>
-          </div>
-          <div class="bigvoto ${votoClass(card.voto)}"><b>${card.voto}</b><span>voto</span></div>
+        <div class="fig-hero">
+          <span class="fig-avatar">${initials(player)}</span>
+          <div class="fig-voto ${votoClass(card.voto)}"><b>${card.voto}</b><span>voto</span></div>
         </div>
+        <h2 class="fig-name">${fullName(player)}</h2>
+        <p class="fig-match">vs ${match.avversario} · ${match.puntiNoi} – ${match.puntiLoro}</p>
         <div class="tricolore wide"></div>
-        <p class="pcard-text">${card.testo || 'Nessun commento: per stavolta la prestazione parla da sola.'}</p>
-        <p class="muted pcard-foot">
-          Singoli <b>${g.sv}/${g.sg}</b> · Doppi <b>${g.dv}/${g.dg}</b> · Vinte <b>${g.vinte}/${g.giocate}</b>
-        </p>
+        <p class="fig-text">${card.testo || 'Nessun commento: per stavolta la prestazione parla da sola.'}</p>
+        <div class="fig-stats">
+          <div><b>${g.sv}/${g.sg}</b><span>Singoli</span></div>
+          <div><b>${g.dv}/${g.dg}</b><span>Doppio</span></div>
+          <div><b>${g.vinte}/${g.giocate}</b><span>Vinte</span></div>
+        </div>
+        <p class="fig-foot">FANTA DART</p>
       </article>
       <div class="actions">
         <button class="btn primary" id="share">${icon('share', 18)} Condividi su WhatsApp</button>

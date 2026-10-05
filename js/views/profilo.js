@@ -1,9 +1,27 @@
-import { html, $, $$, fmtDate, icon, fullName, toast } from '../util.js';
+import { html, $, $$, fmtDate, icon, fullName, toast, votoClass } from '../util.js';
 import { session, logout, changeOwnPin, PIN_RE } from '../auth.js';
 import { getPlayer, listCards, listMatches, listSeasons } from '../db.js';
 import { playerStats, gamesOf, fmtMedia, fmtPerc } from '../stats.js';
 import { topbar, avatar, votoBadge, emptyState } from '../ui.js';
 import { getSelectedSeason } from '../season.js';
+
+const starIcon = icon('star', 22).s;
+
+/** Grafico a linea degli ultimi voti (dal più vecchio al più recente). */
+function trendSvg(votes) {
+  const v = votes.slice(-8);
+  if (v.length < 2) return "<p class=\"muted small\">Servono almeno due serate per vedere l'andamento.</p>";
+  const W = 300, H = 90, pad = 14;
+  const x = (i) => pad + (i * (W - 2 * pad)) / (v.length - 1);
+  const y = (n) => H - pad - ((n - 1) / 9) * (H - 2 * pad);
+  const pts = v.map((n, i) => `${x(i).toFixed(1)},${y(n).toFixed(1)}`).join(' ');
+  const dots = v.map((n, i) =>
+    `<circle cx="${x(i).toFixed(1)}" cy="${y(n).toFixed(1)}" r="4.5" class="dot ${votoClass(n)}"/>` +
+    `<text x="${x(i).toFixed(1)}" y="${(y(n) - 9).toFixed(1)}" text-anchor="middle" class="dl">${n}</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ultimi voti: ${v.join(', ')}" class="spark">` +
+    `<line x1="${pad}" x2="${W - pad}" y1="${y(6).toFixed(1)}" y2="${y(6).toFixed(1)}" class="sufficienza"/>` +
+    `<polyline points="${pts}" class="line"/>${dots}</svg>`;
+}
 
 export default async function view([paramId]) {
   const playerId = paramId || session.account.playerId;
@@ -34,6 +52,11 @@ export default async function view([paramId]) {
       <div class="stat"><b>${st.serate}</b><span>Serate</span></div>
       <div class="stat"><b>${st.vinte}/${st.giocate}</b><span>Vinte</span></div>
       <div class="stat gold"><b>${st.mvp}</b><span>MVP</span></div>`;
+    $(root, '#avwrap').classList.toggle('mvp', st.mvp > 0);
+    $(root, '#badges').innerHTML = st.mvp > 0
+      ? `<div class="medal" title="MVP della serata"><span class="medal-disc">${starIcon}</span><b>MVP</b><span>×${st.mvp}</span></div>`
+      : "<p class=\"muted small\">Ancora nessun badge: il primo è l'MVP di una serata.</p>";
+    $(root, '#trend').innerHTML = trendSvg(history.map((x) => x.c.voto).reverse());
     $(root, '#split').textContent = st.giocate
       ? `Singoli ${st.sv}/${st.sg} (${fmtPerc(st.sv, st.sg)}) · Doppi ${st.dv}/${st.dg} (${fmtPerc(st.dv, st.dg)})`
       : '';
@@ -55,7 +78,7 @@ export default async function view([paramId]) {
         right: session.isAdmin ? html`<a class="iconbtn" href="#/giocatore/${playerId}" aria-label="Modifica giocatore">${icon('edit')}</a>` : '',
       })}
       <section class="hero">
-        ${avatar(player, 'xl')}
+        <span class="avatar-wrap" id="avwrap">${avatar(player, 'xl')}<span class="avatar-star" aria-hidden="true">${icon('star', 16)}</span></span>
         <div><h2>${fullName(player)}</h2><p class="muted">Tessera ${player.tessera} · ${player.ruolo === 'admin' ? 'Admin' : 'Player'}</p></div>
       </section>
       ${season ? html`<div class="seg" role="tablist">
@@ -64,6 +87,10 @@ export default async function view([paramId]) {
       </div>` : ''}
       <div class="stats" id="stats"></div>
       <p class="muted small split" id="split"></p>
+      <h2 class="section">Andamento voti</h2>
+      <div class="card trend" id="trend"></div>
+      <h2 class="section">Badge</h2>
+      <div class="badges" id="badges"></div>
       <h2 class="section">Storico pagellini</h2>
       <ul class="list" id="history"></ul>
       ${own ? html`
