@@ -101,7 +101,7 @@ test('stato: in programma o da completare in base alla data', () => {
   assert.equal(scoreText({ puntiNoi: 12, puntiLoro: 8 }), '12 – 8');
 });
 
-test('classifica: a parità di media e MVP vince chi ha più partite vinte, non l'ordine alfabetico', () => {
+test('classifica: a parità di media e MVP vince chi ha più partite vinte, non l\'ordine alfabetico', () => {
   const players = [P('a', 'Balzano'), P('b', 'Ceni'), P('c', 'Gagliardi')];
   const cards = [c('1', 'a', 7, 1, 0), c('1', 'b', 7, 1, 1), c('1', 'c', 7, 1, 0)];
   const r = ranking(players, [m('1', 6, 4)], cards).map((x) => x.player.id);
