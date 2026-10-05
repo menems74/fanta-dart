@@ -1,0 +1,13 @@
+{
+  "name": "fanta-dart",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Fanta Dart: pagellini goliardici per la squadra di freccette (PWA).",
+  "scripts": {
+    "start": "python -m http.server 5173",
+    "test": "node --test",
+    "rules:deploy": "firebase deploy --only firestore:rules"
+  },
+  "license": "MIT"
+}

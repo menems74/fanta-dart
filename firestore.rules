@@ -1,0 +1,47 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function hasAccount() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/accounts/$(request.auth.uid));
+    }
+    function isAdmin() {
+      return hasAccount()
+        && get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data.ruolo == 'admin';
+    }
+
+    // Ruolo di ogni account di accesso (uid Firebase -> giocatore). Lo scrivono solo gli admin.
+    match /accounts/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /players/{id} {
+      allow read: if hasAccount();
+      allow write: if isAdmin();
+    }
+
+    match /seasons/{id} {
+      allow read: if hasAccount();
+      allow write: if isAdmin();
+    }
+
+    // I Player vedono solo le serate pubblicate.
+    match /matches/{id} {
+      allow read: if isAdmin() || (hasAccount() && resource.data.pubblicata == true);
+      allow write: if isAdmin();
+    }
+
+    match /reportCards/{id} {
+      allow read: if isAdmin() || (hasAccount() && resource.data.pubblicata == true);
+      allow create, update: if isAdmin()
+        && request.resource.data.voto is int
+        && request.resource.data.voto >= 1 && request.resource.data.voto <= 10
+        && request.resource.data.partiteVinte is int
+        && request.resource.data.partiteVinte >= 0;
+      allow delete: if isAdmin();
+    }
+  }
+}

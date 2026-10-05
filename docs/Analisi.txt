@@ -1,0 +1,33 @@
+Agisci come un Senior Full Stack Web Developer esperto nella creazione di PWA (Progressive Web App). 
+Il tuo compito è scrivermi il codice e la struttura per un'applicazione chiamata "Fanta Dart".
+
+# CONTESTO E SCOPO
+Fanta Dart è un'app gestionale e goliardica per una squadra di freccette. Serve agli amministratori per inserire le partite giocate e, a fine serata, compilare i "pagellini" (valutazioni e commenti) per ogni giocatore.
+
+# STACK TECNOLOGICO
+- Frontend: HTML5, CSS3, Vanilla JavaScript (oppure consigliami tu se conosci tecnologie migliori o più adatte)
+- Backend/Database: Firebase (esistente da configurare)/ Node.js
+- Architettura: PWA (Progressive Web App) con manifest.json e Service Worker per la cache offline.
+
+# STRUTTURA DATI (ENTITÀ PRINCIPALI)
+1. Giocatori (Users): ID, Nome, Cognome, Numero Tessera, Ruolo (Admin / Player).
+2. Partite (Matches): ID, Data, Luogo, Squadra Avversaria.
+3. Pagellini (ReportCards): ID, ID Partita, ID Giocatore, Voto (1-10), Testo (commento lungo), Partite vinte(opzionale).
+
+# FUNZIONALITÀ RICHIESTE
+1. Autenticazione e Ruoli: 
+   - Gli "Admin" possono creare giocatori, creare partite e scrivere i pagellini.
+   - I "Player" (sola lettura) possono loggarsi per vedere la lista delle partite e leggere i propri pagellini e quelli dei compagni.
+2. Dashboard Partite: Una vista a lista con le partite ordinate cronologicamente. Cliccando su una partita si apre il dettaglio con tutti i pagellini di quella serata.
+3. Profilo Giocatore: Una pagina personale per ogni giocatore che mostra i suoi dati anagrafici, lo storico dei suoi pagellini e calcola in automatico la "Media Voto" di tutte le partite giocate.
+4. Export Immagine: Un pulsante nel dettaglio del pagellino per esportare il div HTML in formato immagine (PNG/JPG) per la condivisione su WhatsApp.
+5. Trofei o Badge: Il sistema potrebbe assegnare in automatico un badge MVP a chi ha il voto più alto della serata. e nelle statistiche della squadra contare quanti Badge un giocatore ha collezionato
+
+# REQUISITI UI/UX
+- Interfaccia mobile-first, ottimizzata per l'uso da smartphone (visto che verrà usata principalmente al pub post-partita).
+- Tema scuro (Dark Mode) di default.
+
+# OUTPUT RICHIESTO
+1. Proponimi lo schema esatto del database (tabelle/collezioni) in base allo stack indicato.
+2. Forniscimi la struttura delle cartelle del progetto.
+3. Scrivimi il codice per i file core della PWA (manifest.json, service-worker.js, index.html).

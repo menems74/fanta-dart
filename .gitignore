@@ -1,0 +1,11 @@
+node_modules/
+_work/
+.firebase/
+firebase-debug.log
+*.log
+.DS_Store
+Thumbs.db
+.claude/
+# chiavi di servizio: non vanno mai nel repository
+*serviceAccount*.json
+*-adminsdk-*.json
