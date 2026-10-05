@@ -61,8 +61,11 @@ export function suggestedScore(cards) {
     const g = gamesOf(c);
     t.sg += g.sg; t.sv += g.sv; t.dg += g.dg; t.dv += g.dv;
   }
-  if (t.dg % 2 || t.dv % 2) {
-    return { warn: 'I doppi non tornano ancora: ogni doppio coinvolge due giocatori. Completa i pagellini mancanti.' };
+  if (t.dg % 2) {
+    return { warn: `Doppi giocati inseriti: ${t.dg}. Ogni doppio coinvolge due giocatori, quindi il totale deve essere pari: controlla i pagellini.` };
+  }
+  if (t.dv % 2) {
+    return { warn: `Doppi vinti inseriti: ${t.dv}. Ogni doppio vinto vale per entrambi i compagni, quindi il totale deve essere pari: controlla i doppi vinti nei pagellini.` };
   }
   const totale = t.sg + t.dg / 2;
   if (totale !== TOTALE_PARTITE) {

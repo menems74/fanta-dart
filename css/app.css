@@ -171,6 +171,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .stat.gold b { color: var(--gd); }
 .split { margin: 8px 2px 0; text-align: center; }
 .hint { display: flex; align-items: flex-start; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(242, 184, 75, .08); border: 1px solid rgba(242, 184, 75, .3); font-size: 13px; line-height: 1.45; color: var(--tx); }
+.games { display: block; color: var(--tx); opacity: .85; font-variant-numeric: tabular-nums; }
 .hint .ico { color: var(--gd); margin-top: 1px; }
 .suggest { display: grid; gap: 8px; margin-top: 12px; border-color: var(--gd); }
 .suggest p { font-size: 14px; }

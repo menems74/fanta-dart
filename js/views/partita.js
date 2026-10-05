@@ -1,7 +1,7 @@
 import { html, $, fmtDate, icon, toast, go } from '../util.js';
 import { session } from '../auth.js';
 import { getMatch, getSeason, listPlayers, listCards, setMatchPublished, deleteMatch, saveMatch } from '../db.js';
-import { suggestedScore } from '../stats.js';
+import { suggestedScore, gamesOf } from '../stats.js';
 import { topbar, avatar, votoBadge, esitoTag, emptyState } from '../ui.js';
 import { fullName } from '../util.js';
 
@@ -53,6 +53,7 @@ export default async function view([id]) {
             ${avatar(p)}
             <div class="grow">
               <strong>${fullName(p)} ${match.mvpPlayerId === c.playerId ? html`<span class="mvp">${icon('star', 14)} MVP</span>` : ''}</strong>
+              <span class="small games">Singoli ${gamesOf(c).sv}/${gamesOf(c).sg} · Doppi ${gamesOf(c).dv}/${gamesOf(c).dg}</span>
               <span class="muted small clamp">${c.testo || 'Nessun commento'}</span>
             </div>
             ${votoBadge(c.voto)}
