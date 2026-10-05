@@ -62,11 +62,11 @@ export function suggestedScore(cards) {
     t.sg += g.sg; t.sv += g.sv; t.dg += g.dg; t.dv += g.dv;
   }
   if (t.dg % 2 || t.dv % 2) {
-    return { warn: 'I doppi non quadrano: ogni doppio coinvolge due giocatori, controlla i pagellini.' };
+    return { warn: 'I doppi non tornano ancora: ogni doppio coinvolge due giocatori. Completa i pagellini mancanti.' };
   }
   const totale = t.sg + t.dg / 2;
   if (totale !== TOTALE_PARTITE) {
-    return { warn: `I pagellini coprono ${totale} partite su ${TOTALE_PARTITE}: controlla che ci siano tutti i giocatori e i dati inseriti.` };
+    return { warn: `Pagellini inseriti: ${totale} partite su ${TOTALE_PARTITE}. Il risultato verrà proposto appena i dati sono completi.` };
   }
   const noi = t.sv + t.dv / 2;
   return { noi, loro: totale - noi };

@@ -17,6 +17,8 @@ export default async function view([id]) {
   const byId = new Map(players.map((p) => [p.id, p]));
   cards.sort((a, b) => b.voto - a.voto);
   const suggestion = session.isAdmin && cards.length ? suggestedScore(cards) : null;
+  const sameScore = !!suggestion && !suggestion.warn
+    && suggestion.noi === match.puntiNoi && suggestion.loro === match.puntiLoro;
   const done = new Set(cards.map((c) => c.playerId));
   const missing = session.isAdmin
     ? (season?.playerIds || []).filter((pid) => !done.has(pid)).map((pid) => byId.get(pid)).filter(Boolean)
@@ -36,13 +38,11 @@ export default async function view([id]) {
           ${match.pubblicata ? '' : html` · <span class="tag neu">Bozza non pubblicata</span>`}</p>
       </section>
 
-      ${suggestion ? html`<section class="card suggest">
-        ${suggestion.warn
-          ? html`<p class="notice">${suggestion.warn}</p>`
-          : html`<p>Dai pagellini risulta <b>${suggestion.noi} – ${suggestion.loro}</b>
-              ${(suggestion.noi === match.puntiNoi && suggestion.loro === match.puntiLoro) ? '(coincide con il risultato salvato)' : ''}</p>
-            ${(suggestion.noi === match.puntiNoi && suggestion.loro === match.puntiLoro) ? '' :
-              html`<button class="btn small sec" id="apply">Imposta ${suggestion.noi} – ${suggestion.loro} come risultato</button>`}`}
+      ${suggestion?.warn ? html`<p class="hint">${icon('info', 18)}<span>${suggestion.warn}</span></p>` : ''}
+      ${suggestion && !suggestion.warn ? html`<section class="card suggest">
+        <p>Dai pagellini risulta <b>${suggestion.noi} – ${suggestion.loro}</b>
+          ${sameScore ? '(coincide con il risultato salvato)' : ''}</p>
+        ${sameScore ? '' : html`<button class="btn small sec" id="apply">Imposta ${suggestion.noi} – ${suggestion.loro} come risultato</button>`}
       </section>` : ''}
 
       <h2 class="section">Pagellini</h2>
