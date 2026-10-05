@@ -56,6 +56,8 @@ export default async function view([param]) {
               <button class="btn small primary">Registra</button>
             </form>
             <p class="error" id="regerr" role="alert"></p>`}
+          <p class="muted small acct">Codice account: <span class="uid">${p.uid || 'non presente'}</span> · versione ${p.authVersion || 0}</p>
+          ${p.uid ? html`<button type="button" class="btn small sec" id="repair">Ripristina collegamento account</button>` : ''}
         </div>
         <h2 class="section">Reset PIN</h2>
         <form id="reset" class="form" novalidate>
@@ -91,6 +93,15 @@ export default async function view([param]) {
         }
       });
 
+      $(root, '#repair')?.addEventListener('click', async (e) => {
+        if (!confirm('Ricreare il collegamento tra questo giocatore e il suo account di accesso?')) return;
+        e.target.disabled = true;
+        try {
+          await setAccount(p.uid, { playerId: p.id, ruolo: p.ruolo });
+          toast('Collegamento ripristinato: riprova ad accedere');
+        } catch (err) { console.error(err); toast('Operazione non riuscita'); }
+        e.target.disabled = false;
+      });
       $(root, '#pinshow')?.addEventListener('click', (e) => {
         const v = $(root, '#pinval');
         const hidden = v.textContent === '••••';
