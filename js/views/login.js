@@ -1,5 +1,5 @@
 import { html, $, formatTessera } from '../util.js';
-import { login, session, normalizeTessera, TESSERA_RE, PIN_RE } from '../auth.js';
+import { login, session, normalizeTessera, TESSERA_RE, PIN_RE, orphanMessage } from '../auth.js';
 
 const MESSAGES = {
   'auth/invalid-credential': 'Tessera o PIN non corretti.',
@@ -47,7 +47,7 @@ export default async function view() {
         try {
           await login(tessera, pin);
         } catch (e2) {
-          err.textContent = MESSAGES[e2.code] || 'Accesso non riuscito. Riprova.';
+          err.textContent = e2.code === 'app/orphan' ? orphanMessage(e2.uid) : (MESSAGES[e2.code] || 'Accesso non riuscito. Riprova.');
           btn.disabled = false;
           btn.textContent = 'Entra';
         }
