@@ -1,5 +1,5 @@
 // Service worker: l'app si apre anche offline. I dati li gestisce la cache offline di Firestore.
-const CACHE = 'fanta-dart-v1';
+const CACHE = 'fanta-dart-v2';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/app.js', 'js/auth.js', 'js/db.js', 'js/firebase.js', 'js/season.js', 'js/stats.js', 'js/ui.js', 'js/util.js',
@@ -12,7 +12,7 @@ const SHELL = [
 const CDN = ['www.gstatic.com', 'cdn.jsdelivr.net'];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
@@ -22,10 +22,11 @@ self.addEventListener('activate', (e) => {
       .then(() => self.clients.claim()));
 });
 
+// 'no-cache' obbliga a ricontrollare il server: GitHub Pages altrimenti fa tenere i file in memoria per 10 minuti.
 async function networkFirst(req) {
   const cache = await caches.open(CACHE);
   try {
-    const res = await fetch(req);
+    const res = await fetch(req, { cache: 'no-cache' });
     if (res.ok) cache.put(req, res.clone());
     return res;
   } catch (err) {
