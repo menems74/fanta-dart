@@ -53,12 +53,16 @@ export function playerStats(playerId, matches, cards) {
   return { serate, media, ...t, giocate: t.sg + t.dg, vinte: t.sv + t.dv, mvp };
 }
 
+/** Ordine: media voto, poi MVP, poi percentuale di vittorie, poi vittorie, poi serate, infine cognome. */
 export function ranking(players, matches, cards) {
+  const perc = (r) => (r.giocate ? r.vinte / r.giocate : 0);
   return players
     .map((p) => ({ player: p, ...playerStats(p.id, matches, cards) }))
     .sort((a, b) =>
       (b.media ?? -1) - (a.media ?? -1) ||
       b.mvp - a.mvp ||
+      perc(b) - perc(a) ||
+      b.vinte - a.vinte ||
       b.serate - a.serate ||
       a.player.cognome.localeCompare(b.player.cognome, 'it'));
 }
