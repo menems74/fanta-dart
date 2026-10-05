@@ -1,9 +1,12 @@
-import { html, $, fmtDate, icon } from '../util.js';
+import { html, $, fmtDate, icon, fullName } from '../util.js';
 import { session } from '../auth.js';
-import { listSeasons, listMatches } from '../db.js';
-import { recordStagione } from '../stats.js';
+import { listSeasons, listMatches, listPlayers, listCards } from '../db.js';
+import { recordStagione, esito, fmtMedia } from '../stats.js';
 import { topbar, esitoTag, emptyState } from '../ui.js';
 import { getSelectedSeason, setSelectedSeason } from '../season.js';
+
+const shortName = (p) => (p ? `${p.nome} ${p.cognome[0]}.` : '');
+const opponentBadge = (name) => name.replace(/[^\p{L}\p{N}]/gu, '').slice(0, 2).toUpperCase() || '?';
 
 export default async function view() {
   const seasons = await listSeasons();
@@ -16,8 +19,17 @@ export default async function view() {
     };
   }
   const season = getSelectedSeason(seasons);
-  const matches = await listMatches(season.id, { onlyPublished: !session.isAdmin });
-  const rec = recordStagione(matches.filter((m) => m.pubblicata));
+  const [matches, players, cards] = await Promise.all([
+    listMatches(season.id, { onlyPublished: !session.isAdmin }),
+    listPlayers(),
+    listCards({ seasonId: season.id }, { onlyPublished: true }),
+  ]);
+  const byId = new Map(players.map((p) => [p.id, p]));
+  const published = matches.filter((m) => m.pubblicata);
+  const rec = recordStagione(published);
+  const media = cards.length ? cards.reduce((s, c) => s + c.voto, 0) / cards.length : null;
+  const last = published[0];
+  const lastMvp = last?.mvpPlayerId ? byId.get(last.mvpPlayerId) : null;
 
   return {
     html: html`
@@ -30,19 +42,42 @@ export default async function view() {
           ${seasons.map((s) => html`<option value="${s.id}" ${s.id === season.id ? 'selected' : ''}>${s.nome} · ${s.squadra}</option>`)}
         </select>
       </label>
+
+      ${last ? html`
+        <a class="card last" href="#/partita/${last.id}">
+          <p class="muted small">Ultima serata · ${fmtDate(last.data)}</p>
+          <p class="last-score">${last.puntiNoi} – ${last.puntiLoro}</p>
+          <p class="muted">vs ${last.avversario}${last.luogo ? ` · ${last.luogo}` : ''}</p>
+          <div class="tricolore"></div>
+          ${lastMvp
+            ? html`<p class="last-mvp">${icon('star', 16)} MVP <b>${fullName(lastMvp)}</b></p>`
+            : html`<p class="muted small">MVP non assegnato</p>`}
+        </a>
+        <div class="stats season-stats">
+          <div class="stat w"><b>${rec.w}</b><span>Vinte</span></div>
+          <div class="stat"><b>${rec.d}</b><span>Pari</span></div>
+          <div class="stat l"><b>${rec.l}</b><span>Perse</span></div>
+          <div class="stat"><b>${fmtMedia(media)}</b><span>Media voti</span></div>
+        </div>` : ''}
+
       ${matches.length ? html`
-        <p class="muted small record">${rec.w} vinte · ${rec.d} pari · ${rec.l} perse</p>
+        <h2 class="section">Tutte le serate</h2>
         <ul class="list">
-          ${matches.map((m) => html`
-            <li><a class="card match ${m.pubblicata ? '' : 'draft'}" href="#/partita/${m.id}">
+          ${matches.map((m) => {
+            const mvp = m.mvpPlayerId ? byId.get(m.mvpPlayerId) : null;
+            return html`
+            <li><a class="item ${m.pubblicata ? esito(m).key : 'draft'}" href="#/partita/${m.id}">
+              <span class="avatar" aria-hidden="true">${opponentBadge(m.avversario)}</span>
               <div class="grow">
                 <strong>vs ${m.avversario}</strong>
                 <span class="muted small">${fmtDate(m.data)}${m.luogo ? ` · ${m.luogo}` : ''}</span>
               </div>
               ${m.pubblicata
-                ? html`<div class="score"><b>${m.puntiNoi} – ${m.puntiLoro}</b>${esitoTag(m)}</div>`
+                ? html`<div class="score"><b>${m.puntiNoi} – ${m.puntiLoro}</b>
+                    ${mvp ? html`<span class="mvp-line">${icon('star', 12)} ${shortName(mvp)}</span>` : esitoTag(m)}</div>`
                 : html`<span class="tag neu">Bozza</span>`}
-            </a></li>`)}
+            </a></li>`;
+          })}
         </ul>`
         : emptyState('Nessuna partita', session.isAdmin ? 'Aggiungi la prima serata della stagione.' : 'Qui compariranno le serate pubblicate.',
             session.isAdmin ? html`<a class="btn primary" href="#/partita/nuova">Nuova partita</a>` : '')}`,

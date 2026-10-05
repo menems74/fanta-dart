@@ -29,8 +29,8 @@ export default async function view() {
           <li><a class="card row ${p.attivo === false ? 'off' : ''}" href="#/giocatore/${p.id}">
             ${avatar(p)}
             <div class="grow"><strong>${fullName(p)}</strong>
-              <span class="muted small">Tessera ${p.tessera} · ${p.ruolo === 'admin' ? 'Admin' : 'Player'}${p.attivo === false ? ' · non attivo' : ''}</span></div>
-            ${icon('chevron')}
+              <span class="muted small">${p.ruolo === 'admin' ? 'Admin' : 'Player'}${p.attivo === false ? ' · non attivo' : ''}</span></div>
+            <span class="tessera" aria-label="Tessera ${p.tessera}">${p.tessera}</span>
           </a></li>`)}
       </ul>`,
   };

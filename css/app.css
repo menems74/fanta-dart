@@ -175,6 +175,26 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .rank .media { font-size: 19px; min-width: 42px; text-align: right; }
 .mvpcount { display: inline-flex; align-items: center; gap: 3px; color: var(--gd); font-size: 13px; font-weight: 600; }
 
+/* ---------- elenco partite ---------- */
+.card.last { text-align: center; display: grid; gap: 4px; justify-items: center; padding: 16px 14px; margin-bottom: 12px; background: linear-gradient(165deg, rgba(27, 74, 156, .55), rgba(13, 31, 63, .9)); }
+.last-score { font-size: 44px; font-weight: 800; line-height: 1.1; letter-spacing: -1px; }
+.last .tricolore { margin: 8px 0; }
+.last-mvp { display: inline-flex; align-items: center; gap: 6px; color: var(--gd); }
+.last-mvp b { color: var(--tx); font-weight: 700; }
+.season-stats .stat.w b { color: var(--gr-tx); }
+.season-stats .stat.l b { color: var(--rd-tx); }
+.item { display: flex; align-items: center; gap: 12px; background: rgba(13, 31, 63, .86); border: 1px solid var(--ln); border-left-width: 4px; border-radius: var(--radius); padding: 11px 14px; }
+a.item:active { background: var(--c2); }
+.item.w { border-left-color: var(--gr); }
+.item.l { border-left-color: var(--rd); }
+.item.d { border-left-color: var(--mu); }
+.item.draft { border-style: dashed; border-left-style: dashed; }
+.item strong { display: block; font-weight: 600; }
+.mvp-line { display: inline-flex; align-items: center; gap: 3px; color: var(--gd); font-size: 12px; font-weight: 600; }
+
+/* ---------- gestione: numero di tessera ---------- */
+.tessera { flex: none; font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: .02em; color: var(--tx); background: rgba(7, 20, 43, .7); border: 1px solid var(--ln); border-radius: 8px; padding: 5px 10px; }
+
 /* ---------- figurina da condividere ---------- */
 .fig { position: relative; border-radius: 22px; padding: 16px 18px 14px; border: 2px solid var(--ln); background: linear-gradient(165deg, #1a428c 0%, #0f2753 48%, #0a1833 100%); overflow: hidden; }
 .fig.gold { border-color: var(--gd); background: linear-gradient(165deg, #3d4a6b 0%, #14306a 38%, #0a1833 100%); }
