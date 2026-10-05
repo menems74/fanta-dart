@@ -39,10 +39,9 @@ export default async function view([id]) {
       </section>
 
       ${suggestion?.warn ? html`<p class="hint">${icon('info', 18)}<span>${suggestion.warn}</span></p>` : ''}
-      ${suggestion && !suggestion.warn ? html`<section class="card suggest">
-        <p>Dai pagellini risulta <b>${suggestion.noi} – ${suggestion.loro}</b>
-          ${sameScore ? '(coincide con il risultato salvato)' : ''}</p>
-        ${sameScore ? '' : html`<button class="btn small sec" id="apply">Imposta ${suggestion.noi} – ${suggestion.loro} come risultato</button>`}
+      ${suggestion && !suggestion.warn && !sameScore ? html`<section class="card suggest">
+        <p>Dai pagellini risulta <b>${suggestion.noi} – ${suggestion.loro}</b></p>
+        <button class="btn small sec" id="apply">Imposta ${suggestion.noi} – ${suggestion.loro} come risultato</button>
       </section>` : ''}
 
       <h2 class="section">Pagellini</h2>
