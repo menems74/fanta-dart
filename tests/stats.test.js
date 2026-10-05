@@ -46,12 +46,18 @@ test('giocatore senza pagellini: media nulla', () => {
   assert.equal(fmtPerc(0, 0), '—');
 });
 
-test('classifica: media, poi MVP, poi chi non ha giocato in fondo', () => {
+test('classifica: per media voto, chi non ha giocato in fondo', () => {
   const players = [P('a', 'Verdi'), P('b', 'Rossi'), P('c', 'Bianchi')];
-  const matches = [m('1', 6, 4, 'b')];
-  const cards = [c('1', 'a', 8), c('1', 'b', 8)];
-  const r = ranking(players, matches, cards).map((x) => x.player.id);
+  const cards = [c('1', 'a', 8, 1), c('1', 'b', 9, 0)];
+  const r = ranking(players, [m('1', 6, 4)], cards).map((x) => x.player.id);
   assert.deepEqual(r, ['b', 'a', 'c']);
+});
+
+test("classifica: l'MVP non conta, a parità di media decidono le vittorie", () => {
+  const players = [P('a', 'Verdi'), P('b', 'Rossi')];
+  const cards = [c('1', 'a', 8, 3, 1), c('1', 'b', 8, 1, 0)];
+  const r = ranking(players, [m('1', 6, 4, 'b')], cards).map((x) => x.player.id);
+  assert.deepEqual(r, ['a', 'b']);
 });
 
 test('formato media con la virgola', () => {

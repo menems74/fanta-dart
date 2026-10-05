@@ -41,7 +41,7 @@ export default async function view() {
         <button data-s="stagione" role="tab">${season.nome}</button>
         <button data-s="carriera" role="tab">Carriera</button>
       </div>
-      <p class="muted small record">Ordinata per media voto, poi MVP, poi partite vinte. Contano solo le serate pubblicate.</p>
+      <p class="muted small record">Ordinata per media voto, poi partite vinte. L'MVP è solo un badge. Contano solo le serate pubblicate.</p>
       <ul class="list" id="rows"></ul>`,
     mount(root) {
       draw(root);
