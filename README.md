@@ -46,6 +46,7 @@ I Player leggono solo le serate con `pubblicata: true` (vedi `firestore.rules`).
    1. *Authentication → Utenti → Aggiungi utente*: email `NN-NNNN@fantadart.app` (la tessera con `-` al posto di `/`, es. `08-4272@fantadart.app`), password = **PIN + `-fanta`** (es. `1234-fanta`). Copia lo **UID** dell'utente creato.
    2. *Firestore → Avvia raccolta* `accounts`, ID documento = lo UID, campi: `playerId` (stringa, es. `08-4272`), `ruolo` (stringa, `admin`).
    3. Raccolta `players`, ID documento = `08-4272`, campi: `tessera` `08/4272`, `nome`, `cognome`, `ruolo` `admin`, `attivo` `true` (booleano), `uid` = lo UID, `authVersion` `0` (numero).
+   Se all'accesso compare «Account non configurato», il messaggio riporta l'UID da usare come ID del documento in `accounts`.
 4. Entra nell'app con tessera e PIN, poi crea la prima stagione da **Gestione**. Gli altri giocatori si creano dall'app.
 
 ## Provarla in locale
@@ -58,7 +59,7 @@ Poi apri http://localhost:5173 (serve Python; qualunque server statico va bene).
 
 ## Pubblicazione su GitHub Pages
 
-*Settings → Pages → Build and deploy → Deploy from a branch → `main` / `(root)`*. L'indirizzo sarà `https://<utente>.github.io/fanta-dart/`. Per i test su telefono, in Firebase **Authentication → Impostazioni → Domini autorizzati** il dominio `github.io` non serve (si usa solo email/password), ma tienilo a mente se aggiungi altri metodi.
+*Settings → Pages → Build and deploy → Deploy from a branch → `main` / `(root)`*. L'indirizzo sarà `https://<utente>.github.io/fanta-dart/`.
 
 ## Note sulla sicurezza
 

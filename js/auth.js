@@ -72,7 +72,7 @@ export function watchSession(onChange) {
         session.error = 'Impossibile leggere il profilo. Controlla la connessione.';
       }
       if (!session.account) {
-        session.error ??= 'Account non configurato: chiedi a un admin.';
+        session.error ??= `Account non configurato: chiedi a un admin. (UID: ${user.uid})`;
         await signOut(auth);
         session.user = null;
       }
