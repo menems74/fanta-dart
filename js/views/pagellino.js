@@ -2,6 +2,7 @@ import { html, $, fmtDate, icon, toast, initials, fullName, votoClass } from '..
 import { session } from '../auth.js';
 import { getMatch, getSeason, getPlayer, getCard } from '../db.js';
 import { topbar, emptyState } from '../ui.js';
+import { gamesOf } from '../stats.js';
 
 const HTML_TO_IMAGE = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm';
 
@@ -13,6 +14,7 @@ export default async function view([matchId, playerId]) {
   }
   const season = await getSeason(match.seasonId);
   const isMvp = match.mvpPlayerId === playerId;
+  const g = gamesOf(card);
 
   return {
     html: html`
@@ -37,7 +39,9 @@ export default async function view([matchId, playerId]) {
         </div>
         <div class="tricolore wide"></div>
         <p class="pcard-text">${card.testo || 'Nessun commento: per stavolta la prestazione parla da sola.'}</p>
-        <p class="muted pcard-foot">Partite vinte: <b>${card.partiteVinte || 0}</b></p>
+        <p class="muted pcard-foot">
+          Singoli <b>${g.sv}/${g.sg}</b> · Doppi <b>${g.dv}/${g.dg}</b> · Vinte <b>${g.vinte}/${g.giocate}</b>
+        </p>
       </article>
       <div class="actions">
         <button class="btn primary" id="share">${icon('share', 18)} Condividi su WhatsApp</button>

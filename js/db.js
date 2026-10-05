@@ -51,7 +51,15 @@ export async function saveMatch(id, data) {
   await setDoc(ref, id ? data : { ...data, creataIl: Date.now(), pubblicata: false, mvpPlayerId: null }, { merge: true });
   return ref.id;
 }
-export const setMvp = (matchId, playerId) =>
+/** Sposta la partita in un'altra stagione, insieme ai suoi pagellini (che ne portano una copia). */
+export async function changeMatchSeason(matchId, seasonId) {
+  const cards = await listCards({ matchId }, { onlyPublished: false });
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'matches', matchId), { seasonId }, { merge: true });
+  for (const c of cards) batch.set(doc(db, 'reportCards', c.id), { seasonId }, { merge: true });
+  await batch.commit();
+}
+export const setMvp =(matchId, playerId) =>
   setDoc(doc(db, 'matches', matchId), { mvpPlayerId: playerId }, { merge: true });
 
 export async function setMatchPublished(matchId, value) {

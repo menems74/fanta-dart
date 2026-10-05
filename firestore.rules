@@ -12,6 +12,14 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data.ruolo == 'admin';
     }
 
+    function validCard(c) {
+      return c.voto is int && c.voto >= 1 && c.voto <= 10
+        && c.singoliGiocati is int && c.singoliGiocati >= 0 && c.singoliGiocati <= 4
+        && c.singoliVinti is int && c.singoliVinti >= 0 && c.singoliVinti <= c.singoliGiocati
+        && c.doppiGiocati is int && c.doppiGiocati >= 0 && c.doppiGiocati <= 2
+        && c.doppiVinti is int && c.doppiVinti >= 0 && c.doppiVinti <= c.doppiGiocati;
+    }
+
     // Ruolo di ogni account di accesso (uid Firebase -> giocatore). Lo scrivono solo gli admin.
     match /accounts/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
@@ -36,11 +44,8 @@ service cloud.firestore {
 
     match /reportCards/{id} {
       allow read: if isAdmin() || (hasAccount() && resource.data.pubblicata == true);
-      allow create, update: if isAdmin()
-        && request.resource.data.voto is int
-        && request.resource.data.voto >= 1 && request.resource.data.voto <= 10
-        && request.resource.data.partiteVinte is int
-        && request.resource.data.partiteVinte >= 0;
+      // Voto 1-10; al massimo 4 singoli e 2 doppi giocati, con vittorie non superiori ai giocati.
+      allow create, update: if isAdmin() && validCard(request.resource.data);
       allow delete: if isAdmin();
     }
   }

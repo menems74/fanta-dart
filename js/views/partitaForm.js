@@ -1,5 +1,5 @@
 import { html, $, toast, go, todayIso } from '../util.js';
-import { getMatch, listSeasons, saveMatch } from '../db.js';
+import { getMatch, listSeasons, saveMatch, changeMatchSeason } from '../db.js';
 import { topbar } from '../ui.js';
 import { getSelectedSeason } from '../season.js';
 
@@ -7,6 +7,13 @@ export default async function view([id]) {
   const seasons = await listSeasons();
   const m = id ? await getMatch(id) : null;
   if (id && !m) return { html: html`${topbar('Partita', { back: '/partite' })}<p class="muted">Partita non trovata.</p>` };
+  if (m?.pubblicata) {
+    return {
+      html: html`${topbar('Modifica partita', { back: `/partita/${id}` })}
+        <p class="notice">La serata è pubblicata e non si può modificare. Ritira la pubblicazione dalla pagina della partita, correggi e pubblica di nuovo.</p>
+        <a class="btn sec" href="#/partita/${id}">Torna alla partita</a>`,
+    };
+  }
   if (!seasons.length) return { html: html`${topbar('Nuova partita', { back: '/partite' })}<p class="muted">Crea prima una stagione.</p>` };
 
   const seasonId = m?.seasonId || getSelectedSeason(seasons).id;
@@ -61,7 +68,9 @@ export default async function view([id]) {
         const btn = $(root, '.btn.primary');
         btn.disabled = true;
         try {
-          const newId = await saveMatch(id, data);
+          const { seasonId: newSeason, ...fields } = data;
+          const newId = await saveMatch(id, id ? fields : data);
+          if (id && newSeason !== m.seasonId) await changeMatchSeason(id, newSeason);
           toast('Partita salvata');
           go(`/partita/${newId}`);
         } catch (e2) { console.error(e2); err.textContent = 'Salvataggio non riuscito.'; btn.disabled = false; }

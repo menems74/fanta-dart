@@ -118,6 +118,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .chips button { height: 46px; border-radius: 10px; border: 1px solid var(--ln); background: var(--c1); color: var(--tx); font: inherit; font-size: 17px; font-weight: 600; }
 .chips button.sel { background: var(--gr); border-color: var(--gr); color: #03210e; }
 
+.steppers { display: grid; gap: 10px; padding: 10px 14px; }
+.stepper-row { display: flex; align-items: center; justify-content: space-between; color: var(--tx); font-size: 15px; }
 .stepper { display: flex; align-items: center; gap: 18px; }
 .stepper button { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--ln); background: var(--c1); color: var(--tx); display: grid; place-items: center; }
 .stepper b { font-size: 24px; min-width: 32px; text-align: center; color: var(--tx); }
@@ -155,6 +157,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .stat b { font-size: 21px; font-weight: 700; }
 .stat span { font-size: 11px; color: var(--mu); }
 .stat.gold b { color: var(--gd); }
+.split { margin: 8px 2px 0; text-align: center; }
+.suggest { display: grid; gap: 8px; margin-top: 12px; border-color: var(--gd); }
+.suggest p { font-size: 14px; }
 .rank .pos { width: 20px; text-align: center; color: var(--mu); font-weight: 700; }
 .rank .media { font-size: 19px; min-width: 42px; text-align: right; }
 .mvpcount { display: inline-flex; align-items: center; gap: 3px; color: var(--gd); font-size: 13px; font-weight: 600; }

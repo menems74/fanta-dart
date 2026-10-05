@@ -6,8 +6,8 @@ App web installabile (PWA) per la squadra di freccette: gli admin inseriscono le
 
 - Accesso con **numero tessera** (`08/4272`) e **PIN a 4 cifre**.
 - **Stagioni** con nome squadra e roster, da confermare a ogni nuova stagione.
-- **Partite** con data, luogo, avversario e risultato.
-- **Pagellini**: voto 1–10, partite vinte, commento, flag **MVP** (uno per serata). Restano in bozza finché l'admin non preme **Pubblica serata**.
+- **Partite** con data, luogo, avversario e risultato (proposto dai pagellini). Modificabili finché sono in bozza.
+- **Pagellini**: voto 1–10, singoli (max 4) e doppi (max 2) giocati e vinti (un doppio vinto vale una partita a testa), commento, flag **MVP** (uno per serata). Restano in bozza finché l'admin non preme **Pubblica serata**.
 - **Profilo** con media voto, partite, vinte e MVP (per stagione e carriera) e **classifica**.
 - **Esporta il pagellino come immagine** e condividilo su WhatsApp.
 - Funziona anche offline in lettura.
@@ -34,7 +34,7 @@ tests/                                      test dei calcoli (npm test)
 | `players/{tessera}` | nome, cognome, tessera, ruolo, attivo (id = tessera con `-` al posto di `/`) |
 | `seasons/{id}` | nome, squadra, roster (`playerIds`) |
 | `matches/{id}` | stagione, data, luogo, avversario, punti, `mvpPlayerId`, `pubblicata` |
-| `reportCards/{matchId_playerId}` | voto, partite vinte, testo, `pubblicata` |
+| `reportCards/{matchId_playerId}` | voto, singoli giocati/vinti (max 4), doppi giocati/vinti (max 2), testo, `pubblicata` |
 
 I Player leggono solo le serate con `pubblicata: true` (vedi `firestore.rules`).
 

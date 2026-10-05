@@ -19,14 +19,14 @@ export default async function view() {
     const inScope = (x) => scope === 'carriera' || x.seasonId === season.id;
     const pool = scope === 'carriera' ? players : players.filter((p) => season.playerIds?.includes(p.id));
     const rows = ranking(pool, matches.filter(inScope), cards.filter(inScope))
-      .filter((r) => scope === 'stagione' || r.partite > 0);
+      .filter((r) => scope === 'stagione' || r.serate > 0);
     $(root, '#rows').innerHTML = rows.length
       ? rows.map((r, i) => html`
         <li><a class="card row rank" href="#/profilo/${r.player.id}">
           <span class="pos">${i + 1}</span>
           ${avatar(r.player)}
           <div class="grow"><strong>${fullName(r.player)}</strong>
-            <span class="muted small">${r.partite} partite · ${r.vinte} vinte</span></div>
+            <span class="muted small">${r.serate} serate · ${r.vinte}/${r.giocate} vinte</span></div>
           <span class="mvpcount" title="MVP">${icon('star', 14)} ${r.mvp}</span>
           <b class="media">${fmtMedia(r.media)}</b>
         </a></li>`.s).join('')

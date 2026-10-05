@@ -1,6 +1,17 @@
 import { html, $, $$, toast, go, icon, fullName } from '../util.js';
 import { getMatch, getPlayer, getCard, saveCard, deleteCard, setMvp } from '../db.js';
 import { topbar, emptyState } from '../ui.js';
+import { MAX_SINGOLI, MAX_DOPPI } from '../stats.js';
+
+const stepper = (key, label, value) => html`
+  <div class="stepper-row">
+    <span>${label}</span>
+    <div class="stepper">
+      <button type="button" data-k="${key}" data-d="-1" aria-label="${label}: meno">${icon('minus')}</button>
+      <b id="v-${key}" aria-live="polite">${value}</b>
+      <button type="button" data-k="${key}" data-d="1" aria-label="${label}: più">${icon('plus')}</button>
+    </div>
+  </div>`;
 
 export default async function view([matchId, playerId]) {
   const back = `/partita/${matchId}`;
@@ -9,7 +20,12 @@ export default async function view([matchId, playerId]) {
   const otherMvp = match.mvpPlayerId && match.mvpPlayerId !== playerId ? await getPlayer(match.mvpPlayerId) : null;
 
   let voto = card?.voto ?? null;
-  let vinte = card?.partiteVinte ?? 0;
+  const v = {
+    singoliGiocati: card?.singoliGiocati ?? MAX_SINGOLI,
+    singoliVinti: card?.singoliVinti ?? 0,
+    doppiGiocati: card?.doppiGiocati ?? MAX_DOPPI,
+    doppiVinti: card?.doppiVinti ?? 0,
+  };
 
   return {
     html: html`
@@ -22,12 +38,18 @@ export default async function view([matchId, playerId]) {
               html`<button type="button" role="radio" data-v="${n}" aria-checked="${n === voto}" class="${n === voto ? 'sel' : ''}">${n}</button>`)}
           </div>
         </div>
-        <div class="field">Partite vinte
-          <div class="stepper">
-            <button type="button" id="dec" aria-label="Meno">${icon('minus')}</button>
-            <b id="vinte">${vinte}</b>
-            <button type="button" id="inc" aria-label="Più">${icon('plus')}</button>
+        <div class="field">Singoli (massimo ${MAX_SINGOLI})
+          <div class="card steppers">
+            ${stepper('singoliGiocati', 'Giocati', v.singoliGiocati)}
+            ${stepper('singoliVinti', 'Vinti', v.singoliVinti)}
           </div>
+        </div>
+        <div class="field">Doppi (massimo ${MAX_DOPPI})
+          <div class="card steppers">
+            ${stepper('doppiGiocati', 'Giocati', v.doppiGiocati)}
+            ${stepper('doppiVinti', 'Vinti', v.doppiVinti)}
+          </div>
+          <small class="muted">Un doppio vinto vale una partita per ciascun compagno.</small>
         </div>
         <label class="field">Commento
           <textarea name="testo" rows="5" maxlength="600" placeholder="Come è andata stasera?">${card?.testo || ''}</textarea>
@@ -45,7 +67,7 @@ export default async function view([matchId, playerId]) {
       </form>`,
     mount(root) {
       const err = $(root, '#err');
-      const setVinte = (n) => { vinte = Math.max(0, Math.min(99, n)); $(root, '#vinte').textContent = vinte; };
+      const show = () => Object.entries(v).forEach(([k, val]) => { $(root, `#v-${k}`).textContent = val; });
 
       $(root, '#chips').addEventListener('click', (e) => {
         const b = e.target.closest('button[data-v]');
@@ -57,8 +79,25 @@ export default async function view([matchId, playerId]) {
           x.setAttribute('aria-checked', on);
         });
       });
-      $(root, '#inc').addEventListener('click', () => setVinte(vinte + 1));
-      $(root, '#dec').addEventListener('click', () => setVinte(vinte - 1));
+
+      // Le vittorie non possono superare le partite giocate; i giocati non superano il massimo.
+      $(root, '#f').addEventListener('click', (e) => {
+        const b = e.target.closest('button[data-k]');
+        if (!b) return;
+        const k = b.dataset.k;
+        const d = parseInt(b.dataset.d, 10);
+        const single = k.startsWith('singoli');
+        const max = single ? MAX_SINGOLI : MAX_DOPPI;
+        const playedKey = single ? 'singoliGiocati' : 'doppiGiocati';
+        const wonKey = single ? 'singoliVinti' : 'doppiVinti';
+        if (k === playedKey) {
+          v[k] = Math.max(0, Math.min(max, v[k] + d));
+          v[wonKey] = Math.min(v[wonKey], v[playedKey]);
+        } else {
+          v[k] = Math.max(0, Math.min(v[playedKey], v[k] + d));
+        }
+        show();
+      });
 
       $(root, '#f').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -69,7 +108,7 @@ export default async function view([matchId, playerId]) {
         try {
           await saveCard({
             matchId, playerId, seasonId: match.seasonId,
-            voto, partiteVinte: vinte, testo: f.testo.value.trim(),
+            voto, ...v, testo: f.testo.value.trim(),
             pubblicata: !!match.pubblicata,
           });
           const wantsMvp = f.mvp.checked;

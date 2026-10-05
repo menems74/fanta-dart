@@ -1,6 +1,7 @@
 import { html, $, fmtDate, icon, toast, go } from '../util.js';
 import { session } from '../auth.js';
-import { getMatch, getSeason, listPlayers, listCards, setMatchPublished, deleteMatch } from '../db.js';
+import { getMatch, getSeason, listPlayers, listCards, setMatchPublished, deleteMatch, saveMatch } from '../db.js';
+import { suggestedScore } from '../stats.js';
 import { topbar, avatar, votoBadge, esitoTag, emptyState } from '../ui.js';
 import { fullName } from '../util.js';
 
@@ -15,6 +16,7 @@ export default async function view([id]) {
   ]);
   const byId = new Map(players.map((p) => [p.id, p]));
   cards.sort((a, b) => b.voto - a.voto);
+  const suggestion = session.isAdmin && cards.length ? suggestedScore(cards) : null;
   const done = new Set(cards.map((c) => c.playerId));
   const missing = session.isAdmin
     ? (season?.playerIds || []).filter((pid) => !done.has(pid)).map((pid) => byId.get(pid)).filter(Boolean)
@@ -24,7 +26,8 @@ export default async function view([id]) {
     html: html`
       ${topbar(`vs ${match.avversario}`, {
         back: '/partite',
-        right: session.isAdmin ? html`<a class="iconbtn" href="#/partita/${id}/modifica" aria-label="Modifica partita">${icon('edit')}</a>` : '',
+        right: session.isAdmin && !match.pubblicata
+          ? html`<a class="iconbtn" href="#/partita/${id}/modifica" aria-label="Modifica partita">${icon('edit')}</a>` : '',
       })}
       <section class="card summary">
         <div class="score big"><b>${match.puntiNoi} – ${match.puntiLoro}</b>${esitoTag(match)}</div>
@@ -32,6 +35,15 @@ export default async function view([id]) {
         <p class="muted small">${season ? `${season.nome} · ${season.squadra}` : ''}
           ${match.pubblicata ? '' : html` · <span class="tag neu">Bozza non pubblicata</span>`}</p>
       </section>
+
+      ${suggestion ? html`<section class="card suggest">
+        ${suggestion.warn
+          ? html`<p class="notice">${suggestion.warn}</p>`
+          : html`<p>Dai pagellini risulta <b>${suggestion.noi} – ${suggestion.loro}</b>
+              ${(suggestion.noi === match.puntiNoi && suggestion.loro === match.puntiLoro) ? '(coincide con il risultato salvato)' : ''}</p>
+            ${(suggestion.noi === match.puntiNoi && suggestion.loro === match.puntiLoro) ? '' :
+              html`<button class="btn small sec" id="apply">Imposta ${suggestion.noi} – ${suggestion.loro} come risultato</button>`}`}
+      </section>` : ''}
 
       <h2 class="section">Pagellini</h2>
       ${cards.length ? html`<ul class="list">
@@ -64,6 +76,14 @@ export default async function view([id]) {
           <button class="btn danger" id="del">${icon('trash', 18)} Elimina partita</button>
         </div>` : ''}`,
     mount(root) {
+      $(root, '#apply')?.addEventListener('click', async (e) => {
+        e.target.disabled = true;
+        try {
+          await saveMatch(id, { puntiNoi: suggestion.noi, puntiLoro: suggestion.loro });
+          toast('Risultato aggiornato');
+          window.dispatchEvent(new HashChangeEvent('hashchange'));
+        } catch (err) { console.error(err); toast('Operazione non riuscita'); e.target.disabled = false; }
+      });
       $(root, '#pub')?.addEventListener('click', async (e) => {
         const next = !match.pubblicata;
         const msg = next

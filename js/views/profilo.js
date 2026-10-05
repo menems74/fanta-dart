@@ -1,7 +1,7 @@
 import { html, $, $$, fmtDate, icon, fullName, toast } from '../util.js';
 import { session, logout, changeOwnPin, PIN_RE } from '../auth.js';
 import { getPlayer, listCards, listMatches, listSeasons } from '../db.js';
-import { playerStats, fmtMedia } from '../stats.js';
+import { playerStats, gamesOf, fmtMedia, fmtPerc } from '../stats.js';
 import { topbar, avatar, votoBadge, emptyState } from '../ui.js';
 import { getSelectedSeason } from '../season.js';
 
@@ -31,14 +31,17 @@ export default async function view([paramId]) {
       .sort((a, b) => b.m.data.localeCompare(a.m.data));
     $(root, '#stats').innerHTML = `
       <div class="stat"><b>${fmtMedia(st.media)}</b><span>Media voto</span></div>
-      <div class="stat"><b>${st.partite}</b><span>Partite</span></div>
-      <div class="stat"><b>${st.vinte}</b><span>Vinte</span></div>
+      <div class="stat"><b>${st.serate}</b><span>Serate</span></div>
+      <div class="stat"><b>${st.vinte}/${st.giocate}</b><span>Vinte</span></div>
       <div class="stat gold"><b>${st.mvp}</b><span>MVP</span></div>`;
+    $(root, '#split').textContent = st.giocate
+      ? `Singoli ${st.sv}/${st.sg} (${fmtPerc(st.sv, st.sg)}) · Doppi ${st.dv}/${st.dg} (${fmtPerc(st.dv, st.dg)})`
+      : '';
     $(root, '#history').innerHTML = history.length
       ? history.map(({ c, m }) => html`
           <li><a class="card row" href="#/pagellino/${c.matchId}/${playerId}">
             <div class="grow"><strong>vs ${m.avversario}</strong>
-              <span class="muted small">${fmtDate(m.data)} · ${c.partiteVinte || 0} vinte ${m.mvpPlayerId === playerId ? '· MVP' : ''}</span></div>
+              <span class="muted small">${fmtDate(m.data)} · ${gamesOf(c).vinte}/${gamesOf(c).giocate} vinte ${m.mvpPlayerId === playerId ? '· MVP' : ''}</span></div>
             ${votoBadge(c.voto)}
           </a></li>`.s).join('')
       : '<li class="muted">Ancora nessun pagellino pubblicato.</li>';
@@ -60,6 +63,7 @@ export default async function view([paramId]) {
         <button data-s="carriera" role="tab">Carriera</button>
       </div>` : ''}
       <div class="stats" id="stats"></div>
+      <p class="muted small split" id="split"></p>
       <h2 class="section">Storico pagellini</h2>
       <ul class="list" id="history"></ul>
       ${own ? html`
