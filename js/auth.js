@@ -52,12 +52,27 @@ export async function changeOwnPin(newPin) {
 }
 
 let secondaryAuth;
+const secondary = () => (secondaryAuth ??= getAuth(initializeApp(firebaseConfig, 'secondary')));
+
 /** Crea l'account di un giocatore senza disconnettere l'admin (app Firebase secondaria). */
 export async function createAccount(tessera, pin, version = 0) {
-  secondaryAuth ??= getAuth(initializeApp(firebaseConfig, 'secondary'));
-  const cred = await createUserWithEmailAndPassword(secondaryAuth, emailFor(tessera, version), passwordFor(pin));
-  await signOut(secondaryAuth);
+  const a = secondary();
+  const cred = await createUserWithEmailAndPassword(a, emailFor(tessera, version), passwordFor(pin));
+  await signOut(a);
   return cred.user.uid;
+}
+
+/** Verifica che il PIN sia quello attuale dell'account, senza toccare la sessione dell'admin. */
+export async function verifyPin(tessera, version, pin) {
+  const a = secondary();
+  try {
+    await signInWithEmailAndPassword(a, emailFor(tessera, version), passwordFor(pin));
+    await signOut(a);
+    return true;
+  } catch (e) {
+    if (['auth/invalid-credential', 'auth/wrong-password', 'auth/user-not-found'].includes(e.code)) return false;
+    throw e;
+  }
 }
 
 export function watchSession(onChange) {
@@ -72,7 +87,7 @@ export function watchSession(onChange) {
         session.error = 'Impossibile leggere il profilo. Controlla la connessione.';
       }
       if (!session.account) {
-        session.error ??= `Account non configurato: chiedi a un admin. (UID: ${user.uid})`;
+        session.error ??= `Accesso non riuscito: il PIN potrebbe essere stato reimpostato o l'account non è completo. Chiedi a un admin. (codice ${user.uid})`;
         await signOut(auth);
         session.user = null;
       }

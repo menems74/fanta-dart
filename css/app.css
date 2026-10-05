@@ -169,6 +169,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .stat b { font-size: 23px; font-weight: 700; }
 .stat span { font-size: 15px; color: var(--mu); }
 .stat.gold b { color: var(--gd); }
+.pinbox { display: grid; gap: 10px; }
+.pinval { font-size: 28px; letter-spacing: .25em; font-variant-numeric: tabular-nums; }
+.pininput { width: 110px; min-height: 46px; border: 1px solid var(--ln); background: var(--c1); color: var(--tx); border-radius: 10px; padding: 0 12px; font: inherit; font-size: 19px; letter-spacing: .2em; text-align: center; }
 .split { margin: 8px 2px 0; text-align: center; }
 .hint { display: flex; align-items: flex-start; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(242, 184, 75, .08); border: 1px solid rgba(242, 184, 75, .3); font-size: 17px; line-height: 1.45; color: var(--tx); }
 .games { display: block; color: var(--tx); opacity: .85; font-variant-numeric: tabular-nums; }

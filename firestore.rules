@@ -20,10 +20,22 @@ service cloud.firestore {
         && c.doppiVinti is int && c.doppiVinti >= 0 && c.doppiVinti <= c.doppiGiocati;
     }
 
+    function myPlayerId() {
+      return get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data.playerId;
+    }
+
     // Ruolo di ogni account di accesso (uid Firebase -> giocatore). Lo scrivono solo gli admin.
     match /accounts/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
       allow write: if isAdmin();
+    }
+
+    // PIN in chiaro: lo leggono solo gli admin; ognuno può aggiornare il proprio quando lo cambia.
+    match /pins/{playerId} {
+      allow read, delete: if isAdmin();
+      allow create, update: if (isAdmin() || (hasAccount() && myPlayerId() == playerId))
+        && request.resource.data.pin is string
+        && request.resource.data.pin.matches('^[0-9]{4}$');
     }
 
     match /players/{id} {

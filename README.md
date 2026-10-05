@@ -34,6 +34,7 @@ tests/                                      test dei calcoli (npm test)
 | `players/{tessera}` | nome, cognome, tessera, ruolo, attivo (id = tessera con `-` al posto di `/`) |
 | `seasons/{id}` | nome, squadra, roster (`playerIds`) |
 | `matches/{id}` | stagione, data, luogo, avversario, punti, `mvpPlayerId`, `pubblicata` |
+| `pins/{tessera}` | PIN in chiaro, leggibile solo dagli admin |
 | `reportCards/{matchId_playerId}` | voto, singoli giocati/vinti (max 4), doppi giocati/vinti (max 2), testo, `pubblicata` |
 
 I Player leggono solo le serate con `pubblicata: true` (vedi `firestore.rules`).

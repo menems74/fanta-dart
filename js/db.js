@@ -25,6 +25,10 @@ export const listPlayers = async () =>
     (a, b) => a.cognome.localeCompare(b.cognome, 'it') || a.nome.localeCompare(b.nome, 'it'));
 export const savePlayer = (id, data) => setDoc(doc(db, 'players', id), data, { merge: true });
 
+// ---------- PIN (visibile solo agli admin, scelta voluta dall'utente) ----------
+export const getPin = async (playerId) => (await one(doc(db, 'pins', playerId)))?.pin ?? null;
+export const setPin = (playerId, pin) => setDoc(doc(db, 'pins', playerId), { pin });
+
 // ---------- stagioni ----------
 export const listSeasons = async () =>
   (await list(collection(db, 'seasons'))).sort((a, b) => b.creataIl - a.creataIl);

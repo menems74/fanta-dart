@@ -1,6 +1,6 @@
 import { html, $, $$, fmtDate, icon, fullName, toast, votoClass } from '../util.js';
 import { session, logout, changeOwnPin, PIN_RE } from '../auth.js';
-import { getPlayer, listCards, listMatches, listSeasons } from '../db.js';
+import { getPlayer, listCards, listMatches, listSeasons, setPin } from '../db.js';
 import { playerStats, gamesOf, fmtMedia, fmtPerc } from '../stats.js';
 import { topbar, avatar, votoBadge, emptyState } from '../ui.js';
 import { getSelectedSeason } from '../season.js';
@@ -123,6 +123,7 @@ export default async function view([paramId]) {
         if (!PIN_RE.test(pin)) { err.textContent = 'Il PIN è di 4 cifre.'; return; }
         try {
           await changeOwnPin(pin);
+          await setPin(playerId, pin).catch((err) => console.warn('PIN non aggiornato', err));
           toast('PIN aggiornato');
           e.target.reset();
           e.target.hidden = true;

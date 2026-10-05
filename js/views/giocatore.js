@@ -1,6 +1,6 @@
 import { html, $, toast, go, randomPin, formatTessera } from '../util.js';
-import { session, createAccount, normalizeTessera, playerIdOf, TESSERA_RE, PIN_RE, MAX_VERSIONS } from '../auth.js';
-import { getPlayer, savePlayer, setAccount, delAccount, listSeasons, saveSeason } from '../db.js';
+import { session, createAccount, verifyPin, normalizeTessera, playerIdOf, TESSERA_RE, PIN_RE, MAX_VERSIONS } from '../auth.js';
+import { getPlayer, savePlayer, setAccount, delAccount, listSeasons, saveSeason, getPin, setPin } from '../db.js';
 import { topbar } from '../ui.js';
 import { getSelectedSeason } from '../season.js';
 
@@ -8,7 +8,7 @@ export default async function view([param]) {
   const isNew = param === 'nuovo';
   const p = isNew ? null : await getPlayer(param);
   if (!isNew && !p) return { html: html`${topbar('Giocatore', { back: '/gestione' })}<p class="muted">Giocatore non trovato.</p>` };
-  const seasons = await listSeasons();
+  const [seasons, pin] = await Promise.all([listSeasons(), isNew ? null : getPin(p.id)]);
   const season = seasons.length ? getSelectedSeason(seasons) : null;
   const isSelf = p?.id === session.account.playerId;
 
@@ -42,6 +42,21 @@ export default async function view([param]) {
       </form>
 
       ${isNew ? '' : html`
+        <h2 class="section">PIN attuale</h2>
+        <div class="card pinbox">
+          ${pin ? html`
+            <div class="row between">
+              <b class="pinval" id="pinval" data-pin="${pin}" aria-live="polite">••••</b>
+              <button type="button" class="btn small sec" id="pinshow">Mostra</button>
+            </div>`
+            : html`
+            <p class="muted small">PIN non registrato. Se lo conosci, inseriscilo: l'app verifica che sia giusto e lo salva.</p>
+            <form id="regpin" class="row" novalidate>
+              <input class="pininput" name="pin" inputmode="numeric" maxlength="4" placeholder="0000" aria-label="PIN attuale">
+              <button class="btn small primary">Registra</button>
+            </form>
+            <p class="error" id="regerr" role="alert"></p>`}
+        </div>
         <h2 class="section">Reset PIN</h2>
         <form id="reset" class="form" novalidate>
           <label class="field">Nuovo PIN (4 cifre)
@@ -76,6 +91,25 @@ export default async function view([param]) {
         }
       });
 
+      $(root, '#pinshow')?.addEventListener('click', (e) => {
+        const v = $(root, '#pinval');
+        const hidden = v.textContent === '••••';
+        v.textContent = hidden ? v.dataset.pin : '••••';
+        e.currentTarget.textContent = hidden ? 'Nascondi' : 'Mostra';
+      });
+      $(root, '#regpin')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const val = e.target.pin.value.trim();
+        const rerr = $(root, '#regerr');
+        if (!PIN_RE.test(val)) { rerr.textContent = 'Il PIN è di 4 cifre.'; return; }
+        try {
+          if (!(await verifyPin(p.tessera, p.authVersion || 0, val))) { rerr.textContent = 'Questo non è il PIN attuale.'; return; }
+          await setPin(p.id, val);
+          toast('PIN registrato');
+          window.dispatchEvent(new HashChangeEvent('hashchange'));
+        } catch (e2) { console.error(e2); rerr.textContent = 'Salvataggio non riuscito. Controlla che le regole Firestore siano aggiornate.'; }
+      });
+
       $(root, '#reset')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const pin = e.target.pin.value.trim();
@@ -90,6 +124,7 @@ export default async function view([param]) {
           await setAccount(uid, { playerId: p.id, ruolo: p.ruolo });
           await savePlayer(p.id, { uid, authVersion: version });
           if (p.uid) await delAccount(p.uid);
+          await setPin(p.id, pin).catch((err) => console.warn('PIN non salvato', err));
           toast('PIN aggiornato');
           go('/gestione');
         } catch (e2) {
@@ -115,6 +150,7 @@ async function createPlayer(f, nome, cognome, season) {
   const uid = await createAccount(tessera, pin, 0);
   await setAccount(uid, { playerId: id, ruolo });
   await savePlayer(id, { tessera, nome, cognome, ruolo, attivo: true, uid, authVersion: 0 });
+  await setPin(id, pin).catch((err) => console.warn('PIN non salvato', err));
   if (season && f.roster?.checked && !season.playerIds?.includes(id)) {
     await saveSeason(season.id, { playerIds: [...(season.playerIds || []), id] });
   }
