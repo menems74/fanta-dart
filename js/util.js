@@ -76,4 +76,10 @@ export function toast(msg) {
 
 export const go = (path) => { location.hash = `#${path}`; };
 
+/** Formatta mentre si digita: solo cifre, con la barra dopo le prime due (084272 -> 08/4272). */
+export function formatTessera(s) {
+  const d = String(s).replace(/\D/g, '').slice(0, 6);
+  return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
+}
+
 export const randomPin = () => String(Math.floor(Math.random() * 10000)).padStart(4, '0');

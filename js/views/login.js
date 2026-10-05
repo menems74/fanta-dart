@@ -1,4 +1,4 @@
-import { html, $ } from '../util.js';
+import { html, $, formatTessera } from '../util.js';
 import { login, session, normalizeTessera, TESSERA_RE, PIN_RE } from '../auth.js';
 
 const MESSAGES = {
@@ -19,7 +19,8 @@ export default async function view() {
         <p class="muted">Le pagelle di fine serata</p>
         <form id="f" novalidate>
           <label class="field">Numero tessera
-            <input name="tessera" inputmode="numeric" autocomplete="username" placeholder="08/4272" required>
+            <input name="tessera" inputmode="numeric" maxlength="7" autocomplete="username" placeholder="08/4272" required>
+            <small class="muted">Scrivi solo i numeri: la barra si inserisce da sola.</small>
           </label>
           <label class="field">PIN
             <input name="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" placeholder="••••" required>
@@ -32,6 +33,7 @@ export default async function view() {
     mount(root) {
       const f = $(root, '#f');
       const err = $(root, '#err');
+      f.tessera.addEventListener('input', () => { f.tessera.value = formatTessera(f.tessera.value); });
       f.addEventListener('submit', async (e) => {
         e.preventDefault();
         const tessera = normalizeTessera(f.tessera.value);

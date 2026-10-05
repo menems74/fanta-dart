@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { formatTessera } from '../js/util.js';
 import assert from 'node:assert/strict';
 import { esito, hasResult, scoreText, isUpcoming, matchStatus, recordStagione, playerStats, ranking, fmtMedia, fmtPerc, suggestedScore } from '../js/stats.js';
 
@@ -112,4 +113,15 @@ test('classifica: a parità di media e MVP vince chi ha più partite vinte, non 
   const cards = [c('1', 'a', 7, 1, 0), c('1', 'b', 7, 1, 1), c('1', 'c', 7, 1, 0)];
   const r = ranking(players, [m('1', 6, 4)], cards).map((x) => x.player.id);
   assert.deepEqual(r, ['b', 'a', 'c']);
+});
+
+test('tessera: la barra si inserisce da sola mentre si digitano le cifre', () => {
+  assert.equal(formatTessera('0'), '0');
+  assert.equal(formatTessera('08'), '08');
+  assert.equal(formatTessera('084'), '08/4');
+  assert.equal(formatTessera('084272'), '08/4272');
+  assert.equal(formatTessera('07910'), '07/910');
+  assert.equal(formatTessera('08/4272'), '08/4272');
+  assert.equal(formatTessera('08 - 4272 x'), '08/4272');
+  assert.equal(formatTessera('0842721234'), '08/4272');
 });

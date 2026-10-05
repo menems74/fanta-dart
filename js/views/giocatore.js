@@ -1,4 +1,4 @@
-import { html, $, toast, go, randomPin } from '../util.js';
+import { html, $, toast, go, randomPin, formatTessera } from '../util.js';
 import { session, createAccount, normalizeTessera, playerIdOf, TESSERA_RE, PIN_RE, MAX_VERSIONS } from '../auth.js';
 import { getPlayer, savePlayer, setAccount, delAccount, listSeasons, saveSeason } from '../db.js';
 import { topbar } from '../ui.js';
@@ -21,7 +21,7 @@ export default async function view([param]) {
           <label class="field">Cognome<input name="cognome" value="${p?.cognome || ''}" maxlength="40" required></label>
         </div>
         <label class="field">Numero tessera
-          <input name="tessera" value="${p?.tessera || ''}" placeholder="08/4272" inputmode="numeric" ${isNew ? '' : 'disabled'} required>
+          <input name="tessera" value="${p?.tessera || ''}" placeholder="08/4272" inputmode="numeric" maxlength="7" ${isNew ? '' : 'disabled'} required>
         </label>
         <label class="field">Ruolo
           <select name="ruolo" ${isSelf ? 'disabled' : ''}>
@@ -53,6 +53,7 @@ export default async function view([param]) {
     mount(root) {
       const f = $(root, '#f');
       const err = $(root, '#err');
+      if (isNew) f.tessera.addEventListener('input', () => { f.tessera.value = formatTessera(f.tessera.value); });
 
       f.addEventListener('submit', async (e) => {
         e.preventDefault();
