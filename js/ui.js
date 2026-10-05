@@ -1,5 +1,5 @@
-import { html, icon, initials, fullName, votoClass } from './util.js';
-import { esito } from './stats.js';
+import { html, icon, initials, fullName, votoClass, todayIso } from './util.js';
+import { matchStatus } from './stats.js';
 
 export const topbar = (title, { back, right } = {}) => html`
   <header class="topbar">
@@ -14,7 +14,7 @@ export const avatar = (p, size = '') =>
 export const votoBadge = (v) => html`<span class="voto ${votoClass(v)}">${v}</span>`;
 
 export const esitoTag = (m) => {
-  const e = esito(m);
+  const e = matchStatus(m, todayIso());
   return html`<span class="tag ${e.key}">${e.label}</span>`;
 };
 

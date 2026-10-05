@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { esito, recordStagione, playerStats, ranking, fmtMedia, fmtPerc, suggestedScore } from '../js/stats.js';
+import { esito, hasResult, scoreText, isUpcoming, matchStatus, recordStagione, playerStats, ranking, fmtMedia, fmtPerc, suggestedScore } from '../js/stats.js';
 
 const m = (id, noi, loro, mvp = null) => ({ id, puntiNoi: noi, puntiLoro: loro, mvpPlayerId: mvp });
 // c(matchId, playerId, voto, singoli vinti/giocati, doppi vinti/giocati)
@@ -80,4 +80,23 @@ test('punteggio suggerito: con un cambio il totale resta 20', () => {
   // d gioca solo 2 singoli e 1 doppio, un sostituto e gioca gli altri 2 singoli e 1 doppio
   const cards = [c('1', 'a', 8, 3, 1), c('1', 'b', 7, 2, 1), c('1', 'c', 6, 1, 0), c('1', 'd', 6, 1, 1, 2, 1), c('1', 'e', 6, 1, 1, 2, 1)];
   assert.ok(!suggestedScore(cards).warn);
+});
+
+test('partita senza risultato: né vinta né persa, non conta nel record', () => {
+  const futura = { data: '2026-12-01', puntiNoi: null, puntiLoro: null };
+  assert.equal(hasResult(futura), false);
+  assert.equal(esito(futura).key, 'n');
+  assert.equal(scoreText(futura), '');
+  assert.deepEqual(recordStagione([futura, m('1', 12, 8)]), { w: 1, l: 0, d: 0 });
+});
+
+test('stato: in programma o da completare in base alla data', () => {
+  const senza = (data) => ({ data, puntiNoi: null, puntiLoro: null });
+  assert.equal(isUpcoming(senza('2026-10-09'), '2026-10-06'), true);
+  assert.equal(isUpcoming(senza('2026-10-06'), '2026-10-06'), true);
+  assert.equal(isUpcoming(senza('2026-10-02'), '2026-10-06'), false);
+  assert.equal(matchStatus(senza('2026-10-09'), '2026-10-06').label, 'In programma');
+  assert.equal(matchStatus(senza('2026-10-02'), '2026-10-06').label, 'Da completare');
+  assert.equal(matchStatus({ data: '2026-10-02', puntiNoi: 12, puntiLoro: 8 }, '2026-10-06').label, 'Vinta');
+  assert.equal(scoreText({ puntiNoi: 12, puntiLoro: 8 }), '12 – 8');
 });

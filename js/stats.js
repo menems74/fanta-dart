@@ -6,15 +6,28 @@ export const MAX_SINGOLI = 4;
 export const MAX_DOPPI = 2;
 export const TOTALE_PARTITE = 20;
 
+/** Il risultato è facoltativo: una partita futura o ancora da completare non ha punteggio. */
+export const hasResult = (m) => Number.isInteger(m.puntiNoi) && Number.isInteger(m.puntiLoro);
+export const scoreText = (m) => (hasResult(m) ? `${m.puntiNoi} – ${m.puntiLoro}` : '');
+/** today: data odierna in formato AAAA-MM-GG. */
+export const isUpcoming = (m, today) => !hasResult(m) && m.data >= today;
+
 export function esito(m) {
+  if (!hasResult(m)) return { key: 'n', label: 'Senza risultato' };
   if (m.puntiNoi > m.puntiLoro) return { key: 'w', label: 'Vinta' };
   if (m.puntiNoi < m.puntiLoro) return { key: 'l', label: 'Persa' };
   return { key: 'd', label: 'Pari' };
 }
 
+/** Stato mostrato nelle liste: esito se c'è il risultato, altrimenti se è in programma o da completare. */
+export function matchStatus(m, today) {
+  if (hasResult(m)) return esito(m);
+  return { key: 'n', label: isUpcoming(m, today) ? 'In programma' : 'Da completare' };
+}
+
 export function recordStagione(matches) {
   const r = { w: 0, l: 0, d: 0 };
-  for (const m of matches) r[esito(m).key]++;
+  for (const m of matches) if (hasResult(m)) r[esito(m).key]++;
   return r;
 }
 

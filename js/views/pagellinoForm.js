@@ -1,7 +1,7 @@
 import { html, $, $$, toast, go, icon, fullName } from '../util.js';
 import { getMatch, getPlayer, getCard, saveCard, deleteCard, setMvp } from '../db.js';
 import { topbar, emptyState } from '../ui.js';
-import { MAX_SINGOLI, MAX_DOPPI } from '../stats.js';
+import { MAX_SINGOLI, MAX_DOPPI, hasResult, scoreText } from '../stats.js';
 
 const stepper = (key, label, value) => html`
   <div class="stepper-row">
@@ -34,7 +34,7 @@ export default async function view([matchId, playerId]) {
         back: card ? `/pagellino/${matchId}/${playerId}` : back,
         right: html`<button type="button" class="mvpbtn" id="mvp" aria-pressed="${String(mvp)}">${icon('star', 16)} MVP</button>`,
       })}
-      <p class="muted small">vs ${match.avversario} · ${match.puntiNoi} – ${match.puntiLoro}</p>
+      <p class="muted small">vs ${match.avversario}${hasResult(match) ? ` · ${scoreText(match)}` : ''}</p>
       ${otherMvp ? html`<p class="muted small" id="mvpnote">MVP attuale della serata: ${fullName(otherMvp)}. Attivandolo qui lo sostituisci.</p>` : ''}
       <form id="f" class="form" novalidate>
         <div class="field">Voto

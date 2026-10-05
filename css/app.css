@@ -192,6 +192,7 @@ a.item:active { background: var(--c2); }
 .item.w { border-left-color: var(--gr); }
 .item.l { border-left-color: var(--rd); }
 .item.d { border-left-color: var(--mu); }
+.item.n { border-left-color: #4a6fb0; }
 .item.draft { border-style: dashed; border-left-style: dashed; }
 .item strong { display: block; font-weight: 600; }
 .mvp-line { display: inline-flex; align-items: center; gap: 3px; color: var(--gd); font-size: 12px; font-weight: 600; }

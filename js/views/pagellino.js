@@ -2,7 +2,7 @@ import { html, $, fmtDate, icon, toast, initials, fullName, votoClass } from '..
 import { session } from '../auth.js';
 import { getMatch, getSeason, getPlayer, getCard } from '../db.js';
 import { topbar, emptyState } from '../ui.js';
-import { gamesOf } from '../stats.js';
+import { gamesOf, hasResult, scoreText } from '../stats.js';
 
 const HTML_TO_IMAGE = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm';
 
@@ -34,7 +34,7 @@ export default async function view([matchId, playerId]) {
           <div class="fig-voto ${votoClass(card.voto)}"><b>${card.voto}</b><span>voto</span></div>
         </div>
         <h2 class="fig-name">${fullName(player)}</h2>
-        <p class="fig-match">vs ${match.avversario} · ${match.puntiNoi} – ${match.puntiLoro}</p>
+        <p class="fig-match">vs ${match.avversario}${hasResult(match) ? ` · ${scoreText(match)}` : ''}</p>
         <div class="tricolore wide"></div>
         <p class="fig-text">${card.testo || 'Nessun commento: per stavolta la prestazione parla da sola.'}</p>
         <div class="fig-stats">

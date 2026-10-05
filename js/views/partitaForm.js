@@ -2,13 +2,13 @@ import { html, $, toast, go, todayIso } from '../util.js';
 import { getMatch, listSeasons, saveMatch, changeMatchSeason } from '../db.js';
 import { topbar } from '../ui.js';
 import { getSelectedSeason } from '../season.js';
-import { TOTALE_PARTITE } from '../stats.js';
+import { TOTALE_PARTITE, hasResult } from '../stats.js';
 
 export default async function view([id]) {
   const seasons = await listSeasons();
   const m = id ? await getMatch(id) : null;
   if (id && !m) return { html: html`${topbar('Partita', { back: '/partite' })}<p class="muted">Partita non trovata.</p>` };
-  if (m?.pubblicata) {
+  if (m?.pubblicata && hasResult(m)) {
     return {
       html: html`${topbar('Modifica partita', { back: `/partita/${id}` })}
         <p class="notice">La serata è pubblicata e non si può modificare. Ritira la pubblicazione dalla pagina della partita, correggi e pubblica di nuovo.</p>
@@ -40,13 +40,13 @@ export default async function view([id]) {
         </label>
         <div class="two">
           <label class="field">Punti nostri
-            <input type="number" name="puntiNoi" min="0" max="${TOTALE_PARTITE}" inputmode="numeric" value="${m?.puntiNoi ?? TOTALE_PARTITE / 2}" required>
+            <input type="number" name="puntiNoi" min="0" max="${TOTALE_PARTITE}" inputmode="numeric" value="${m?.puntiNoi ?? ''}" placeholder="—">
           </label>
           <label class="field">Punti loro
-            <input type="number" name="puntiLoro" min="0" max="${TOTALE_PARTITE}" inputmode="numeric" value="${m?.puntiLoro ?? TOTALE_PARTITE / 2}" required>
+            <input type="number" name="puntiLoro" min="0" max="${TOTALE_PARTITE}" inputmode="numeric" value="${m?.puntiLoro ?? ''}" placeholder="—">
           </label>
         </div>
-        <p class="muted small">La somma dei punti è sempre ${TOTALE_PARTITE}: cambiandone uno, l'altro si aggiorna.</p>
+        <p class="muted small">Il risultato è facoltativo: lascialo vuoto per una partita futura o da completare. Se lo inserisci, la somma è sempre ${TOTALE_PARTITE}: cambiandone uno, l'altro si aggiorna.</p>
         <p class="error" id="err" role="alert"></p>
         <button class="btn primary">Salva</button>
       </form>`,
@@ -55,27 +55,32 @@ export default async function view([id]) {
       // I due punteggi si completano a vicenda: nostri + loro = TOTALE_PARTITE.
       const link = (from, to) => from.addEventListener('input', () => {
         const v = parseInt(from.value, 10);
-        if (Number.isInteger(v) && v >= 0 && v <= TOTALE_PARTITE) to.value = TOTALE_PARTITE - v;
+        if (from.value.trim() === '') to.value = '';
+        else if (Number.isInteger(v) && v >= 0 && v <= TOTALE_PARTITE) to.value = TOTALE_PARTITE - v;
       });
       link(f.puntiNoi, f.puntiLoro);
       link(f.puntiLoro, f.puntiNoi);
       f.addEventListener('submit', async (e) => {
         e.preventDefault();
         const err = $(root, '#err');
+        err.textContent = '';
         const data = {
           seasonId: f.seasonId.value,
           data: f.data.value,
           avversario: f.avversario.value.trim(),
           luogo: f.luogo.value.trim(),
-          puntiNoi: parseInt(f.puntiNoi.value, 10),
-          puntiLoro: parseInt(f.puntiLoro.value, 10),
+          puntiNoi: f.puntiNoi.value.trim() === '' ? null : parseInt(f.puntiNoi.value, 10),
+          puntiLoro: f.puntiLoro.value.trim() === '' ? null : parseInt(f.puntiLoro.value, 10),
         };
+        const noResult = data.puntiNoi === null && data.puntiLoro === null;
         if (!data.data || !data.avversario) { err.textContent = 'Data e squadra avversaria sono obbligatorie.'; return; }
-        if (!Number.isInteger(data.puntiNoi) || !Number.isInteger(data.puntiLoro) || data.puntiNoi < 0 || data.puntiLoro < 0) {
-          err.textContent = 'I punti devono essere numeri interi.'; return;
-        }
-        if (data.puntiNoi + data.puntiLoro !== TOTALE_PARTITE) {
-          err.textContent = `La somma dei punti deve fare ${TOTALE_PARTITE}.`; return;
+        if (!noResult) {
+          if (!Number.isInteger(data.puntiNoi) || !Number.isInteger(data.puntiLoro) || data.puntiNoi < 0 || data.puntiLoro < 0) {
+            err.textContent = 'I punti devono essere numeri interi, oppure lasciali vuoti.'; return;
+          }
+          if (data.puntiNoi + data.puntiLoro !== TOTALE_PARTITE) {
+            err.textContent = `La somma dei punti deve fare ${TOTALE_PARTITE}.`; return;
+          }
         }
         const btn = $(root, '.btn.primary');
         btn.disabled = true;

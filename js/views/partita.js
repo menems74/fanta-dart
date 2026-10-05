@@ -1,7 +1,7 @@
 import { html, $, fmtDate, icon, toast, go } from '../util.js';
 import { session } from '../auth.js';
 import { getMatch, getSeason, listPlayers, listCards, setMatchPublished, deleteMatch, saveMatch } from '../db.js';
-import { suggestedScore, gamesOf } from '../stats.js';
+import { suggestedScore, gamesOf, hasResult, scoreText } from '../stats.js';
 import { topbar, avatar, votoBadge, esitoTag, emptyState } from '../ui.js';
 import { fullName } from '../util.js';
 
@@ -28,11 +28,11 @@ export default async function view([id]) {
     html: html`
       ${topbar(`vs ${match.avversario}`, {
         back: '/partite',
-        right: session.isAdmin && !match.pubblicata
+        right: session.isAdmin && (!match.pubblicata || !hasResult(match))
           ? html`<a class="iconbtn" href="#/partita/${id}/modifica" aria-label="Modifica partita">${icon('edit')}</a>` : '',
       })}
       <section class="card summary">
-        <div class="score big"><b>${match.puntiNoi} – ${match.puntiLoro}</b>${esitoTag(match)}</div>
+        <div class="score big">${hasResult(match) ? html`<b>${scoreText(match)}</b>` : ''}${esitoTag(match)}</div>
         <p class="muted">${fmtDate(match.data, true)}${match.luogo ? ` · ${match.luogo}` : ''}</p>
         <p class="muted small">${season ? `${season.nome} · ${season.squadra}` : ''}
           ${match.pubblicata ? '' : html` · <span class="tag neu">Bozza non pubblicata</span>`}</p>
