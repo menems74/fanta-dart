@@ -69,6 +69,12 @@ export default async function view() {
         </select>
       </label>
 
+      <a class="card link-card" href="allenamenti.html" target="_blank" rel="noopener">
+        <span class="badge-ico">${icon('target', 24)}</span>
+        <div class="grow"><strong>Allenamenti</strong><span class="muted small">Si apre in una nuova scheda</span></div>
+        ${icon('external', 20)}
+      </a>
+
       ${last ? html`
         <a class="card last" href="#/partita/${last.id}">
           <p class="muted small">Ultima serata · ${fmtDate(last.data)}</p>

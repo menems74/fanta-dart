@@ -10,6 +10,7 @@ App web installabile (PWA) per la squadra di freccette: gli admin inseriscono le
 - **Pagellini**: voto 1–10, singoli (max 4) e doppi (max 2) giocati e vinti (un doppio vinto vale una partita a testa), commento, flag **MVP** (uno per serata). Restano in bozza finché l'admin non preme **Pubblica serata**.
 - **Profilo** con media voto, partite, vinte e MVP (per stagione e carriera) e **classifica**.
 - **Esporta il pagellino come immagine** e condividilo su WhatsApp.
+- **Allenamenti**: pagina separata (`allenamenti.html`), aperta in una nuova scheda dal link nella sezione Partite. Si sceglie il giocatore e poi il tipo di allenamento (le tipologie arriveranno con il manuale).
 - Funziona anche offline in lettura.
 
 ## Tecnologie

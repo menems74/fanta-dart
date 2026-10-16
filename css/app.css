@@ -830,3 +830,11 @@ body.offline .offline-banner { display: block; }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ---------- Allenamenti ---------- */
+.link-card { display: flex; align-items: center; gap: 14px; margin: 6px 0 14px; }
+.link-card .ico:last-child { color: var(--mu); }
+.badge-ico { width: 48px; height: 48px; flex: none; border-radius: 50%; display: grid; place-items: center; color: var(--gr-tx); background: rgba(16, 185, 129, 0.14); border: 1px solid rgba(16, 185, 129, 0.4); }
+.lead { margin: 2px 4px 0; }
+.soon { display: grid; gap: 10px; justify-items: center; text-align: center; padding: 28px 18px; border-style: dashed; }
+.soon-ico { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; color: var(--gr-tx); background: rgba(16, 185, 129, 0.14); border: 1px solid rgba(16, 185, 129, 0.4); }
