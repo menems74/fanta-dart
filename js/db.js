@@ -53,6 +53,10 @@ export async function saveTest(data) {
 }
 export const deleteTest = (id) => deleteDoc(doc(db, 'skilltests', id));
 
+// ---------- squadra: tutte le sessioni e i test (leggibili da ogni giocatore) ----------
+export const listAllTrainings = () => list(collection(db, 'trainings'));
+export const listAllTests = () => list(collection(db, 'skilltests'));
+
 // ---------- stagioni ----------
 export const listSeasons = async () =>
   (await list(collection(db, 'seasons'))).sort((a, b) => b.creataIl - a.creataIl);

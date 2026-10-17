@@ -229,3 +229,56 @@ export function testDue(tests, done) {
   if (done >= TOTALE_SESSIONI) return last.tipo === 'finale' ? null : 'finale';
   return done - (last.sessioniFatte || 0) >= 25 ? 'intermedio' : null;
 }
+
+// ---- sfida del sabato ----
+// Ogni sabato una prova a rotazione (scoring, doppie, checkout). Conta la sessione di quel tipo fatta in quel giorno:
+// si puo' sfidare la squadra oppure solo se stessi, senza nessun obbligo di essere in tanti.
+export const CHALLENGE_TIPI = ['scoring', 'doppie', 'checkout'];
+export const saturdayOf = (iso) => addDays(weekStart(iso), 5);
+const dow = (iso) => (toDate(iso).getDay() + 6) % 7; // lunedi' 0 ... domenica 6
+
+export function challengeFor(satIso) {
+  const days = Math.round(Date.UTC(+satIso.slice(0, 4), +satIso.slice(5, 7) - 1, +satIso.slice(8, 10)) / 864e5);
+  const idx = Math.round((days - 2) / 7); // il 3 gennaio 1970 era un sabato
+  return CHALLENGE_TIPI[((idx % 3) + 3) % 3];
+}
+export const isChallengeSession = (t) => t.data === saturdayOf(t.data) && t.tipo === challengeFor(t.data);
+/** Il sabato piu' recente, oggi compreso. */
+export const lastSaturday = (iso) => (dow(iso) >= 5 ? addDays(weekStart(iso), 5) : addDays(weekStart(iso), -2));
+/** Il prossimo sabato, oggi compreso. */
+export const nextSaturday = (iso) => (dow(iso) <= 5 ? addDays(weekStart(iso), 5) : addDays(weekStart(iso), 12));
+
+/** Risultati di un sabato: il miglior risultato di ogni giocatore, con il confronto con il suo record precedente. */
+export function challengeResults(all, sat, tipo) {
+  const best = new Map();
+  for (const t of all) {
+    if (t.data !== sat || t.tipo !== tipo || !Number.isFinite(t.metrica)) continue;
+    const b = best.get(t.playerId);
+    if (!b || t.metrica > b.metrica) best.set(t.playerId, t);
+  }
+  return [...best.values()].map((t) => {
+    const prev = all.filter((x) => x.playerId === t.playerId && x.tipo === tipo && x.data < sat && Number.isFinite(x.metrica)).map((x) => x.metrica);
+    const prevBest = prev.length ? Math.max(...prev) : null;
+    return { playerId: t.playerId, metrica: t.metrica, prevBest, delta: prevBest == null ? null : t.metrica - prevBest, t };
+  }).sort((a, b) => b.metrica - a.metrica || (a.t.creataIl || 0) - (b.t.creataIl || 0));
+}
+
+/** Sabati in cui hai fatto la prova di sfida e quante volte hai battuto il tuo record. */
+export function sfideDelSabato(trainings) {
+  const own = trainings.filter(isChallengeSession);
+  let record = 0;
+  for (const t of own) {
+    const prev = trainings.filter((x) => x.tipo === t.tipo && x.data < t.data && Number.isFinite(x.metrica)).map((x) => x.metrica);
+    if (prev.length && Number.isFinite(t.metrica) && t.metrica > Math.max(...prev)) record++;
+  }
+  return { partecipate: new Set(own.map((t) => t.data)).size, record };
+}
+
+/** Riepilogo di squadra: sessioni totali, di questa settimana e ultimo Skill Score di ogni giocatore attivo. */
+export function teamRows(players, all, tests, todayIso) {
+  return players.filter((p) => p.attivo !== false).map((p) => {
+    const mine = all.filter((t) => t.playerId === p.id);
+    const last = tests.filter((x) => x.playerId === p.id).sort((a, b) => (b.creataIl || 0) - (a.creataIl || 0))[0];
+    return { player: p, totale: doneNumbers(mine).size, settimana: sessionsThisWeek(mine, todayIso), skill: last ? skillScore(last) : null };
+  }).sort((a, b) => b.settimana - a.settimana || b.totale - a.totale || a.player.cognome.localeCompare(b.player.cognome, 'it'));
+}

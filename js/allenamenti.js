@@ -11,6 +11,7 @@ import risultato from './training/risultato.js';
 import miei from './training/miei.js';
 import skill from './training/skill.js';
 import skillrisultato from './training/skillrisultato.js';
+import squadra from './training/squadra.js';
 
 const root = document.getElementById('view');
 const routes = [
@@ -21,6 +22,7 @@ const routes = [
   [/^\/miei$/, miei],
   [/^\/test$/, skill],
   [/^\/test\/([^/]+)$/, skillrisultato],
+  [/^\/squadra$/, squadra],
 ];
 let ready = false;
 let token = 0;

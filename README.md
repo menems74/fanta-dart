@@ -10,7 +10,7 @@ App web installabile (PWA) per la squadra di freccette: gli admin inseriscono le
 - **Pagellini**: voto 1–10, singoli (max 4) e doppi (max 2) giocati e vinti (un doppio vinto vale una partita a testa), commento, flag **MVP** (uno per serata). Restano in bozza finché l'admin non preme **Pubblica serata**.
 - **Profilo** con media voto, partite, vinte e MVP (per stagione e carriera) e **classifica**.
 - **Esporta il pagellino come immagine** e condividilo su WhatsApp.
-- **Allenamenti**: pagina separata (`allenamenti.html`), aperta in una nuova scheda dal link nella sezione Partite. Percorso di 100 sessioni in 4 fasi (scoring, doppie, checkout, pressione, partita) con inserimento rapido mentre ci si allena, record personali con obiettivo da battere, mappa del percorso, badge, serie di settimane, confronto primo/secondo giro, punti da lavorare e **Skill test** (iniziale, intermedio, finale) con Skill Score su 100. La bozza della sessione resta sul telefono. I progressi di squadra arriveranno dopo.
+- **Allenamenti**: pagina separata (`allenamenti.html`), aperta in una nuova scheda dal link nella sezione Partite. Percorso di 100 sessioni in 4 fasi (scoring, doppie, checkout, pressione, partita) con inserimento rapido mentre ci si allena, record personali con obiettivo da battere, mappa del percorso, badge, serie di settimane, confronto primo/secondo giro, punti da lavorare e **Skill test** (iniziale, intermedio, finale) con Skill Score su 100. Ogni sabato c'è la **sfida del sabato** (scoring, doppie e checkout a rotazione): si può sfidare la squadra o solo se stessi. La pagina Squadra mostra la sfida e chi si sta allenando. La bozza della sessione resta sul telefono.
 - Funziona anche offline in lettura.
 
 ## Tecnologie

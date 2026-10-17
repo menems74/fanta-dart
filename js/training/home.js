@@ -1,11 +1,13 @@
-import { html, icon, fullName, todayIso, toast } from '../util.js';
+import { html, icon, fullName, todayIso, fmtDate } from '../util.js';
 import { session } from '../auth.js';
 import { listTrainings, listTests } from '../db.js';
 import { topbar, avatar } from '../ui.js';
 import { toApp } from './ui.js';
 import {
   progress, sessionsThisWeek, weeklyStreak, GOAL_SETTIMANALE, skillScore, testDue, fmt1,
+  nextSaturday, challengeFor,
 } from './calc.js';
+import { TIPO_INFO } from './catalogo.js';
 import { BADGES, earnedBadges } from './badges.js';
 
 const TITOLO = { iniziale: 'Fai il test iniziale', intermedio: 'Rifai lo Skill test', finale: 'Fai il test finale' };
@@ -22,6 +24,11 @@ export default async function view() {
   const due = testDue(tests, pr.done);
   const last = tests[0];
   const first = tests.length > 1 ? tests.at(-1) : null;
+  const sat = nextSaturday(today);
+  const sfidaTipo = challengeFor(sat);
+  const oggi = sat === today;
+  const recordSfida = trainings.filter((t) => t.tipo === sfidaTipo && Number.isFinite(t.metrica))
+    .reduce((m, t) => Math.max(m, t.metrica), -Infinity);
   const delta = last && first ? Math.round((skillScore(last) - skillScore(first)) * 10) / 10 : null;
 
   return {
@@ -62,10 +69,13 @@ export default async function view() {
           </a>`}
         ${due && last ? html`<a class="btn sec" href="#/test">${icon('target', 18)} ${TITOLO[due]}</a>` : ''}
 
-        <button type="button" class="pill-btn" id="squad">${icon('users', 24)} Progressi della squadra</button>
+        <a class="card skill-card ${oggi ? 'now' : ''}" href="#/squadra">
+          <span class="badge-ico">${icon('flag', 24)}</span>
+          <div class="grow"><strong>Sfida del sabato${oggi ? ' · oggi!' : ''}</strong>
+            <span class="muted small">${TIPO_INFO[sfidaTipo].label} · ${fmtDate(sat)}${Number.isFinite(recordSfida) ? ` · record ${fmt1(recordSfida)}` : ''}</span></div>
+          ${icon('chevron', 22)}
+        </a>
+        <a class="pill-btn" href="#/squadra">${icon('users', 24)} Progressi della squadra</a>
       </div>`,
-    mount(root) {
-      root.querySelector('#squad').addEventListener('click', () => toast('Progressi della squadra: disponibile a breve'));
-    },
   };
 }

@@ -1,6 +1,6 @@
 // Badge: si calcolano sempre dai dati, non sono salvati. Cosi' non possono andare fuori sincrono.
 import { FASI } from './catalogo.js';
-import { doneNumbers, recordsOf, longestWeekStreak, skillScore } from './calc.js';
+import { doneNumbers, recordsOf, longestWeekStreak, skillScore, sfideDelSabato } from './calc.js';
 
 const best = (trainings, tipo) =>
   trainings.filter((t) => t.tipo === tipo && Number.isFinite(t.metrica)).reduce((m, t) => Math.max(m, t.metrica), -Infinity);
@@ -27,6 +27,8 @@ export const BADGES = [
   { id: 'pr12', nome: 'Pressione perfetta', desc: 'Pressione: 12 visite su 12', icon: 'flame', ok: (c) => best(c.trainings, 'pressione') >= 12 },
   { id: 'pa50', nome: 'Media 50', desc: 'Partita: media di almeno 50', icon: 'trophy', ok: (c) => best(c.trainings, 'partita') >= 50 },
   { id: 'sett4', nome: 'Quattro settimane', desc: '4 settimane di fila con 2 sessioni', icon: 'calendar', ok: (c) => c.streak >= 4 },
+  { id: 'sfida1', nome: 'Prima sfida', desc: 'Fai la sfida del sabato', icon: 'flag', ok: (c) => c.sfide.partecipate >= 1 },
+  { id: 'sfidarec', nome: 'Sabato da record', desc: 'Batti il tuo record nella sfida del sabato', icon: 'trophy', ok: (c) => c.sfide.record >= 1 },
   { id: 'test', nome: 'Punto di partenza', desc: 'Completa lo Skill test', icon: 'check', ok: (c) => c.tests.length >= 1 },
   { id: 'skill10', nome: 'Skill +10', desc: 'Migliora lo Skill Score di 10 punti', icon: 'star', ok: (c) => {
     if (c.tests.length < 2) return false;
@@ -42,6 +44,7 @@ export function earnedBadges(trainings, tests = []) {
     count: doneNumbers(trainings).size,
     records: recordsOf(trainings),
     streak: longestWeekStreak(trainings),
+    sfide: sfideDelSabato(trainings),
   };
   return new Set(BADGES.filter((b) => b.ok(c)).map((b) => b.id));
 }

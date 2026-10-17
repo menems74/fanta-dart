@@ -8,6 +8,7 @@ import {
   nextK, progress, weekStart, sessionsThisWeek, comparable, fmtTimer,
   weeklyStreak, longestWeekStreak, recordsOf, pairsOf, doppieMedie, checkoutFails,
   skillScore, skillQuotas, testDue, testTipoFor,
+  saturdayOf, challengeFor, lastSaturday, nextSaturday, challengeResults, sfideDelSabato, isChallengeSession, teamRows,
 } from '../js/training/calc.js';
 import { BADGES, earnedBadges, newBadges } from '../js/training/badges.js';
 
@@ -205,6 +206,7 @@ test('quando proporre lo Skill test', () => {
 
 test('badge: id unici e ottenuti in base ai dati', () => {
   assert.equal(new Set(BADGES.map((b) => b.id)).size, BADGES.length);
+  assert.equal(BADGES.length, 20);
   assert.equal(earnedBadges([], []).size, 0);
   const uno = earnedBadges([T('scoring', 1, 210, '2026-10-01', { dati: {} })], []);
   assert.ok(uno.has('prima') && uno.has('sc200') && !uno.has('s10'));
@@ -230,4 +232,78 @@ test('nuovi badge: solo quelli ottenuti con l ultima sessione', () => {
   const nuovi = newBadges([...prima, decima], [], { sessionId: 'x9' }).map((b) => b.id);
   assert.ok(nuovi.includes('s10'));
   assert.ok(!nuovi.includes('prima'));
+});
+
+test('sfida del sabato: sabato della settimana e rotazione tra le tre prove', () => {
+  assert.equal(saturdayOf('2026-10-17'), '2026-10-17'); // sabato
+  assert.equal(saturdayOf('2026-10-12'), '2026-10-17'); // lunedi'
+  assert.equal(saturdayOf('2026-10-18'), '2026-10-17'); // domenica
+  const a = challengeFor('2026-10-17');
+  const b = challengeFor('2026-10-24');
+  const c = challengeFor('2026-10-31');
+  assert.equal(new Set([a, b, c]).size, 3);
+  assert.equal(challengeFor('2026-11-07'), a);
+  assert.ok(['scoring', 'doppie', 'checkout'].includes(a));
+});
+
+test('ultimo e prossimo sabato in ogni giorno della settimana', () => {
+  assert.equal(nextSaturday('2026-10-12'), '2026-10-17'); // lunedi'
+  assert.equal(nextSaturday('2026-10-17'), '2026-10-17'); // sabato: oggi
+  assert.equal(nextSaturday('2026-10-18'), '2026-10-24'); // domenica
+  assert.equal(lastSaturday('2026-10-12'), '2026-10-10'); // lunedi'
+  assert.equal(lastSaturday('2026-10-16'), '2026-10-10'); // venerdi'
+  assert.equal(lastSaturday('2026-10-17'), '2026-10-17'); // sabato: oggi
+  assert.equal(lastSaturday('2026-10-18'), '2026-10-17'); // domenica
+});
+
+test('risultati della sfida: migliore di ogni giocatore e confronto col suo record', () => {
+  const sat = '2026-10-17';
+  const tipo = challengeFor(sat);
+  const t = (playerId, metrica, data, off = 0) => ({ playerId, tipo, metrica, data, creataIl: off });
+  const all = [
+    t('a', 180, '2026-10-03'), t('a', 200, sat, 1), t('a', 190, sat, 2),
+    t('b', 210, sat, 3),
+    t('c', 150, '2026-10-10'), t('c', 150, sat, 4),
+    { playerId: 'a', tipo: tipo === 'scoring' ? 'doppie' : 'scoring', metrica: 999, data: sat },
+  ];
+  const r = challengeResults(all, sat, tipo);
+  assert.deepEqual(r.map((x) => x.playerId), ['b', 'a', 'c']);
+  assert.equal(r[1].metrica, 200);
+  assert.equal(r[1].delta, 20);
+  assert.equal(r[0].prevBest, null);
+  assert.equal(r[2].delta, 0);
+  assert.deepEqual(challengeResults(all, '2026-10-24', tipo), []);
+});
+
+test('sfide del sabato: partecipazioni e record contro se stessi', () => {
+  const sat1 = '2026-10-17';
+  const sat2 = '2026-10-24';
+  const tipo1 = challengeFor(sat1);
+  const tipo2 = challengeFor(sat2);
+  const S = (tipo, metrica, data) => ({ id: `${tipo}${data}`, tipo, metrica, data });
+  const tutte = [S(tipo1, 100, '2026-10-05'), S(tipo1, 120, sat1), S(tipo2, 50, sat2), S(tipo2, 60, '2026-10-20')];
+  const r = sfideDelSabato(tutte);
+  assert.equal(r.partecipate, 2);
+  assert.equal(r.record, 1);
+  assert.ok(isChallengeSession(S(tipo1, 1, sat1)));
+  assert.ok(!isChallengeSession(S(tipo1, 1, '2026-10-16')));
+  assert.equal(sfideDelSabato([]).partecipate, 0);
+});
+
+test('riepilogo di squadra: ordine per settimana, poi totale', () => {
+  const players = [
+    { id: 'a', nome: 'A', cognome: 'Rossi' }, { id: 'b', nome: 'B', cognome: 'Bianchi' },
+    { id: 'c', nome: 'C', cognome: 'Verdi', attivo: false },
+  ];
+  const all = [
+    { playerId: 'a', numero: 1, data: '2026-10-05' }, { playerId: 'a', numero: 2, data: '2026-10-06' }, { playerId: 'a', numero: 3, data: '2026-10-13' },
+    { playerId: 'b', numero: 1, data: '2026-10-13' }, { playerId: 'b', numero: 2, data: '2026-10-14' },
+  ];
+  const tests = [{ playerId: 'b', creataIl: 1, scoring: 90, doppie: 20, bull: 40, checkout: 7 }];
+  const rows = teamRows(players, all, tests, '2026-10-15');
+  assert.deepEqual(rows.map((r) => r.player.id), ['b', 'a']);
+  assert.equal(rows[0].settimana, 2);
+  assert.equal(rows[1].totale, 3);
+  assert.equal(rows[0].skill, 100);
+  assert.equal(rows[1].skill, null);
 });

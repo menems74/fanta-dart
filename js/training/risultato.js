@@ -1,12 +1,13 @@
 import { html, $, icon, toast, go, fmtDate } from '../util.js';
 import { session } from '../auth.js';
-import { getTraining, listTrainings, listTests, deleteTraining } from '../db.js';
+import { getTraining, listTrainings, listTests, listAllTrainings, deleteTraining } from '../db.js';
 import { topbar, emptyState } from '../ui.js';
 import { badgeTile } from './ui.js';
 import { newBadges } from './badges.js';
 import { TIPO_INFO, sessionInfo } from './catalogo.js';
 import {
   headline, compareWith, comparable, scoringResult, doppieResult, checkoutResult, pressioneResult, fmt1,
+  isChallengeSession, challengeResults,
 } from './calc.js';
 
 function message(cmp) {
@@ -67,6 +68,12 @@ export default async function view([id]) {
   const cmp = message(compareWith(t, prev));
   const h = headline(t);
   const info = sessionInfo(t.tipo, t.k);
+  let sfida = null;
+  if (isChallengeSession(t)) {
+    const res = challengeResults(await listAllTrainings(), t.data, t.tipo);
+    const pos = res.findIndex((r) => r.playerId === t.playerId);
+    if (pos >= 0) sfida = { pos: pos + 1, tot: res.length };
+  }
   const nuovi = mine ? newBadges(all, tests, { sessionId: t.id }) : [];
 
   return {
@@ -80,6 +87,10 @@ export default async function view([id]) {
           ${cmp.cls === 'pb' ? icon('trophy', 22) : ''}
           <div><b>${cmp.title}</b><span>${cmp.text}</span></div></div>` : ''}
       </section>
+
+      ${sfida ? html`<div class="card chal-res">${icon('flag', 22)}<div>
+        <b>Sfida del sabato</b>
+        <span>${sfida.tot > 1 ? `Sei ${sfida.pos}º su ${sfida.tot} in gara.` : 'Hai sfidato te stesso: se hai battuto il record, sabato è tuo.'}</span></div></div>` : ''}
 
       ${nuovi.length ? html`<h2 class="section">${nuovi.length === 1 ? 'Nuovo badge' : 'Nuovi badge'}</h2>
         <div class="bgrid">${nuovi.map((b) => badgeTile(b, true))}</div>` : ''}

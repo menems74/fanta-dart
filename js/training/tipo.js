@@ -1,9 +1,9 @@
-import { html, icon } from '../util.js';
+import { html, icon, todayIso } from '../util.js';
 import { session } from '../auth.js';
 import { listTrainings } from '../db.js';
 import { topbar } from '../ui.js';
 import { TIPI, TIPO_INFO, numeroOf, faseOf } from './catalogo.js';
-import { nextK, fmt1 } from './calc.js';
+import { nextK, fmt1, nextSaturday, challengeFor } from './calc.js';
 import { loadDraft } from './store.js';
 
 export default async function view() {
@@ -23,6 +23,8 @@ export default async function view() {
     };
   });
   const rec = rows.filter((r) => r.k).sort((a, b) => a.n - b.n)[0]?.tipo;
+  const oggi = todayIso();
+  const sfida = nextSaturday(oggi) === oggi ? challengeFor(oggi) : null;
 
   return {
     html: html`
@@ -34,7 +36,7 @@ export default async function view() {
           const body = html`
             <span class="badge-ico">${icon(info.icon, 24)}</span>
             <div class="grow">
-              <strong>${info.label} ${r.draft ? html`<span class="tag gold">In corso</span>` : r.tipo === rec ? html`<span class="tag w">Consigliata</span>` : ''}</strong>
+              <strong>${info.label} ${r.draft ? html`<span class="tag gold">In corso</span>` : r.tipo === sfida ? html`<span class="tag gold">Sfida di oggi</span>` : r.tipo === rec ? html`<span class="tag w">Consigliata</span>` : ''}</strong>
               <span class="muted small">${r.k ? `Sessione ${r.n} · ${faseOf(r.n).nome}` : 'Tutte e 20 completate'}</span>
               <span class="muted small">${info.desc}${r.best != null ? ` · record ${fmt1(r.best)}` : ''}</span>
             </div>
