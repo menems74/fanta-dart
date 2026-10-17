@@ -4,12 +4,13 @@ import { session } from '../auth.js';
 import { listTrainings, saveTraining } from '../db.js';
 import { topbar, emptyState } from '../ui.js';
 import {
-  TIPI, TIPO_INFO, DOPPIE_BERSAGLI, CHECKOUT_OUTS, SERIE_SCORING, VISITE_PRESSIONE, sessionInfo,
+  TIPI, TIPO_INFO, DOPPIE_BERSAGLI, CHECKOUT_OUTS, SERIE_SCORING, VISITE_PRESSIONE, sessionInfo, sigFromInfo, signatureOf,
 } from './catalogo.js';
 import {
   nextK, metricOf, scoringResult, doppieResult, checkoutResult, pressioneResult, fmtTimer,
 } from './calc.js';
 import { loadDraft, saveDraft, clearDraft } from './store.js';
+import { numRow, optsRow, chips, rowAccess } from './inputs.js';
 
 const AVV = [['bot', 'Bot'], ['amico', 'Amico'], ['club', 'Club'], ['torneo', 'Torneo']];
 const FRECCE = [{ v: 0, t: '✕', fail: true }, { v: 1, t: '1ª' }, { v: 2, t: '2ª' }, { v: 3, t: '3ª' }];
@@ -30,30 +31,6 @@ function initial(tipo, info) {
     };
   }
 }
-
-const numRow = (arr, i, label, max) => html`
-  <div class="card nrow" data-arr="${arr}" data-i="${i}" data-max="${max}">
-    <span class="nlbl">${label}</span>
-    <button type="button" class="nbtn" data-d="-1" aria-label="${label}: meno">${icon('minus')}</button>
-    <b class="nval blank">—</b>
-    <button type="button" class="nbtn" data-d="1" aria-label="${label}: più">${icon('plus')}</button>
-    <input class="nrange" type="range" min="0" max="${max}" step="1" value="0" aria-label="${label}">
-  </div>`;
-
-const optsRow = (arr, i, label, values, sub = '') => html`
-  <div class="card orow" data-arr="${arr}" data-i="${i}">
-    <span class="olbl"><b>${label}</b>${sub ? html`<small class="muted">${sub}</small>` : ''}</span>
-    <div class="opts">
-      ${values.map((o) => html`<button type="button" data-v="${o.v}" class="${o.fail ? 'fail' : ''}" aria-label="${label}: ${o.t}">${o.t}</button>`)}
-    </div>
-  </div>`;
-
-const chips = (name, label) => html`
-  <div class="field">${label}
-    <div class="chips" role="group" aria-label="${label}">
-      ${[1, 2, 3, 4, 5].map((n) => html`<button type="button" data-chip="${name}" data-v="${n}">${n}</button>`)}
-    </div>
-  </div>`;
 
 const numField = (f, label, ph, d) => html`
   <label class="field">${label}
@@ -114,6 +91,9 @@ export default async function view([tipo]) {
     return { html: html`${topbar(TIPO_INFO[tipo].label, { back: '/tipo' })}${emptyState('Tipo completato', 'Hai fatto tutte le 20 sessioni di questo tipo. Complimenti!')}` };
   }
   const info = sessionInfo(tipo, k);
+  const sig = sigFromInfo(info);
+  const precedenti = trainings.filter((t) => t.tipo === tipo && signatureOf(t) === sig && Number.isFinite(t.metrica));
+  const record = tipo === 'partita' || !precedenti.length ? null : Math.max(...precedenti.map((t) => t.metrica));
   const draft = loadDraft(pid, tipo);
   const resume = draft && draft.k === k;
   const s = {
@@ -133,24 +113,22 @@ export default async function view([tipo]) {
           <p class="muted small">Sessione ${info.n} · ${info.fase.nome}${resume ? ' · ripresa' : ''}</p>
           <p>${intro(tipo, info)}</p>
           <p class="muted small">Prima di iniziare: 5 minuti di riscaldamento, non contano.</p>
+          ${tipo === 'partita' ? '' : record != null
+            ? html`<p class="goal">Da battere: <b>${record}</b> (il tuo record)</p>`
+            : html`<p class="goal">Primo risultato: da qui si migliora.</p>`}
         </section>
         ${body(tipo, info, s.d)}
         <h2 class="section">Com'è andata?</h2>
         ${chips('conc', 'Concentrazione (1 bassa, 5 alta)')}
         ${chips('feel', 'Feeling del lancio (1 basso, 5 alto)')}
       </div>
-      <div class="dock"><div class="dock-sum" id="sum"></div><button type="button" class="btn primary" id="done">Concludi</button></div>`,
+      <div class="dock"><div class="dock-sum"><span id="sum"></span><small id="goal"></small></div><button type="button" class="btn primary" id="done">Concludi</button></div>`,
 
     mount(root) {
       const el = $(root, '#sess');
       const persist = () => saveDraft(pid, tipo, { k, startedAt: s.startedAt, d: s.d, conc: s.conc, feel: s.feel });
       const main = MAIN_ARRAY[tipo];
-      const get = (row) => (row.dataset.i === '' ? s.d[row.dataset.arr] : s.d[row.dataset.arr][+row.dataset.i]);
-      const set = (row, v) => {
-        const max = row.dataset.max ? +row.dataset.max : 3;
-        const val = Math.max(0, Math.min(max, v));
-        if (row.dataset.i === '') s.d[row.dataset.arr] = val; else s.d[row.dataset.arr][+row.dataset.i] = val;
-      };
+      const { get, set } = rowAccess(s.d);
 
       const summary = () => {
         if (tipo === 'scoring') return `Totale ${scoringResult(s.d).total} / 300`;
@@ -177,6 +155,12 @@ export default async function view([tipo]) {
         $$(el, '[data-avv]').forEach((b) => b.classList.toggle('sel', s.d.avvTipo === b.dataset.avv));
         $$(el, '[data-leg]').forEach((row) => { $(row, '.nval').textContent = s.d[row.dataset.leg]; });
         $(root, '#sum').textContent = summary();
+        const g = $(root, '#goal');
+        if (record != null) {
+          const diff = metricOf(tipo, s.d) - record;
+          g.textContent = diff > 0 ? `Record battuto! +${diff}` : `Da battere: ${record}`;
+          g.classList.toggle('win', diff > 0);
+        }
       };
 
       el.addEventListener('click', (e) => {

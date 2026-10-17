@@ -48,6 +48,18 @@ service cloud.firestore {
       allow update, delete: if hasAccount() && (resource.data.playerId == myPlayerId() || isAdmin());
     }
 
+    // Skill test (iniziale, intermedio, finale): come gli allenamenti, ognuno scrive i propri.
+    match /skilltests/{id} {
+      allow read: if hasAccount();
+      allow create: if hasAccount() && request.resource.data.playerId == myPlayerId()
+        && request.resource.data.tipo in ['iniziale', 'intermedio', 'finale']
+        && request.resource.data.scoring is int && request.resource.data.scoring >= 0 && request.resource.data.scoring <= 90
+        && request.resource.data.doppie is int && request.resource.data.doppie >= 0 && request.resource.data.doppie <= 20
+        && request.resource.data.bull is int && request.resource.data.bull >= 0 && request.resource.data.bull <= 40
+        && request.resource.data.checkout is int && request.resource.data.checkout >= 0 && request.resource.data.checkout <= 7;
+      allow update, delete: if hasAccount() && (resource.data.playerId == myPlayerId() || isAdmin());
+    }
+
     match /players/{id} {
       allow read: if hasAccount();
       allow write: if isAdmin();

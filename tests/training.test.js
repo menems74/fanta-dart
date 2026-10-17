@@ -6,7 +6,10 @@ import {
 import {
   scoringResult, doppieResult, checkoutResult, pressioneResult, metricOf, compareWith,
   nextK, progress, weekStart, sessionsThisWeek, comparable, fmtTimer,
+  weeklyStreak, longestWeekStreak, recordsOf, pairsOf, doppieMedie, checkoutFails,
+  skillScore, skillQuotas, testDue, testTipoFor,
 } from '../js/training/calc.js';
+import { BADGES, earnedBadges, newBadges } from '../js/training/badges.js';
 
 test('numerazione: ogni tipo ha 20 sessioni e le 100 sono tutte diverse', () => {
   const tutti = new Set();
@@ -137,4 +140,94 @@ test('timer', () => {
   assert.equal(fmtTimer(0), '00:00');
   assert.equal(fmtTimer(65_000), '01:05');
   assert.equal(fmtTimer(3_600_000), '60:00');
+});
+
+const T = (tipo, k, metrica, data = '2026-10-01', extra = {}) =>
+  ({ id: `${tipo}${k}`, tipo, k, numero: numeroOf(tipo, k), metrica, data, creataIl: k * 1000 + (extra.off || 0), dati: extra.dati || {} });
+
+test('serie di settimane: la settimana in corso non spezza la serie', () => {
+  const ses = (data) => ({ data });
+  // lunedi 05/10 e 12/10, settimana 19/10 ancora in corso
+  const t = [ses('2026-09-28'), ses('2026-09-29'), ses('2026-10-05'), ses('2026-10-06'), ses('2026-10-12'), ses('2026-10-13')];
+  assert.equal(weeklyStreak(t, '2026-10-20'), 3);
+  assert.equal(weeklyStreak(t, '2026-10-14'), 3);
+  assert.equal(weeklyStreak([ses('2026-10-06')], '2026-10-20'), 0);
+  assert.equal(longestWeekStreak(t), 3);
+  assert.equal(longestWeekStreak([...t, ses('2026-10-26'), ses('2026-10-27')]), 3);
+  assert.equal(longestWeekStreak([]), 0);
+});
+
+test('record personali: il primo risultato non conta', () => {
+  const t = [T('scoring', 1, 150), T('scoring', 2, 140), T('scoring', 3, 170), T('doppie', 1, 30)];
+  assert.equal(recordsOf(t), 1);
+  assert.equal(recordsOf([T('scoring', 1, 150)]), 0);
+});
+
+test('confronto primo e secondo giro dello stesso tipo', () => {
+  const t = [T('scoring', 1, 150), T('scoring', 2, 170), T('scoring', 3, 160), T('doppie', 1, 30), T('doppie', 2, 28)];
+  const p = pairsOf(t);
+  assert.equal(p.length, 2);
+  const sc = p.find((x) => x.tipo === 'scoring');
+  assert.equal(sc.delta, 20);
+  assert.equal(p.find((x) => x.tipo === 'doppie').delta, -2);
+});
+
+test('punti da lavorare: doppia piu debole e checkout che sbaglio piu spesso', () => {
+  const d = (hit) => ({ tipo: 'doppie', dati: { bersagli: ['D20', 'D16', 'D10', 'D8'], hit } });
+  const m = doppieMedie([d([10, 12, 8, 2]), d([12, 10, 6, 4])]);
+  assert.equal(m[0].b, 'D8');
+  assert.equal(m[0].pct, 15);
+  assert.equal(doppieMedie([]), null);
+  const c = (frecce) => ({ tipo: 'checkout', dati: { outs: [40, 44, 48, 52], frecce } });
+  const f = checkoutFails([c([1, 0, 0, 0]), c([3, 0, 1, 0])]);
+  assert.deepEqual(f.map((x) => x.out), [44, 52]);
+  assert.equal(f[0].rate, 0);
+});
+
+test('Skill Score: quattro quote da 25, una cifra decimale', () => {
+  assert.equal(skillScore({ scoring: 90, doppie: 20, bull: 40, checkout: 7 }), 100);
+  assert.equal(skillScore({ scoring: 0, doppie: 0, bull: 0, checkout: 0 }), 0);
+  assert.equal(skillScore({ scoring: 45, doppie: 10, bull: 20, checkout: 3 }), 48.2);
+  assert.equal(skillQuotas({ scoring: 45, doppie: 10, bull: 20, checkout: 7 }).checkout, 25);
+});
+
+test('quando proporre lo Skill test', () => {
+  assert.equal(testDue([], 0), 'iniziale');
+  assert.equal(testDue([{ tipo: 'iniziale', sessioniFatte: 0 }], 10), null);
+  assert.equal(testDue([{ tipo: 'iniziale', sessioniFatte: 0 }], 25), 'intermedio');
+  assert.equal(testDue([{ tipo: 'intermedio', sessioniFatte: 25 }], 49), null);
+  assert.equal(testDue([{ tipo: 'intermedio', sessioniFatte: 75 }], 100), 'finale');
+  assert.equal(testDue([{ tipo: 'finale', sessioniFatte: 100 }], 100), null);
+  assert.equal(testTipoFor([], 0), 'iniziale');
+  assert.equal(testTipoFor([{}], 30), 'intermedio');
+  assert.equal(testTipoFor([{}], 100), 'finale');
+});
+
+test('badge: id unici e ottenuti in base ai dati', () => {
+  assert.equal(new Set(BADGES.map((b) => b.id)).size, BADGES.length);
+  assert.equal(earnedBadges([], []).size, 0);
+  const uno = earnedBadges([T('scoring', 1, 210, '2026-10-01', { dati: {} })], []);
+  assert.ok(uno.has('prima') && uno.has('sc200') && !uno.has('s10'));
+  const dieci = Array.from({ length: 10 }, (_, i) => T('scoring', i + 1, 100 + i));
+  assert.ok(earnedBadges(dieci, []).has('s10'));
+  assert.ok(earnedBadges(dieci, []).has('rec5'));
+  assert.ok(earnedBadges([], [{ creataIl: 1 }]).has('test'));
+  const crono = [{ creataIl: 1, scoring: 30, doppie: 5, bull: 10, checkout: 1 }, { creataIl: 2, scoring: 80, doppie: 15, bull: 30, checkout: 5 }];
+  assert.ok(earnedBadges([], crono).has('skill10'));
+});
+
+test('fase completata sblocca il badge solo con tutte le 25 sessioni', () => {
+  const quasi = [];
+  for (let n = 1; n <= 24; n++) quasi.push({ id: `a${n}`, numero: n, tipo: 'scoring', k: n, metrica: 1 });
+  assert.ok(!earnedBadges(quasi, []).has('f1'));
+  const tutte = [...quasi, { id: 'a25', numero: 25, tipo: 'partita', k: 5, metrica: null }];
+  assert.ok(earnedBadges(tutte, []).has('f1'));
+});
+
+test('nuovi badge: solo quelli ottenuti con l ultima sessione', () => {
+  const prima = Array.from({ length: 9 }, (_, i) => ({ id: `x${i}`, numero: i + 1, tipo: 'scoring', k: i + 1, metrica: 100, data: '2026-10-01', creataIl: i }));
+  const decima = { id: 'x9', numero: 10, tipo: 'doppie', k: 2, metrica: 20, data: '2026-10-02', creataIl: 99 };
+  const nuovi = newBadges([...prima, decima], [], { sessionId: 'x9' }).map((b) => b.id);
+  assert.ok(nuovi.includes('s10'));
+  assert.ok(!nuovi.includes('prima'));
 });

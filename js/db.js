@@ -41,6 +41,18 @@ export async function saveTraining(data) {
 }
 export const deleteTraining = (id) => deleteDoc(doc(db, 'trainings', id));
 
+// ---------- skill test ----------
+export const listTests = async (playerId) =>
+  (await list(query(collection(db, 'skilltests'), where('playerId', '==', playerId))))
+    .sort((a, b) => (b.creataIl || 0) - (a.creataIl || 0));
+export const getTest = (id) => one(doc(db, 'skilltests', id));
+export async function saveTest(data) {
+  const ref = doc(collection(db, 'skilltests'));
+  await setDoc(ref, { ...data, creataIl: Date.now() });
+  return ref.id;
+}
+export const deleteTest = (id) => deleteDoc(doc(db, 'skilltests', id));
+
 // ---------- stagioni ----------
 export const listSeasons = async () =>
   (await list(collection(db, 'seasons'))).sort((a, b) => b.creataIl - a.creataIl);

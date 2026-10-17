@@ -1,7 +1,9 @@
 import { html, $, icon, toast, go, fmtDate } from '../util.js';
 import { session } from '../auth.js';
-import { getTraining, listTrainings, deleteTraining } from '../db.js';
+import { getTraining, listTrainings, listTests, deleteTraining } from '../db.js';
 import { topbar, emptyState } from '../ui.js';
+import { badgeTile } from './ui.js';
+import { newBadges } from './badges.js';
 import { TIPO_INFO, sessionInfo } from './catalogo.js';
 import {
   headline, compareWith, comparable, scoringResult, doppieResult, checkoutResult, pressioneResult, fmt1,
@@ -59,12 +61,13 @@ export default async function view([id]) {
   const t = await getTraining(id);
   if (!t) return { html: html`${topbar('Sessione', { back: '/' })}${emptyState('Sessione non trovata', 'Potrebbe essere stata eliminata.')}` };
   const mine = t.playerId === session.account.playerId;
-  const all = await listTrainings(t.playerId);
+  const [all, tests] = await Promise.all([listTrainings(t.playerId), listTests(t.playerId)]);
   const prev = all
     .filter((x) => x.id !== t.id && comparable(t, x) && (x.creataIl || 0) < (t.creataIl || 0));
   const cmp = message(compareWith(t, prev));
   const h = headline(t);
   const info = sessionInfo(t.tipo, t.k);
+  const nuovi = mine ? newBadges(all, tests, { sessionId: t.id }) : [];
 
   return {
     html: html`
@@ -77,6 +80,9 @@ export default async function view([id]) {
           ${cmp.cls === 'pb' ? icon('trophy', 22) : ''}
           <div><b>${cmp.title}</b><span>${cmp.text}</span></div></div>` : ''}
       </section>
+
+      ${nuovi.length ? html`<h2 class="section">${nuovi.length === 1 ? 'Nuovo badge' : 'Nuovi badge'}</h2>
+        <div class="bgrid">${nuovi.map((b) => badgeTile(b, true))}</div>` : ''}
 
       <div class="stats three">
         <div class="stat"><b>${t.durataMin ?? '—'}</b><span>Minuti</span></div>

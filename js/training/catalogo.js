@@ -62,6 +62,9 @@ export function sessionInfo(tipo, k) {
   return info;
 }
 
+export const sigFromInfo = (info) =>
+  info.tipo === 'pressione' ? `${info.base.join('-')}|${info.soglia}` : info.tipo;
+
 /** Due sessioni sono confrontabili solo se hanno le stesse regole (la pressione cambia bersagli e soglia). */
 export const signatureOf = (t) =>
   t.tipo === 'pressione' && t.dati?.bersagli

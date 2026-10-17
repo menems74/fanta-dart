@@ -924,3 +924,35 @@ a.btn.big { text-decoration: none; }
 .tspark .dot { fill: var(--gd); border: 0; box-shadow: none; }
 .tres { font-size: 22px; font-weight: 800; }
 .tres small { font-size: 14px; color: var(--mu); margin-left: 3px; font-weight: 600; }
+
+/* ---------- Allenamenti fase 2: badge, Skill Score, obiettivi ---------- */
+.goal { color: var(--gd); font-weight: 600; }
+.goal b { color: var(--tx); }
+.dock-sum { display: grid; line-height: 1.15; }
+.dock-sum small { font-size: 14px; font-weight: 600; color: var(--mu); }
+.dock-sum small.win { color: var(--gd); }
+.streakline { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--mu); }
+.streakline .ico { color: var(--gd); }
+.skill-card { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+.skill-card.dashed { border-style: dashed; }
+.skill-card strong { display: block; }
+.skill-num { font-size: 30px; font-weight: 800; color: var(--gd); }
+.skill-num small { font-size: 14px; color: var(--mu); font-weight: 600; margin-left: 2px; }
+.bgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 10px 0 16px; }
+.badge { display: grid; justify-items: center; text-align: center; gap: 4px; padding: 14px 8px; border-radius: var(--radius); border: 1px solid var(--ln); background: var(--c1); }
+.badge b { font-size: 16px; line-height: 1.2; }
+.badge small { font-size: 14px; color: var(--mu); line-height: 1.25; }
+.bdisc { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: rgba(148, 169, 203, 0.12); color: var(--mu); }
+.badge.on { border-color: rgba(251, 191, 36, 0.55); box-shadow: 0 0 18px rgba(251, 191, 36, 0.14); }
+.badge.on .bdisc { background: var(--gd); color: var(--gd-dark); }
+.badge.off { opacity: .6; }
+.quote { display: grid; gap: 14px; }
+.qrow { display: grid; gap: 6px; }
+.tres.up small { color: var(--gr-tx); }
+.tres.down small { color: var(--rd-tx); }
+.tres.up, .tres.down { font-size: 18px; }
+.tres small { display: block; font-size: 14px; margin: 0; }
+.insight { display: grid; gap: 12px; }
+.insight p { display: flex; gap: 10px; align-items: flex-start; }
+.insight .ico { color: var(--gr-tx); margin-top: 3px; }
+details.more .bgrid { margin-top: 12px; }

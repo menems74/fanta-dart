@@ -19,4 +19,11 @@ export function spark(values, { w = 140, h = 44 } = {}) {
     + `<circle cx="${x(last).toFixed(1)}" cy="${y(v[last]).toFixed(1)}" r="4" class="dot"/></svg>`);
 }
 
+export const badgeTile = (b, earned) => html`
+  <div class="badge ${earned ? 'on' : 'off'}">
+    <span class="bdisc">${icon(b.icon, 24)}</span>
+    <b>${b.nome}</b>
+    <small>${b.desc}</small>
+  </div>`;
+
 export { votoClass };

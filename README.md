@@ -10,7 +10,7 @@ App web installabile (PWA) per la squadra di freccette: gli admin inseriscono le
 - **Pagellini**: voto 1–10, singoli (max 4) e doppi (max 2) giocati e vinti (un doppio vinto vale una partita a testa), commento, flag **MVP** (uno per serata). Restano in bozza finché l'admin non preme **Pubblica serata**.
 - **Profilo** con media voto, partite, vinte e MVP (per stagione e carriera) e **classifica**.
 - **Esporta il pagellino come immagine** e condividilo su WhatsApp.
-- **Allenamenti**: pagina separata (`allenamenti.html`), aperta in una nuova scheda dal link nella sezione Partite. Percorso di 100 sessioni in 4 fasi (scoring, doppie, checkout, pressione, partita), con inserimento rapido mentre ci si allena, record personali, mappa del percorso e confronto con l'ultima volta. La bozza della sessione resta sul telefono. I progressi di squadra arriveranno dopo.
+- **Allenamenti**: pagina separata (`allenamenti.html`), aperta in una nuova scheda dal link nella sezione Partite. Percorso di 100 sessioni in 4 fasi (scoring, doppie, checkout, pressione, partita) con inserimento rapido mentre ci si allena, record personali con obiettivo da battere, mappa del percorso, badge, serie di settimane, confronto primo/secondo giro, punti da lavorare e **Skill test** (iniziale, intermedio, finale) con Skill Score su 100. La bozza della sessione resta sul telefono. I progressi di squadra arriveranno dopo.
 - Funziona anche offline in lettura.
 
 ## Tecnologie
@@ -36,6 +36,7 @@ tests/                                      test dei calcoli (npm test)
 | `seasons/{id}` | nome, squadra, roster (`playerIds`) |
 | `matches/{id}` | stagione, data, luogo, avversario, punti, `mvpPlayerId`, `pubblicata` |
 | `trainings/{id}` | sessione di allenamento: giocatore, tipo, numero (1-100), data, durata, risultato principale e dati della prova |
+| `skilltests/{id}` | Skill test: tipo, punti delle quattro prove e Skill Score |
 | `pins/{tessera}` | PIN in chiaro, leggibile solo dagli admin |
 | `reportCards/{matchId_playerId}` | voto, singoli giocati/vinti (max 4), doppi giocati/vinti (max 2), testo, `pubblicata` |
 

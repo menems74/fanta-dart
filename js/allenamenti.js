@@ -9,6 +9,8 @@ import tipo from './training/tipo.js';
 import sessione from './training/sessione.js';
 import risultato from './training/risultato.js';
 import miei from './training/miei.js';
+import skill from './training/skill.js';
+import skillrisultato from './training/skillrisultato.js';
 
 const root = document.getElementById('view');
 const routes = [
@@ -17,6 +19,8 @@ const routes = [
   [/^\/sessione\/([^/]+)$/, sessione],
   [/^\/risultato\/([^/]+)$/, risultato],
   [/^\/miei$/, miei],
+  [/^\/test$/, skill],
+  [/^\/test\/([^/]+)$/, skillrisultato],
 ];
 let ready = false;
 let token = 0;

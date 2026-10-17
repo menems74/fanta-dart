@@ -1,19 +1,24 @@
 import { html, icon, fmtDate } from '../util.js';
 import { session } from '../auth.js';
-import { listTrainings } from '../db.js';
+import { listTrainings, listTests } from '../db.js';
 import { topbar, emptyState } from '../ui.js';
-import { toApp, spark } from './ui.js';
+import { toApp, spark, badgeTile } from './ui.js';
 import { TIPI, TIPO_INFO, FASI, isCheckpoint, SESSIONI_PER_TIPO } from './catalogo.js';
-import { doneNumbers, progress, fmt1, headline } from './calc.js';
+import {
+  doneNumbers, progress, fmt1, headline, pairsOf, doppieMedie, checkoutFails, skillScore,
+} from './calc.js';
+import { BADGES, earnedBadges } from './badges.js';
 
 const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+const TEST_NOME = { iniziale: 'Test iniziale', intermedio: 'Test intermedio', finale: 'Test finale' };
 
 export default async function view() {
-  const trainings = await listTrainings(session.account.playerId);
+  const pid = session.account.playerId;
+  const [trainings, tests] = await Promise.all([listTrainings(pid), listTests(pid)]);
   const pr = progress(trainings);
   const done = doneNumbers(trainings);
 
-  if (!trainings.length) {
+  if (!trainings.length && !tests.length) {
     return {
       html: html`${topbar('I miei progressi', { back: '/', right: toApp })}
         ${emptyState('Il percorso inizia da qui', '100 sessioni per migliorare il tuo gioco, una alla volta.',
@@ -21,12 +26,19 @@ export default async function view() {
     };
   }
 
+  const earned = earnedBadges(trainings, tests);
+  const got = BADGES.filter((b) => earned.has(b.id));
+  const locked = BADGES.filter((b) => !earned.has(b.id));
+  const confronti = pairsOf(trainings).slice(0, 4);
+  const doppie = doppieMedie(trainings);
+  const fails = checkoutFails(trainings);
+
   const perTipo = TIPI.map((tipo) => {
     const mine = trainings.filter((t) => t.tipo === tipo);
     const crono = [...mine].sort((a, b) => (a.creataIl || 0) - (b.creataIl || 0));
     const vals = crono.map((t) => t.metrica);
     const fin = vals.filter(Number.isFinite);
-    return { tipo, n: mine.length, vals, best: fin.length && tipo !== 'pressione' ? Math.max(...fin) : null, last: crono.at(-1) };
+    return { tipo, n: mine.length, vals, best: fin.length && tipo !== 'pressione' ? Math.max(...fin) : null };
   });
 
   return {
@@ -42,6 +54,37 @@ export default async function view() {
           </div>`)}
         <p class="muted small">I cerchi dorati sono i checkpoint, ogni 10 sessioni.</p>
       </section>
+
+      <h2 class="section">Badge · ${got.length} su ${BADGES.length}</h2>
+      ${got.length ? html`<div class="bgrid">${got.map((b) => badgeTile(b, true))}</div>`
+        : html`<p class="muted">Il primo badge arriva con la prima sessione.</p>`}
+      ${locked.length ? html`<details class="more"><summary>Da sbloccare (${locked.length})</summary>
+        <div class="bgrid">${locked.map((b) => badgeTile(b, false))}</div></details>` : ''}
+
+      ${tests.length ? html`
+        <h2 class="section">Skill Score</h2>
+        <ul class="list">${tests.map((t) => html`
+          <li><a class="card row" href="#/test/${t.id}">
+            <div class="grow"><strong>${TEST_NOME[t.tipo]}</strong><span class="muted small">${fmtDate(t.data)} · dopo ${t.sessioniFatte ?? 0} sessioni</span></div>
+            <b class="tres">${fmt1(skillScore(t))}<small>/100</small></b>
+          </a></li>`)}</ul>` : ''}
+
+      ${confronti.length ? html`
+        <h2 class="section">Primo e secondo giro</h2>
+        <ul class="list">${confronti.map((c) => html`
+          <li class="card row">
+            <div class="grow"><strong>${TIPO_INFO[c.tipo].label}</strong>
+              <span class="muted small">Sessione ${c.a.numero} → ${c.b.numero}</span></div>
+            <b class="tres ${c.delta > 0 ? 'up' : c.delta < 0 ? 'down' : ''}">${fmt1(c.a.metrica)} → ${fmt1(c.b.metrica)}
+              <small>${c.delta > 0 ? '+' : ''}${fmt1(c.delta)}</small></b>
+          </li>`)}</ul>` : ''}
+
+      ${doppie || fails.length ? html`
+        <h2 class="section">Punti da lavorare</h2>
+        <div class="card insight">
+          ${doppie ? html`<p>${icon('crosshair', 18)} Doppia più debole: <b>${doppie[0].b}</b> (${doppie[0].pct}% di colpi). La più solida: <b>${doppie.at(-1).b}</b> (${doppie.at(-1).pct}%).</p>` : ''}
+          ${fails.length ? html`<p>${icon('flag', 18)} Chiusure da riprendere: <b>${fails.map((f) => f.out).join(', ')}</b> (riescono meno di una volta su due).</p>` : ''}
+        </div>` : ''}
 
       <h2 class="section">Per tipo di allenamento</h2>
       <ul class="list">
