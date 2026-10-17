@@ -29,6 +29,18 @@ export const savePlayer = (id, data) => setDoc(doc(db, 'players', id), data, { m
 export const getPin = async (playerId) => (await one(doc(db, 'pins', playerId)))?.pin ?? null;
 export const setPin = (playerId, pin) => setDoc(doc(db, 'pins', playerId), { pin });
 
+// ---------- allenamenti ----------
+export const listTrainings = async (playerId) =>
+  (await list(query(collection(db, 'trainings'), where('playerId', '==', playerId))))
+    .sort((a, b) => (b.creataIl || 0) - (a.creataIl || 0));
+export const getTraining = (id) => one(doc(db, 'trainings', id));
+export async function saveTraining(data) {
+  const ref = doc(collection(db, 'trainings'));
+  await setDoc(ref, { ...data, creataIl: Date.now() });
+  return ref.id;
+}
+export const deleteTraining = (id) => deleteDoc(doc(db, 'trainings', id));
+
 // ---------- stagioni ----------
 export const listSeasons = async () =>
   (await list(collection(db, 'seasons'))).sort((a, b) => b.creataIl - a.creataIl);

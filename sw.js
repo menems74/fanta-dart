@@ -1,11 +1,13 @@
 // Service worker: l'app si apre anche offline. I dati li gestisce la cache offline di Firestore.
-const CACHE = 'fanta-dart-v3';
+const CACHE = 'fanta-dart-v4';
 const SHELL = [
   './', 'index.html', 'allenamenti.html', 'manifest.webmanifest', 'css/app.css',
   'js/app.js', 'js/allenamenti.js', 'js/auth.js', 'js/db.js', 'js/firebase.js', 'js/season.js', 'js/stats.js', 'js/ui.js', 'js/util.js',
   'js/views/login.js', 'js/views/partite.js', 'js/views/partita.js', 'js/views/partitaForm.js',
   'js/views/pagellino.js', 'js/views/pagellinoForm.js', 'js/views/classifica.js', 'js/views/profilo.js',
   'js/views/gestione.js', 'js/views/stagione.js', 'js/views/giocatore.js',
+  'js/training/catalogo.js', 'js/training/calc.js', 'js/training/store.js', 'js/training/ui.js',
+  'js/training/home.js', 'js/training/tipo.js', 'js/training/sessione.js', 'js/training/risultato.js', 'js/training/miei.js',
   'assets/logo-320.png', 'assets/icon-192.png', 'assets/favicon-64.png',
 ];
 // Librerie statiche su CDN: cache-first (sono versionate nell'URL).
