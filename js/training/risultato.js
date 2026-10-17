@@ -95,11 +95,7 @@ export default async function view([id]) {
       ${nuovi.length ? html`<h2 class="section">${nuovi.length === 1 ? 'Nuovo badge' : 'Nuovi badge'}</h2>
         <div class="bgrid">${nuovi.map((b) => badgeTile(b, true))}</div>` : ''}
 
-      <div class="stats three">
-        <div class="stat"><b>${t.durataMin ?? '—'}</b><span>Minuti</span></div>
-        <div class="stat"><b>${t.concentrazione ?? '—'}</b><span>Concentr.</span></div>
-        <div class="stat"><b>${t.feeling ?? '—'}</b><span>Feeling</span></div>
-      </div>
+      <p class="muted center durata">Durata: ${t.durataMin ?? '—'} min${t.concentrazione ? ` · concentrazione ${t.concentrazione}/5` : ''}${t.feeling ? ` · feeling ${t.feeling}/5` : ''}</p>
 
       <h2 class="section">Il dettaglio</h2>
       <div class="card">${details(t)}</div>

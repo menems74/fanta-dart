@@ -10,7 +10,8 @@ import {
   nextK, metricOf, scoringResult, doppieResult, checkoutResult, pressioneResult, fmtTimer,
 } from './calc.js';
 import { loadDraft, saveDraft, clearDraft } from './store.js';
-import { numRow, optsRow, chips, rowAccess } from './inputs.js';
+import { numRow, optsRow, rowAccess } from './inputs.js';
+import { keepAwake } from './awake.js';
 
 const AVV = [['bot', 'Bot'], ['amico', 'Amico'], ['club', 'Club'], ['torneo', 'Torneo']];
 const FRECCE = [{ v: 0, t: '✕', fail: true }, { v: 1, t: '1ª' }, { v: 2, t: '2ª' }, { v: 3, t: '3ª' }];
@@ -100,10 +101,9 @@ export default async function view([tipo]) {
     k,
     startedAt: resume && Date.now() - draft.startedAt < 6 * 3600e3 ? draft.startedAt : Date.now(),
     d: { ...initial(tipo, info), ...(resume ? draft.d : {}) },
-    conc: resume ? draft.conc ?? null : null,
-    feel: resume ? draft.feel ?? null : null,
   };
   let timer = null;
+  let awake = null;
 
   return {
     html: html`
@@ -113,20 +113,18 @@ export default async function view([tipo]) {
           <p class="muted small">Sessione ${info.n} · ${info.fase.nome}${resume ? ' · ripresa' : ''}</p>
           <p>${intro(tipo, info)}</p>
           <p class="muted small">Prima di iniziare: 5 minuti di riscaldamento, non contano.</p>
+          <p class="muted small" id="awake" hidden></p>
           ${tipo === 'partita' ? '' : record != null
             ? html`<p class="goal">Da battere: <b>${record}</b> (il tuo record)</p>`
             : html`<p class="goal">Primo risultato: da qui si migliora.</p>`}
         </section>
         ${body(tipo, info, s.d)}
-        <h2 class="section">Com'è andata?</h2>
-        ${chips('conc', 'Concentrazione (1 bassa, 5 alta)')}
-        ${chips('feel', 'Feeling del lancio (1 basso, 5 alto)')}
       </div>
       <div class="dock"><div class="dock-sum"><span id="sum"></span><small id="goal"></small></div><button type="button" class="btn primary" id="done">Concludi</button></div>`,
 
     mount(root) {
       const el = $(root, '#sess');
-      const persist = () => saveDraft(pid, tipo, { k, startedAt: s.startedAt, d: s.d, conc: s.conc, feel: s.feel });
+      const persist = () => saveDraft(pid, tipo, { k, startedAt: s.startedAt, d: s.d });
       const main = MAIN_ARRAY[tipo];
       const { get, set } = rowAccess(s.d);
 
@@ -144,14 +142,12 @@ export default async function view([tipo]) {
           const n = $(row, '.nval');
           n.textContent = v ?? '—';
           n.classList.toggle("blank", v == null);
-          $(row, '.nrange').value = v ?? 0;
         });
         $$(el, '.orow').forEach((row) => {
           const v = get(row);
           $$(row, '.opts button').forEach((b) => b.classList.toggle('sel', v != null && +b.dataset.v === v));
           if (tipo === 'pressione') row.classList.toggle('good', v != null && v >= s.d.soglia);
         });
-        $$(el, '[data-chip]').forEach((b) => b.classList.toggle('sel', s[b.dataset.chip] === +b.dataset.v));
         $$(el, '[data-avv]').forEach((b) => b.classList.toggle('sel', s.d.avvTipo === b.dataset.avv));
         $$(el, '[data-leg]').forEach((row) => { $(row, '.nval').textContent = s.d[row.dataset.leg]; });
         $(root, '#sum').textContent = summary();
@@ -174,8 +170,6 @@ export default async function view([tipo]) {
           set(row, (get(row) ?? 0) + +b.dataset.d);
         } else if (row && b.dataset.v !== undefined) {
           set(row, +b.dataset.v);
-        } else if (b.dataset.chip) {
-          s[b.dataset.chip] = s[b.dataset.chip] === +b.dataset.v ? null : +b.dataset.v;
         } else if (b.dataset.avv) {
           s.d.avvTipo = s.d.avvTipo === b.dataset.avv ? null : b.dataset.avv;
         } else return;
@@ -185,8 +179,7 @@ export default async function view([tipo]) {
 
       el.addEventListener('input', (e) => {
         const t = e.target;
-        if (t.classList.contains('nrange')) { set(t.closest('[data-arr]'), +t.value); }
-        else if (t.dataset.f) {
+        if (t.dataset.f) {
           const raw = t.value.trim().replace(',', '.');
           const n = raw === '' ? null : Number(raw);
           s.d[t.dataset.f] = Number.isFinite(n) ? n : null;
@@ -194,6 +187,15 @@ export default async function view([tipo]) {
         paint();
         persist();
       });
+
+      awake = keepAwake((on) => {
+        const a = $(root, '#awake');
+        if (!a) return;
+        a.hidden = !on;
+        a.textContent = 'Lo schermo resta acceso durante la sessione.';
+      });
+
+      el.addEventListener('pointerdown', () => awake?.retry(), { passive: true });
 
       const tick = () => { $(root, '#timer').textContent = fmtTimer(Date.now() - s.startedAt); };
       tick();
@@ -214,7 +216,7 @@ export default async function view([tipo]) {
           const id = await saveTraining({
             playerId: pid, tipo, k, numero: info.n, fase: info.fase.id, data: todayIso(),
             durataMin: Math.min(180, Math.max(1, Math.round((Date.now() - s.startedAt) / 60000))),
-            concentrazione: s.conc, feeling: s.feel, metrica: metricOf(tipo, dati), dati,
+            metrica: metricOf(tipo, dati), dati,
           });
           clearDraft(pid, tipo);
           go(`/risultato/${id}`);
@@ -228,6 +230,6 @@ export default async function view([tipo]) {
       paint();
     },
 
-    unmount() { clearInterval(timer); },
+    unmount() { clearInterval(timer); awake?.release(); },
   };
 }

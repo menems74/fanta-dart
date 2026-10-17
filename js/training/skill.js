@@ -5,6 +5,7 @@ import { listTrainings, listTests, saveTest } from '../db.js';
 import { topbar } from '../ui.js';
 import { numRow, optsRow, rowAccess } from './inputs.js';
 import { loadDraft, saveDraft, clearDraft } from './store.js';
+import { keepAwake } from './awake.js';
 import { progress, skillScore, testTipoFor, CHECKOUT_TEST, fmt1 } from './calc.js';
 
 const ESITO = [{ v: 0, t: '✕', fail: true }, { v: 1, t: '✓' }];
@@ -19,6 +20,7 @@ export default async function view() {
   const s = {
     d: { scoring: null, doppie: null, bull: null, checkout: Array(CHECKOUT_TEST.length).fill(null), ...(draft?.d || {}) },
   };
+  let awake = null;
 
   return {
     html: html`
@@ -56,7 +58,6 @@ export default async function view() {
           const n = $(row, '.nval');
           n.textContent = v ?? '—';
           n.classList.toggle('blank', v == null);
-          $(row, '.nrange').value = v ?? 0;
         });
         $$(el, '.orow').forEach((row) => {
           const v = get(row);
@@ -77,13 +78,6 @@ export default async function view() {
         paint();
         persist();
       });
-      el.addEventListener('input', (e) => {
-        if (!e.target.classList.contains('nrange')) return;
-        set(e.target.closest('[data-arr]'), +e.target.value);
-        paint();
-        persist();
-      });
-
       $(root, '#done').addEventListener('click', async (e) => {
         const m = missing();
         if (m) { toast(`Mancano ${m} ${m === 1 ? 'voce' : 'voci'}`); return; }
@@ -104,7 +98,11 @@ export default async function view() {
           btn.disabled = false;
         }
       });
+      awake = keepAwake();
+      el.addEventListener('pointerdown', () => awake?.retry(), { passive: true });
       paint();
     },
+
+    unmount() { awake?.release(); },
   };
 }
