@@ -880,9 +880,6 @@ a.btn.big { text-decoration: none; }
 .opts button.fail.sel { background: var(--rd); border-color: var(--rd); color: #fff; }
 .opts.four button { font-size: 17px; }
 .orow.good { border-color: rgba(16, 185, 129, 0.55); }
-.legs { display: grid; gap: 12px; padding: 12px 14px; }
-.leg { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 10px; }
-.leg span { font-weight: 700; }
 .more { border: 1px solid var(--ln); border-radius: var(--radius-sm); padding: 12px 14px; background: var(--c1); }
 .more summary { cursor: pointer; font-weight: 700; color: var(--mu); }
 .more .two { margin-top: 12px; }
@@ -972,3 +969,32 @@ a.pill-btn { text-decoration: none; }
 .nctl { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .nbtn.wide { width: 56px; border-radius: 24px; font-size: 17px; font-weight: 700; }
 .durata { margin: 4px 0 12px; }
+
+/* ---------- Partita: contapunti 501 ---------- */
+.opts.wrap { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
+.opts button.two { height: auto; padding: 10px 4px; display: grid; gap: 2px; font-size: 17px; }
+.opts button.two small { font-size: 13px; font-weight: 500; opacity: .85; }
+.mscore { display: flex; justify-content: center; align-items: center; gap: 22px; }
+.mscore div { display: grid; text-align: center; line-height: 1.1; min-width: 90px; }
+.mscore small { color: var(--mu); font-size: 15px; }
+.mscore b { font-size: 46px; font-weight: 800; }
+.mscore span { font-size: 30px; color: var(--mu); }
+.mmain { text-align: center; display: grid; gap: 4px; }
+.mresto { font-size: 88px; font-weight: 800; line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+.mbot { display: flex; align-items: center; gap: 12px; padding: 10px 14px; }
+.mbot span { flex: 1; font-weight: 700; }
+.mbot b { font-size: 28px; font-variant-numeric: tabular-nums; }
+.mbot small { color: var(--mu); font-size: 14px; }
+.kdisp { height: 64px; border-radius: 14px; display: grid; place-items: center; font-size: 38px; font-weight: 800; background: var(--c1); border: 1px solid var(--ln-bright); font-variant-numeric: tabular-nums; }
+.kdisp.vuoto { font-size: 18px; font-weight: 500; color: var(--mu); }
+.kpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.kpad button { height: 64px; border-radius: 14px; font: inherit; font-size: 28px; font-weight: 700; color: var(--tx); cursor: pointer; border: 1px solid var(--ln); background: var(--c1); }
+.kpad button:active { transform: scale(.95); background: var(--c2); }
+.kpad button.ok { background: var(--gr); border-color: var(--gr); color: #03210e; }
+.mclose { display: grid; gap: 10px; border-color: var(--gd); }
+.mclose b { font-size: 22px; color: var(--gd); }
+.legend { display: grid; gap: 4px; text-align: center; margin: 12px 0; }
+.legend.win { border-color: var(--gr); }
+.legend b { font-size: 22px; }
+.actions.tight { margin-top: 12px; }
+.subsec { font-size: 16px; margin: 14px 0 8px; color: var(--mu); }

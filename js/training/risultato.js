@@ -4,6 +4,8 @@ import { getTraining, listTrainings, listTests, listAllTrainings, deleteTraining
 import { topbar, emptyState } from '../ui.js';
 import { badgeTile } from './ui.js';
 import { newBadges } from './badges.js';
+import { riepilogoLeg } from './scorer.js';
+import { livelloBot } from './bot.js';
 import { TIPO_INFO, sessionInfo } from './catalogo.js';
 import {
   headline, compareWith, comparable, scoringResult, doppieResult, checkoutResult, pressioneResult, fmt1,
@@ -11,7 +13,7 @@ import {
 } from './calc.js';
 
 function message(cmp) {
-  const d = (n) => String(Math.abs(n)).replace('.', ',');
+  const d = (n) => fmt1(Math.abs(n));
   switch (cmp.kind) {
     case 'pb': return { cls: 'pb', title: 'Nuovo record personale!', text: `+${d(cmp.delta)} rispetto all'ultima volta` };
     case 'up': return { cls: 'up', title: `+${d(cmp.delta)} rispetto all'ultima volta`, text: `Il tuo record resta ${fmt1(cmp.best)}: ci sei vicino.` };
@@ -51,9 +53,16 @@ function details(t) {
         ['Miglior checkout', d.bestCheckout], ['Miglior leg (frecce)', d.bestLeg],
         ['Visite 100-139', d.v100], ['Visite 140-179', d.v140], ['180', d.v180],
       ].filter(([, v]) => Number.isFinite(v));
-      return rows.length
-        ? html`<ul class="kv">${rows.map(([l, v]) => html`<li><span>${l}</span><b>${fmt1(v)}</b></li>`)}</ul>`
-        : html`<p class="muted small">Nessun dato aggiuntivo inserito.</p>`;
+      const opp = { solo: 'Da solo', bot: d.botLivello ? `Bot ${livelloBot(d.botLivello).nome}` : 'Bot', amico: 'Amico', club: 'Club', torneo: 'Torneo' }[d.avvTipo];
+      const legs = Array.isArray(d.legs) ? d.legs : [];
+      return html`
+        ${opp ? html`<p class="muted small">Avversario: <b>${opp}</b></p>` : ''}
+        ${rows.length ? html`<ul class="kv">${rows.map(([l, v]) => html`<li><span>${l}</span><b>${fmt1(v)}</b></li>`)}</ul>`
+          : html`<p class="muted small">Nessun dato aggiuntivo inserito.</p>`}
+        ${legs.length ? html`<h3 class="subsec">Leg per leg</h3><ul class="kv">${legs.map((l, i) => {
+          const r = riepilogoLeg(l);
+          return html`<li><span>Leg ${i + 1} · ${r.vinto ? 'vinto' : 'perso'}${r.vinto ? ` in ${r.frecce} frecce` : ''}</span><b>${r.media != null ? fmt1(r.media) : '—'}</b></li>`;
+        })}</ul>` : ''}`;
     }
   }
 }

@@ -57,6 +57,7 @@ export function headline(t) {
     case 'checkout': { const r = checkoutResult(d); return { big: String(r.riusciti), unit: '/ 16', sub: `${r.pct}% di chiusure` }; }
     case 'pressione': { const r = pressioneResult(d); return { big: String(r.riuscite), unit: '/ 12', sub: `miglior serie: ${r.best}` }; }
     default: {
+      if (d.avvTipo === 'solo') return { big: Number.isFinite(d.average) ? fmt1(d.average) : '—', unit: 'media', sub: `${d.io} ${d.io === 1 ? 'leg chiuso' : 'leg chiusi'} da solo` };
       const res = Number.isFinite(d.io) && Number.isFinite(d.avv) ? `${d.io} – ${d.avv}` : '—';
       return { big: res, unit: '', sub: Number.isFinite(d.average) ? `media ${String(d.average).replace('.', ',')}` : 'leg vinti' };
     }

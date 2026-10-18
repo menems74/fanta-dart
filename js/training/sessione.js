@@ -12,8 +12,8 @@ import {
 import { loadDraft, saveDraft, clearDraft } from './store.js';
 import { numRow, optsRow, rowAccess } from './inputs.js';
 import { keepAwake } from './awake.js';
+import partitaView from './partita.js';
 
-const AVV = [['bot', 'Bot'], ['amico', 'Amico'], ['club', 'Club'], ['torneo', 'Torneo']];
 const FRECCE = [{ v: 0, t: '✕', fail: true }, { v: 1, t: '1ª' }, { v: 2, t: '2ª' }, { v: 3, t: '3ª' }];
 const COLPI = [0, 1, 2, 3].map((v) => ({ v, t: String(v) }));
 // Voce obbligatoria di ogni tipo: la sessione si conclude solo quando e' completa.
@@ -26,17 +26,9 @@ function initial(tipo, info) {
     case 'doppie': return { bersagli: DOPPIE_BERSAGLI, hit: vuoto(4) };
     case 'checkout': return { outs: CHECKOUT_OUTS, frecce: vuoto(CHECKOUT_OUTS.length) };
     case 'pressione': return { bersagli: info.bersagli, soglia: info.soglia, hit: vuoto(VISITE_PRESSIONE) };
-    default: return {
-      avvTipo: null, io: 0, avv: 0, legsToWin: info.legsToWin, average: null, first9: null,
-      doppieChiuse: null, frecceDoppie: null, bestCheckout: null, bestLeg: null, v100: null, v140: null, v180: null,
-    };
+    default: return {};
   }
 }
-
-const numField = (f, label, ph, d) => html`
-  <label class="field">${label}
-    <input inputmode="decimal" data-f="${f}" placeholder="${ph}" value="${d[f] ?? ''}">
-  </label>`;
 
 function intro(tipo, info) {
   switch (tipo) {
@@ -44,7 +36,7 @@ function intro(tipo, info) {
     case 'doppie': return 'Venti frecce per ogni doppia: conta solo i colpi sulla doppia richiesta.';
     case 'checkout': return 'Un tentativo da 3 frecce per ogni valore. Segna a quale freccia hai chiuso in doppia, oppure la X se hai fallito.';
     case 'pressione': return `Dodici visite da 3 frecce. Una visita riesce se colpisci il bersaglio almeno ${info.soglia} ${info.soglia === 1 ? 'volta' : 'volte'}.`;
-    default: return `501 straight-in, double-out. Formato suggerito: meglio di ${info.legsToWin * 2 - 1} leg (vince chi arriva a ${info.legsToWin}).`;
+    default: return '';
   }
 }
 
@@ -59,27 +51,7 @@ function body(tipo, info, d) {
       ${d.outs.map((o, i) => optsRow('frecce', i, String(o), FRECCE))}
       <p class="muted small">Se hai chiuso, scegli la freccia (1ª, 2ª o 3ª). ✕ vuol dire che il tentativo è fallito.</p>`;
     case 'pressione': return html`${d.bersagli.map((b, i) => optsRow('hit', i, `Visita ${i + 1}`, COLPI, b))}`;
-    default: return html`
-      <div class="field">Avversario
-        <div class="opts four">${AVV.map(([v, t]) => html`<button type="button" data-avv="${v}">${t}</button>`)}</div>
-      </div>
-      <div class="field">Leg vinti
-        <div class="card legs">
-          <div class="leg" data-leg="io"><span>Io</span>
-            <button type="button" class="nbtn" data-d="-1" aria-label="Io: meno">${icon('minus')}</button><b class="nval">0</b>
-            <button type="button" class="nbtn" data-d="1" aria-label="Io: più">${icon('plus')}</button></div>
-          <div class="leg" data-leg="avv"><span>Avversario</span>
-            <button type="button" class="nbtn" data-d="-1" aria-label="Avversario: meno">${icon('minus')}</button><b class="nval">0</b>
-            <button type="button" class="nbtn" data-d="1" aria-label="Avversario: più">${icon('plus')}</button></div>
-        </div>
-      </div>
-      <div class="two">${numField('average', 'Media su 3 frecce', '45,2', d)}${numField('first9', 'Media first 9', '52,0', d)}</div>
-      <details class="more">
-        <summary>Altri dati (facoltativi)</summary>
-        <div class="two">${numField('doppieChiuse', 'Doppie chiuse', '3', d)}${numField('frecceDoppie', 'Frecce alle doppie', '14', d)}</div>
-        <div class="two">${numField('bestCheckout', 'Miglior checkout', '86', d)}${numField('bestLeg', 'Miglior leg (frecce)', '21', d)}</div>
-        <div class="two three">${numField('v100', 'Visite 100-139', '2', d)}${numField('v140', 'Visite 140-179', '1', d)}${numField('v180', '180', '0', d)}</div>
-      </details>`;
+    default: return html``;
   }
 }
 
@@ -92,6 +64,7 @@ export default async function view([tipo]) {
     return { html: html`${topbar(TIPO_INFO[tipo].label, { back: '/tipo' })}${emptyState('Tipo completato', 'Hai fatto tutte le 20 sessioni di questo tipo. Complimenti!')}` };
   }
   const info = sessionInfo(tipo, k);
+  if (tipo === 'partita') return partitaView({ pid, k, info });
   const sig = sigFromInfo(info);
   const precedenti = trainings.filter((t) => t.tipo === tipo && signatureOf(t) === sig && Number.isFinite(t.metrica));
   const record = tipo === 'partita' || !precedenti.length ? null : Math.max(...precedenti.map((t) => t.metrica));
@@ -133,7 +106,7 @@ export default async function view([tipo]) {
         if (tipo === 'doppie') { const r = doppieResult(s.d); return `${r.hit} / 80 · ${r.pct}%`; }
         if (tipo === 'checkout') return `Chiusi ${checkoutResult(s.d).riusciti} / ${s.d.frecce.length}`;
         if (tipo === 'pressione') { const r = pressioneResult(s.d); return `Riuscite ${r.riuscite} / 12 · serie ${r.best}`; }
-        return `Leg ${s.d.io} – ${s.d.avv}`;
+        return '';
       };
 
       const paint = () => {
@@ -148,8 +121,6 @@ export default async function view([tipo]) {
           $$(row, '.opts button').forEach((b) => b.classList.toggle('sel', v != null && +b.dataset.v === v));
           if (tipo === 'pressione') row.classList.toggle('good', v != null && v >= s.d.soglia);
         });
-        $$(el, '[data-avv]').forEach((b) => b.classList.toggle('sel', s.d.avvTipo === b.dataset.avv));
-        $$(el, '[data-leg]').forEach((row) => { $(row, '.nval').textContent = s.d[row.dataset.leg]; });
         $(root, '#sum').textContent = summary();
         const g = $(root, '#goal');
         if (record != null) {
@@ -163,39 +134,14 @@ export default async function view([tipo]) {
         const b = e.target.closest('button');
         if (!b) return;
         const row = b.closest('[data-arr]');
-        const leg = b.closest('[data-leg]');
-        if (leg && b.dataset.d) {
-          s.d[leg.dataset.leg] = Math.max(0, Math.min(info.legsToWin, s.d[leg.dataset.leg] + +b.dataset.d));
-        } else if (row && b.dataset.d) {
+        if (row && b.dataset.d) {
           set(row, (get(row) ?? 0) + +b.dataset.d);
         } else if (row && b.dataset.v !== undefined) {
           set(row, +b.dataset.v);
-        } else if (b.dataset.avv) {
-          s.d.avvTipo = s.d.avvTipo === b.dataset.avv ? null : b.dataset.avv;
         } else return;
         paint();
         persist();
       });
-
-      el.addEventListener('input', (e) => {
-        const t = e.target;
-        if (t.dataset.f) {
-          const raw = t.value.trim().replace(',', '.');
-          const n = raw === '' ? null : Number(raw);
-          s.d[t.dataset.f] = Number.isFinite(n) ? n : null;
-        } else return;
-        paint();
-        persist();
-      });
-
-      awake = keepAwake((on) => {
-        const a = $(root, '#awake');
-        if (!a) return;
-        a.hidden = !on;
-        a.textContent = 'Lo schermo resta acceso durante la sessione.';
-      });
-
-      el.addEventListener('pointerdown', () => awake?.retry(), { passive: true });
 
       const tick = () => { $(root, '#timer').textContent = fmtTimer(Date.now() - s.startedAt); };
       tick();
