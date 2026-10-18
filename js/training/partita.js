@@ -6,6 +6,7 @@ import { topbar } from '../ui.js';
 import { loadDraft, saveDraft, clearDraft } from './store.js';
 import { keepAwake } from './awake.js';
 import { tavolaDisponibile, tavolaStato, onDardo, onStato, collega } from './tavola.js';
+import { suona, suonoAttivo, impostaSuono, sbloccaAudio } from './suono.js';
 import { segmento, etichettaDardo } from '../dartboard.js';
 import { fmtTimer, fmt1, bestOf } from './calc.js';
 import {
@@ -13,6 +14,7 @@ import {
 } from './scorer.js';
 
 const MAX_LEG = 5;
+const PAUSA_MS = 4000; // dopo 3 frecce la tavola non registra: il tempo di togliere le freccette
 const dardoDaId = (id) => {
   const g = segmento(id);
   return g ? { id, v: g.valore, m: g.moltiplicatore } : { id: 'X', v: 0, m: 1 };
@@ -38,6 +40,8 @@ export default function partitaView({ pid, k, info, trainings }) {
   let timer = null;
   let awake = null;
   let offs = [];
+  let bloccoFino = 0;
+  let stopConto = () => {};
 
   const finita = () => s.legs.length >= s.nLegs;
   const frecceLeg = (ev) => ev.reduce((t, e) => t + e.d, 0);
@@ -66,9 +70,12 @@ export default function partitaView({ pid, k, info, trainings }) {
   // Aggiunge una freccia letta dalla tavola (o 'X' = fuori) e chiude il turno quando e' finito.
   const registraFreccia = (dardo) => {
     s.turno.push(dardo);
+    suona(dardo.id === 'X' ? 'fuori' : dardo.m > 1 || dardo.id === 'B25' ? 'speciale' : 'singolo');
     const r = restoDi(s.ev, 'i');
     const res = elaboraTurno(r, s.turno);
     if (!res.fine) return;
+    bloccoFino = Date.now() + PAUSA_MS;
+    setTimeout(() => suona('fine'), 350);
     s.ev.push({ w: 'i', s: res.s, d: res.d, r, esito: res.esito, dardi: s.turno.map((x) => x.id) });
     s.turno = [];
     if (res.esito === 'sballo') toast(`Sballato: resti a ${r}`);
@@ -107,11 +114,13 @@ export default function partitaView({ pid, k, info, trainings }) {
     </div>`;
   };
   const frecceTurno = () => html`
+    ${Date.now() < bloccoFino ? html`<p class="conto" id="conto">Togli le freccette… <b id="contoN">${Math.ceil((bloccoFino - Date.now()) / 1000)}</b></p>` : ''}
     <div class="dardi" aria-live="polite">${[0, 1, 2].map((i) => html`<span class="dardo ${s.turno[i] ? '' : 'vuoto'}">${s.turno[i] ? etichettaDardo(s.turno[i].id) : '–'}</span>`)}</div>
     <div class="actions tight">
       <button type="button" class="btn sec" id="fuori">Freccia fuori</button>
       <button type="button" class="btn sec" id="fineturno">Fine turno</button>
       <button type="button" class="btn sec" id="manuale">Inserisci a mano</button>
+      <button type="button" class="btn sec" id="suono">${suonoAttivo() ? 'Suono: sì' : 'Suono: no'}</button>
     </div>`;
   const setup = () => html`
     <section class="card sess-intro">
@@ -245,9 +254,10 @@ export default function partitaView({ pid, k, info, trainings }) {
           else if (d.k === 'back') s.input = s.input.slice(0, -1);
           else if (s.input.length < 3) s.input = s.input === '0' ? d.k : s.input + d.k;
         } else if (d.fr !== undefined) chiudiConFrecce(+d.fr);
+        else if (b.id === 'suono') impostaSuono(!suonoAttivo());
         else if (b.id === 'collega') { collegaTavola(); return; }
         else if (b.id === 'fuori') registraFreccia({ id: 'X', v: 0, m: 1 });
-        else if (b.id === 'fineturno') fineTurno();
+        else if (b.id === 'fineturno') { fineTurno(); contoAllaRovescia(); }
         else if (b.id === 'manuale') { s.turno = []; s.manuale = true; }
         else if (b.id === 'usatavola') s.manuale = false;
         else if (b.id === 'undo') annulla();
@@ -256,17 +266,31 @@ export default function partitaView({ pid, k, info, trainings }) {
         else return;
         persist();
         render();
+        contoAllaRovescia();
       });
 
       const collegaTavola = async () => {
         try { await collega(); } catch (err) { console.error(err); toast('Collegamento non riuscito: chiudi le altre app del Granboard e riprova'); }
         render();
       };
+      let contoTimer = null;
+      const contoAllaRovescia = () => {
+        clearInterval(contoTimer);
+        if (Date.now() >= bloccoFino) return;
+        contoTimer = setInterval(() => {
+          const resta = bloccoFino - Date.now();
+          if (resta <= 0) { clearInterval(contoTimer); render(); return; }
+          const n = $(root, '#contoN');
+          if (n) n.textContent = Math.ceil(resta / 1000);
+        }, 200);
+      };
+      stopConto = () => clearInterval(contoTimer);
       const daTavola = (d) => {
-        if (s.fase !== 'gioco' || s.pausa || s.closing || !conTavola()) return;
+        if (s.fase !== 'gioco' || s.pausa || s.closing || !conTavola() || Date.now() < bloccoFino) return;
         registraFreccia({ id: d.id, v: d.valore, m: d.moltiplicatore });
         persist();
         render();
+        contoAllaRovescia();
       };
       offs = [onDardo(daTavola), onStato(() => { if (s.fase !== 'gioco' || !s.closing) render(); })];
 
@@ -275,7 +299,7 @@ export default function partitaView({ pid, k, info, trainings }) {
         const a = $(root, '#awake');
         if (a) { a.hidden = !on; a.textContent = 'Lo schermo resta acceso durante la partita.'; }
       });
-      el.addEventListener('pointerdown', () => awake?.retry(), { passive: true });
+      el.addEventListener('pointerdown', () => { sbloccaAudio(); awake?.retry(); }, { passive: true });
 
       const tick = () => { $(root, '#timer').textContent = fmtTimer(Date.now() - s.startedAt); };
       tick();
@@ -283,6 +307,6 @@ export default function partitaView({ pid, k, info, trainings }) {
       render();
     },
 
-    unmount() { clearInterval(timer); offs.forEach((f) => f()); awake?.release(); },
+    unmount() { clearInterval(timer); stopConto(); offs.forEach((f) => f()); awake?.release(); },
   };
 }
