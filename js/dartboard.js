@@ -58,3 +58,12 @@ export function disegnoBersaglio({ done = new Set(), current = null } = {}) {
   }).join('');
   return `<svg class="dboard" viewBox="-116 -116 232 232" role="img" aria-label="Bersaglio">${paths}${numeri}</svg>`;
 }
+
+/** Come si mostra una freccia: 20 (singolo), T20, D16, 25, Bull. 'X' e' una freccia fuori dal bersaglio. */
+export function etichettaDardo(id) {
+  if (id === 'X') return '0';
+  if (id === 'B25') return '25';
+  if (id === 'B50') return 'Bull';
+  const m = /^([STD])(\d+)/.exec(id);
+  return m[1] === 'S' ? m[2] : `${m[1]}${m[2]}`;
+}

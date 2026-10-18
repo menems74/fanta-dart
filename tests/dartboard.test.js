@@ -38,3 +38,13 @@ test('disegno SVG: un percorso per ogni settore, evidenziati corrente e fatti', 
   assert.ok(!svg.includes('NaN'));
   assert.equal((svg.match(/<text /g) || []).length, 20);
 });
+
+import { etichettaDardo } from '../js/dartboard.js';
+test('etichette delle frecce', () => {
+  assert.equal(etichettaDardo('S19o'), '19');
+  assert.equal(etichettaDardo('T20'), 'T20');
+  assert.equal(etichettaDardo('D16'), 'D16');
+  assert.equal(etichettaDardo('B25'), '25');
+  assert.equal(etichettaDardo('B50'), 'Bull');
+  assert.equal(etichettaDardo('X'), '0');
+});

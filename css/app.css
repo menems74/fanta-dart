@@ -1010,3 +1010,9 @@ a.pill-btn { text-decoration: none; }
 .calname { font-size: 28px; font-weight: 800; color: var(--gd); }
 .actions.cols3 { grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .actions.cols3 .btn { height: 46px; font-size: 16px; padding: 0 4px; }
+
+/* Frecce lette dal Granboard */
+.dardi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.dardo { height: 72px; border-radius: 14px; display: grid; place-items: center; font-size: 32px; font-weight: 800; background: var(--c1); border: 1px solid var(--ln-bright); font-variant-numeric: tabular-nums; }
+.dardo.vuoto { color: var(--mu); font-weight: 500; }
+.tavola { margin: 12px 0; }

@@ -61,3 +61,26 @@ export function statistichePartita(legs, w = 'i') {
     v180: buone.filter((e) => e.s === 180).length,
   };
 }
+
+/**
+ * Elabora le frecce di un turno lette una per una. dardi: [{ v: valore, m: moltiplicatore }].
+ * Restituisce { fine: false, resto } finche' il turno continua, altrimenti { fine: true, esito, s, d, resto }:
+ * sballo (superi, lasci 1, o arrivi a 0 senza doppia) vale 0 punti e 3 frecce; chiusura in doppia (bull interno incluso) vale
+ * le frecce effettivamente usate; tre frecce senza chiudere chiudono il turno.
+ */
+export function elaboraTurno(resto, dardi) {
+  let r = resto;
+  let punti = 0;
+  for (let i = 0; i < dardi.length; i++) {
+    const nuovo = r - dardi[i].v;
+    if (nuovo < 0 || nuovo === 1) return { fine: true, esito: 'sballo', s: 0, d: 3, resto };
+    if (nuovo === 0) {
+      return dardi[i].m === 2
+        ? { fine: true, esito: 'chiuso', s: resto, d: i + 1, resto: 0 }
+        : { fine: true, esito: 'sballo', s: 0, d: 3, resto };
+    }
+    r = nuovo;
+    punti += dardi[i].v;
+  }
+  return dardi.length >= 3 ? { fine: true, esito: 'ok', s: punti, d: 3, resto: r } : { fine: false, resto: r };
+}
