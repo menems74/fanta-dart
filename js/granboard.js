@@ -3,11 +3,14 @@
 import { html, $ } from './util.js';
 import { topbar } from './ui.js';
 import { keepAwake } from './training/awake.js';
-import { hex, dec, ascii, shortUuid, parseUuids } from './granboard-utils.js';
+import { hex, dec, ascii, shortUuid, parseUuids, parseHexBytes } from './granboard-utils.js';
 
-// Web Bluetooth legge solo i servizi di cui conosce l'UUID in anticipo: questi sono quelli standard piu' comuni.
-const STANDARD = ['generic_access', 'generic_attribute', 'device_information', 'battery_service',
-  '6e400001-b5a3-f393-e0a9-e50e24dcca9e', 0xffe0, 0xfff0, 0xffd0];
+// Web Bluetooth legge solo i servizi di cui conosce l'UUID in anticipo.
+// Servizio della tavola trovato con nRF Connect: una caratteristica che invia notifiche (...1571) e una in scrittura (...1572).
+const SERVICE = '442f1570-8a00-9a28-cbe1-e1d4212d53eb';
+const NOTIFY = '442f1571-8a00-9a28-cbe1-e1d4212d53eb';
+const WRITE = '442f1572-8a00-9a28-cbe1-e1d4212d53eb';
+const STANDARD = ['generic_access', 'generic_attribute', 'device_information', 'battery_service', SERVICE];
 const KEY = 'fd.granboard.uuids';
 
 const read = () => { try { return localStorage.getItem(KEY) || ''; } catch { return ''; } };
@@ -20,17 +23,24 @@ root.innerHTML = html`
   ${topbar('Prova Granboard')}
   <section class="card sess-intro">
     <p>Pagina di prova: si collega alla tavola e mostra i messaggi che invia a ogni freccia.</p>
-    <p class="muted small">1. Chiudi l'app GranDarts e spegni il Bluetooth di altri dispositivi collegati alla tavola.<br>
+    <p class="muted small">1. Chiudi l'app GranDarts e nRF Connect: la tavola si collega a un solo dispositivo alla volta.<br>
       2. Accendi il Granboard.<br>
-      3. Incolla qui sotto gli UUID dei servizi (li trovi con l'app gratuita nRF Connect, vedi le istruzioni in chat).<br>
-      4. Premi «Collega la tavola» e scegli il Granboard dall'elenco.<br>
-      5. Tira una freccia, scrivi il settore colpito nel campo «Nota» e premi «Aggiungi».</p>
+      3. Premi «Collega la tavola» e scegli GRANBOARD dall'elenco.<br>
+      4. Tira una freccia, scrivi il settore colpito nel campo «Nota» e premi «Aggiungi».<br>
+      5. Quando hai provato qualche settore, premi «Copia il registro» e incollalo in chat.</p>
     ${supported ? '' : html`<p class="error">Questo browser non supporta Web Bluetooth: apri la pagina con Chrome su Android.</p>`}
   </section>
 
-  <label class="field">UUID dei servizi (uno per riga)
-    <textarea id="uuids" rows="3" placeholder="es. ffe0&#10;6e400001-b5a3-f393-e0a9-e50e24dcca9e">${read()}</textarea>
-  </label>
+  <details class="more">
+    <summary>Opzioni avanzate</summary>
+    <label class="field">UUID aggiuntivi dei servizi (facoltativo, uno per riga)
+      <textarea id="uuids" rows="2">${read()}</textarea>
+    </label>
+    <div class="two">
+      <label class="field">Invia alla tavola (byte in esadecimale)<input id="hexin" placeholder="es. 01 ff" autocomplete="off"></label>
+      <button type="button" class="btn sec" id="send" style="align-self:end" disabled>Invia</button>
+    </div>
+  </details>
   <div class="actions tight">
     <button type="button" class="btn primary" id="connect" ${supported ? '' : 'disabled'}>Collega la tavola</button>
     <button type="button" class="btn sec" id="disconnect" hidden>Scollega</button>
@@ -58,6 +68,7 @@ const out = (txt) => {
 
 let device = null;
 let awake = null;
+let writeChar = null;
 
 const onValue = (ev) => {
   const c = ev.target;
@@ -78,6 +89,8 @@ async function connect() {
   out(`Dispositivo: ${device.name || '(senza nome)'}`);
   device.addEventListener('gattserverdisconnected', () => {
     out('Tavola scollegata.');
+    writeChar = null;
+    $(root, '#send').disabled = true;
     $(root, '#disconnect').hidden = true;
     $(root, '#connect').hidden = false;
     awake?.release();
@@ -95,7 +108,8 @@ async function connect() {
       for (const c of chars) {
         const p = c.properties;
         const prop = ['read', 'write', 'writeWithoutResponse', 'notify', 'indicate'].filter((k) => p[k]).join(', ');
-        out(`  caratteristica ${shortUuid(c.uuid)} (${prop || 'nessuna proprieta'})`);
+        out(`  caratteristica ${shortUuid(c.uuid)} (${prop || 'nessuna proprieta'})${c.uuid === NOTIFY ? '  <- notifiche' : c.uuid === WRITE ? '  <- scrittura' : ''}`);
+        if (c.uuid === WRITE) { writeChar = c; $(root, '#send').disabled = false; }
         if (p.read) {
           try { const v = await c.readValue(); out(`    lettura: hex[${hex(v)}] txt[${ascii(v)}]`); } catch (e) { out(`    lettura fallita: ${e.message}`); }
         }
@@ -124,6 +138,16 @@ async function connect() {
 
 $(root, '#connect').addEventListener('click', connect);
 $(root, '#disconnect').addEventListener('click', () => device?.gatt?.disconnect());
+$(root, '#send').addEventListener('click', async () => {
+  const bytes = parseHexBytes($(root, '#hexin').value);
+  if (!bytes) { out('Byte non validi: usa coppie di cifre esadecimali, per esempio 01 ff.'); return; }
+  try {
+    if (writeChar.properties.writeWithoutResponse) await writeChar.writeValueWithoutResponse(bytes);
+    else await writeChar.writeValue(bytes);
+    out(`>>> INVIATO hex[${hex(new DataView(bytes.buffer))}]`);
+  } catch (e) { out(`Invio fallito: ${e.name}: ${e.message}`); }
+});
+$(root, '#nota').addEventListener('keydown', (e) => { if (e.key === 'Enter') $(root, '#addnota').click(); });
 $(root, '#addnota').addEventListener('click', () => {
   const n = $(root, '#nota');
   if (n.value.trim()) { out(`>>> NOTA: ${n.value.trim()}`); n.value = ''; }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hex, dec, ascii, shortUuid, parseUuids } from '../js/granboard-utils.js';
+import { hex, dec, ascii, shortUuid, parseUuids, parseHexBytes } from '../js/granboard-utils.js';
 
 const dv = (...bytes) => new DataView(new Uint8Array(bytes).buffer);
 
@@ -25,4 +25,13 @@ test('elenco di UUID scritto a mano', () => {
   assert.deepEqual(r.ko, ['xyz', '12345']);
   assert.deepEqual(parseUuids('   '), { ok: [], ko: [] });
   assert.deepEqual(parseUuids('12345678').ok, [0x12345678]);
+});
+
+test('byte scritti a mano', () => {
+  assert.deepEqual([...parseHexBytes('01 ff 0A')], [1, 255, 10]);
+  assert.deepEqual([...parseHexBytes('0x01,0xFF')], [1, 255]);
+  assert.deepEqual([...parseHexBytes('01ff0a')], [1, 255, 10]);
+  assert.equal(parseHexBytes(''), null);
+  assert.equal(parseHexBytes('abc'), null);
+  assert.equal(parseHexBytes('zz'), null);
 });
