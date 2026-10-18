@@ -997,3 +997,6 @@ a.pill-btn { text-decoration: none; }
 .mfrecce.over { color: var(--gd); }
 .legend.rec { border-color: var(--gd); box-shadow: 0 0 22px rgba(251, 191, 36, 0.2); }
 .legend.rec b { color: var(--gd); }
+
+/* ---------- Pagina di prova Granboard ---------- */
+.glog { margin: 0; padding: 12px; max-height: 46vh; overflow: auto; border-radius: var(--radius-sm); border: 1px solid var(--ln); background: rgba(6, 13, 26, 0.85); color: var(--tx); font: 13px/1.5 ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-all; }
