@@ -46,9 +46,6 @@ const PRESSIONE = {
 // Colpi minimi su 3 frecce perche' una visita riesca (1 se non indicato).
 const SOGLIA = { 54: 3, 79: 2, 89: 2, 99: 2 };
 
-/** Leg da vincere in una partita: meglio di 3, 5, 7 o 9 a seconda della fase. */
-export const legsToWin = (n) => (n <= 25 ? 2 : n <= 50 ? 3 : n <= 75 ? 4 : 5);
-
 export function sessionInfo(tipo, k) {
   const n = numeroOf(tipo, k);
   const info = { tipo, k, n, fase: faseOf(n) };
@@ -58,15 +55,18 @@ export function sessionInfo(tipo, k) {
     info.bersagli = Array.from({ length: VISITE_PRESSIONE }, (_, i) => base[i % 3]);
     info.soglia = SOGLIA[n] || 1;
   }
-  if (tipo === 'partita') info.legsToWin = legsToWin(n);
   return info;
 }
 
 export const sigFromInfo = (info) =>
-  info.tipo === 'pressione' ? `${info.base.join('-')}|${info.soglia}` : info.tipo;
+  info.tipo === 'pressione' ? `${info.base.join('-')}|${info.soglia}` : info.tipo === 'partita' ? 'partita:frecce' : info.tipo;
 
 /** Due sessioni sono confrontabili solo se hanno le stesse regole (la pressione cambia bersagli e soglia). */
-export const signatureOf = (t) =>
-  t.tipo === 'pressione' && t.dati?.bersagli
-    ? `${t.dati.bersagli.slice(0, 3).join('-')}|${t.dati.soglia}`
-    : t.tipo;
+export const signatureOf = (t) => {
+  if (t.tipo === 'pressione' && t.dati?.bersagli) return `${t.dati.bersagli.slice(0, 3).join('-')}|${t.dati.soglia}`;
+  if (t.tipo === 'partita') return t.dati?.versione === 2 ? 'partita:frecce' : 'partita';
+  return t.tipo;
+};
+
+/** Per la partita (dalla versione 2) il dato e' il numero di frecce per chiudere un 501: meno e' meglio. */
+export const meglioSeBasso = (t) => t.tipo === 'partita' && t.dati?.versione === 2;

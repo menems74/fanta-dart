@@ -3,7 +3,7 @@ import { session } from '../auth.js';
 import { listTrainings } from '../db.js';
 import { topbar } from '../ui.js';
 import { TIPI, TIPO_INFO, numeroOf, faseOf } from './catalogo.js';
-import { nextK, fmt1, nextSaturday, challengeFor } from './calc.js';
+import { nextK, fmt1, nextSaturday, challengeFor, bestOf } from './calc.js';
 import { loadDraft } from './store.js';
 
 export default async function view() {
@@ -13,12 +13,11 @@ export default async function view() {
   const rows = TIPI.map((tipo) => {
     const k = nextK(trainings, tipo);
     const mine = trainings.filter((t) => t.tipo === tipo);
-    const best = tipo === 'pressione' ? null
-      : mine.map((t) => t.metrica).filter(Number.isFinite).reduce((m, v) => Math.max(m, v), -Infinity);
+    const best = bestOf(trainings, tipo);
     return {
       tipo, k, done: mine.length,
       n: k ? numeroOf(tipo, k) : null,
-      best: Number.isFinite(best) ? best : null,
+      best,
       draft: !!loadDraft(pid, tipo),
     };
   });
@@ -38,7 +37,7 @@ export default async function view() {
             <div class="grow">
               <strong>${info.label} ${r.draft ? html`<span class="tag gold">In corso</span>` : r.tipo === sfida ? html`<span class="tag gold">Sfida di oggi</span>` : r.tipo === rec ? html`<span class="tag w">Consigliata</span>` : ''}</strong>
               <span class="muted small">${r.k ? `Sessione ${r.n} · ${faseOf(r.n).nome}` : 'Tutte e 20 completate'}</span>
-              <span class="muted small">${info.desc}${r.best != null ? ` · record ${fmt1(r.best)}` : ''}</span>
+              <span class="muted small">${info.desc}${r.best != null ? ` · record ${fmt1(r.best)}${r.tipo === 'partita' ? ' frecce' : ''}` : ''}</span>
             </div>
             <span class="tipo-side">${r.k ? icon('chevron', 22) : icon('check', 22)}</span>`;
           return r.k

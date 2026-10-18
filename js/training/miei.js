@@ -3,9 +3,9 @@ import { session } from '../auth.js';
 import { listTrainings, listTests } from '../db.js';
 import { topbar, emptyState } from '../ui.js';
 import { toApp, spark, badgeTile } from './ui.js';
-import { TIPI, TIPO_INFO, FASI, isCheckpoint, SESSIONI_PER_TIPO } from './catalogo.js';
+import { TIPI, TIPO_INFO, FASI, isCheckpoint, SESSIONI_PER_TIPO, meglioSeBasso } from './catalogo.js';
 import {
-  doneNumbers, progress, fmt1, headline, pairsOf, doppieMedie, checkoutFails, skillScore,
+  doneNumbers, progress, fmt1, headline, pairsOf, doppieMedie, checkoutFails, skillScore, bestOf,
 } from './calc.js';
 import { BADGES, earnedBadges } from './badges.js';
 
@@ -30,6 +30,7 @@ export default async function view() {
   const got = BADGES.filter((b) => earned.has(b.id));
   const locked = BADGES.filter((b) => !earned.has(b.id));
   const confronti = pairsOf(trainings).slice(0, 4);
+  const migl = (c) => (meglioSeBasso(c.b) ? -c.delta : c.delta); // positivo = migliorato
   const doppie = doppieMedie(trainings);
   const fails = checkoutFails(trainings);
 
@@ -37,8 +38,7 @@ export default async function view() {
     const mine = trainings.filter((t) => t.tipo === tipo);
     const crono = [...mine].sort((a, b) => (a.creataIl || 0) - (b.creataIl || 0));
     const vals = crono.map((t) => t.metrica);
-    const fin = vals.filter(Number.isFinite);
-    return { tipo, n: mine.length, vals, best: fin.length && tipo !== 'pressione' ? Math.max(...fin) : null };
+    return { tipo, n: mine.length, vals, best: bestOf(trainings, tipo) };
   });
 
   return {
@@ -75,7 +75,7 @@ export default async function view() {
           <li class="card row">
             <div class="grow"><strong>${TIPO_INFO[c.tipo].label}</strong>
               <span class="muted small">Sessione ${c.a.numero} → ${c.b.numero}</span></div>
-            <b class="tres ${c.delta > 0 ? 'up' : c.delta < 0 ? 'down' : ''}">${fmt1(c.a.metrica)} → ${fmt1(c.b.metrica)}
+            <b class="tres ${migl(c) > 0 ? 'up' : migl(c) < 0 ? 'down' : ''}">${fmt1(c.a.metrica)} → ${fmt1(c.b.metrica)}
               <small>${c.delta > 0 ? '+' : ''}${fmt1(c.delta)}</small></b>
           </li>`)}</ul>` : ''}
 
@@ -93,7 +93,7 @@ export default async function view() {
             <div class="row">
               <span class="badge-ico">${icon(TIPO_INFO[p.tipo].icon, 24)}</span>
               <div class="grow"><strong>${TIPO_INFO[p.tipo].label}</strong>
-                <span class="muted small">${p.n}/${SESSIONI_PER_TIPO} sessioni${p.best != null ? ` · record ${fmt1(p.best)}` : ''}</span></div>
+                <span class="muted small">${p.n}/${SESSIONI_PER_TIPO} sessioni${p.best != null ? ` · record ${fmt1(p.best)}${p.tipo === 'partita' ? ' frecce' : ''}` : ''}</span></div>
               ${p.tipo === 'pressione' ? '' : spark(p.vals)}
             </div>
           </li>`)}

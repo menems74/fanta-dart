@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  TIPI, numeroOf, faseOf, sessionInfo, legsToWin, signatureOf, isCheckpoint,
+  TIPI, numeroOf, faseOf, sessionInfo, signatureOf, isCheckpoint, sigFromInfo, meglioSeBasso,
 } from '../js/training/catalogo.js';
 import {
   scoringResult, doppieResult, checkoutResult, pressioneResult, metricOf, compareWith,
   nextK, progress, weekStart, sessionsThisWeek, comparable, fmtTimer,
   weeklyStreak, longestWeekStreak, recordsOf, pairsOf, doppieMedie, checkoutFails,
-  skillScore, skillQuotas, testDue, testTipoFor,
+  skillScore, skillQuotas, testDue, testTipoFor, bestOf,
   saturdayOf, challengeFor, lastSaturday, nextSaturday, challengeResults, sfideDelSabato, isChallengeSession, teamRows,
 } from '../js/training/calc.js';
 import { BADGES, earnedBadges, newBadges } from '../js/training/badges.js';
@@ -45,14 +45,6 @@ test('pressione: bersagli e soglia dal catalogo, tutte le 20 sessioni definite',
   assert.equal(sessionInfo('pressione', 1).soglia, 1);
 });
 
-test('partita: formato in base alla fase', () => {
-  assert.equal(legsToWin(5), 2);
-  assert.equal(legsToWin(30), 3);
-  assert.equal(legsToWin(65), 4);
-  assert.equal(legsToWin(95), 5);
-  assert.equal(sessionInfo('partita', 6).legsToWin, 3);
-});
-
 test('scoring e doppie', () => {
   const s = scoringResult({ serie: [20, 18, 25, 30, 12, 15, 22, 19, 21, 17], t20: 31 });
   assert.equal(s.total, 199);
@@ -82,8 +74,8 @@ test('pressione: riuscite e miglior serie rispettano la soglia', () => {
 
 test('metrica principale per tipo', () => {
   assert.equal(metricOf('scoring', { serie: [10, 10] }), 20);
-  assert.equal(metricOf('partita', { average: 52.4 }), 52.4);
-  assert.equal(metricOf('partita', { average: null }), null);
+  assert.equal(metricOf('partita', { bestLeg: 24, average: 52.4 }), 24);
+  assert.equal(metricOf('partita', { bestLeg: null }), null);
 });
 
 test('confronto: primo risultato, record, miglioramento e calo', () => {
@@ -306,4 +298,41 @@ test('riepilogo di squadra: ordine per settimana, poi totale', () => {
   assert.equal(rows[1].totale, 3);
   assert.equal(rows[0].skill, 100);
   assert.equal(rows[1].skill, null);
+});
+
+test('partita: meno frecce e meglio, record e confronto', () => {
+  const P2 = (k, metrica) => ({ id: `p${k}`, tipo: 'partita', k, metrica, data: '2026-10-01', creataIl: k, dati: { versione: 2 } });
+  assert.ok(meglioSeBasso(P2(1, 30)));
+  assert.ok(!meglioSeBasso({ tipo: 'scoring', dati: {} }));
+  assert.ok(!meglioSeBasso({ tipo: 'partita', dati: {} })); // vecchio formato (media)
+  // confronto con "lower": 24 frecce battono 27
+  const pb = compareWith({ metrica: 24 }, [{ metrica: 27 }, { metrica: 30 }], true);
+  assert.equal(pb.kind, 'pb');
+  assert.equal(pb.best, 27);
+  assert.equal(compareWith({ metrica: 28 }, [{ metrica: 30 }, { metrica: 27 }], true).kind, 'up');
+  assert.equal(compareWith({ metrica: 33 }, [{ metrica: 30 }, { metrica: 27 }], true).kind, 'down');
+  assert.equal(compareWith({ metrica: 30 }, [{ metrica: 30 }], true).kind, 'same');
+  // record migliore = minimo; il vecchio formato non conta
+  const vecchio = { id: 'v', tipo: 'partita', k: 9, metrica: 47, creataIl: 0, data: '2026-09-01', dati: {} };
+  assert.equal(bestOf([P2(1, 30), P2(2, 24), P2(3, 27), vecchio], 'partita'), 24);
+  assert.equal(bestOf([vecchio], 'partita'), null);
+  assert.equal(bestOf([T('scoring', 1, 150), T('scoring', 2, 170)], 'scoring'), 170);
+  assert.equal(bestOf([], 'doppie'), null);
+  assert.equal(bestOf([T('pressione', 1, 9)], 'pressione'), null);
+  // i record in senso inverso e le firme dei due formati
+  assert.equal(recordsOf([P2(1, 30), P2(2, 27), P2(3, 29)]), 1);
+  assert.equal(recordsOf([P2(1, 30), P2(2, 33)]), 0);
+  assert.equal(signatureOf(P2(1, 30)), 'partita:frecce');
+  assert.equal(signatureOf(vecchio), 'partita');
+  assert.equal(sigFromInfo(sessionInfo('partita', 1)), 'partita:frecce');
+  assert.ok(!comparable(P2(1, 30), vecchio));
+});
+
+test('badge: chiusura rapida solo con il nuovo formato', () => {
+  const nuovo = { id: 'a', tipo: 'partita', k: 1, numero: 5, metrica: 28, data: '2026-10-01', creataIl: 1, dati: { versione: 2 } };
+  const lento = { ...nuovo, id: 'b', metrica: 40 };
+  const vecchio = { ...nuovo, id: 'c', metrica: 20, dati: {} };
+  assert.ok(earnedBadges([nuovo], []).has('pa30'));
+  assert.ok(!earnedBadges([lento], []).has('pa30'));
+  assert.ok(!earnedBadges([vecchio], []).has('pa30'));
 });

@@ -25,7 +25,7 @@ export const BADGES = [
   { id: 'db40', nome: 'Doppie solide', desc: 'Doppie: almeno 40 colpi su 80', icon: 'crosshair', ok: (c) => best(c.trainings, 'doppie') >= 40 },
   { id: 'co10', nome: 'Chiusure sicure', desc: 'Checkout: almeno 10 su 16', icon: 'flag', ok: (c) => best(c.trainings, 'checkout') >= 10 },
   { id: 'pr12', nome: 'Pressione perfetta', desc: 'Pressione: 12 visite su 12', icon: 'flame', ok: (c) => best(c.trainings, 'pressione') >= 12 },
-  { id: 'pa50', nome: 'Media 50', desc: 'Partita: media di almeno 50', icon: 'trophy', ok: (c) => best(c.trainings, 'partita') >= 50 },
+  { id: 'pa30', nome: 'Chiusura rapida', desc: 'Partita: chiudi un 501 in 30 frecce o meno', icon: 'trophy', ok: (c) => c.trainings.some((t) => t.tipo === 'partita' && t.dati?.versione === 2 && t.metrica <= 30) },
   { id: 'sett4', nome: 'Quattro settimane', desc: '4 settimane di fila con 2 sessioni', icon: 'calendar', ok: (c) => c.streak >= 4 },
   { id: 'sfida1', nome: 'Prima sfida', desc: 'Fai la sfida del sabato', icon: 'flag', ok: (c) => c.sfide.partecipate >= 1 },
   { id: 'sfidarec', nome: 'Sabato da record', desc: 'Batti il tuo record nella sfida del sabato', icon: 'trophy', ok: (c) => c.sfide.record >= 1 },

@@ -25,11 +25,10 @@ export function applicaVisita(resto, s) {
 }
 
 // ---- un leg e' un elenco di eventi { w: 'i' | 'b', s, d, r, esito } ----
-// w: chi ha tirato (io / bot), s: punti validi (0 se sballo), d: frecce usate, r: resto prima della visita.
+// w: chi ha tirato (sempre 'i', io), s: punti validi (0 se sballo), d: frecce usate, r: resto prima della visita.
 const sum = (a) => a.reduce((t, v) => t + v, 0);
 export const restoDi = (ev, w) => ev.filter((e) => e.w === w).reduce((r, e) => (e.esito === 'sballo' ? r : r - e.s), LEG_START);
 export const vincitore = (ev) => ev.find((e) => e.esito === 'chiuso')?.w ?? null;
-export const prossimoTurno = (ev, starter, altro) => (ev.length % 2 === 0 ? starter : altro);
 const round1 = (v) => Math.round(v * 10) / 10;
 
 /** Riepilogo di un leg dal mio punto di vista. */

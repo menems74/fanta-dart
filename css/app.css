@@ -972,8 +972,6 @@ a.pill-btn { text-decoration: none; }
 
 /* ---------- Partita: contapunti 501 ---------- */
 .opts.wrap { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
-.opts button.two { height: auto; padding: 10px 4px; display: grid; gap: 2px; font-size: 17px; }
-.opts button.two small { font-size: 13px; font-weight: 500; opacity: .85; }
 .mscore { display: flex; justify-content: center; align-items: center; gap: 22px; }
 .mscore div { display: grid; text-align: center; line-height: 1.1; min-width: 90px; }
 .mscore small { color: var(--mu); font-size: 15px; }
@@ -981,10 +979,6 @@ a.pill-btn { text-decoration: none; }
 .mscore span { font-size: 30px; color: var(--mu); }
 .mmain { text-align: center; display: grid; gap: 4px; }
 .mresto { font-size: 88px; font-weight: 800; line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
-.mbot { display: flex; align-items: center; gap: 12px; padding: 10px 14px; }
-.mbot span { flex: 1; font-weight: 700; }
-.mbot b { font-size: 28px; font-variant-numeric: tabular-nums; }
-.mbot small { color: var(--mu); font-size: 14px; }
 .kdisp { height: 64px; border-radius: 14px; display: grid; place-items: center; font-size: 38px; font-weight: 800; background: var(--c1); border: 1px solid var(--ln-bright); font-variant-numeric: tabular-nums; }
 .kdisp.vuoto { font-size: 18px; font-weight: 500; color: var(--mu); }
 .kpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -998,3 +992,8 @@ a.pill-btn { text-decoration: none; }
 .legend b { font-size: 22px; }
 .actions.tight { margin-top: 12px; }
 .subsec { font-size: 16px; margin: 14px 0 8px; color: var(--mu); }
+.mfrecce { font-size: 17px; font-weight: 600; color: var(--mu); }
+.mfrecce b { color: var(--tx); font-size: 20px; }
+.mfrecce.over { color: var(--gd); }
+.legend.rec { border-color: var(--gd); box-shadow: 0 0 22px rgba(251, 191, 36, 0.2); }
+.legend.rec b { color: var(--gd); }

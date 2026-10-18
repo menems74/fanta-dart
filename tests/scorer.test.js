@@ -2,16 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   visitaValida, chiudibileIn, frecceChiusura, applicaVisita, restoDi, vincitore,
-  riepilogoLeg, statistichePartita, prossimoTurno, LEG_START,
+  riepilogoLeg, statistichePartita, LEG_START,
 } from '../js/training/scorer.js';
-import { visitaBot, livelloBot, BOT_LIVELLI } from '../js/training/bot.js';
-
-const mulberry32 = (seed) => () => {
-  seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
-  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-};
 
 test('punteggi possibili con tre frecce', () => {
   for (const s of [0, 26, 60, 100, 171 - 1, 180]) assert.ok(visitaValida(s), `${s}`);
@@ -50,8 +42,6 @@ test('resto e vincitore dal registro del leg', () => {
   assert.equal(restoDi(leg, 'b'), 501 - 105);
   assert.equal(vincitore(leg), null);
   assert.equal(vincitore([...leg, ev('i', 40, 2, 40, 'chiuso')]), 'i');
-  assert.equal(prossimoTurno([], 'i', 'b'), 'i');
-  assert.equal(prossimoTurno([ev('i', 1, 3, 501)], 'i', 'b'), 'b');
   assert.equal(LEG_START, 501);
 });
 
@@ -82,45 +72,4 @@ test('leg perso a mano: non conta come miglior leg', () => {
   assert.equal(st.bestLeg, null);
   assert.equal(st.media, 60);
   assert.equal(statistichePartita([]).media, null);
-});
-
-test('bot: un leg termina sempre e non sballa mai', () => {
-  for (const liv of BOT_LIVELLI) {
-    const rng = mulberry32(liv.media);
-    for (let leg = 0; leg < 60; leg++) {
-      let resto = 501;
-      let visite = 0;
-      while (resto > 0 && visite < 80) {
-        const v = visitaBot(resto, liv.media, rng);
-        const r = applicaVisita(resto, v.s);
-        if (v.esito === 'chiuso') { assert.equal(r.esito, 'chiuso'); assert.ok(frecceChiusura(resto).includes(v.d)); resto = 0; }
-        else { assert.notEqual(r.esito, 'sballo', `resto ${resto} s ${v.s}`); assert.ok(r.resto >= 2); resto = r.resto; }
-        visite++;
-      }
-      assert.equal(resto, 0, `livello ${liv.id}: leg non finito`);
-    }
-  }
-});
-
-test('bot: la media segue il livello e i livelli sono ordinati', () => {
-  const mediaDi = (livello) => {
-    const rng = mulberry32(7);
-    let punti = 0;
-    let frecce = 0;
-    for (let leg = 0; leg < 300; leg++) {
-      let resto = 501;
-      while (resto > 0) {
-        const v = visitaBot(resto, livello.media, rng);
-        punti += v.s;
-        frecce += v.d;
-        resto = v.esito === 'chiuso' ? 0 : resto - v.s;
-      }
-    }
-    return (punti / frecce) * 3;
-  };
-  const medie = BOT_LIVELLI.map(mediaDi);
-  for (let i = 1; i < medie.length; i++) assert.ok(medie[i] > medie[i - 1], medie.join(', '));
-  BOT_LIVELLI.forEach((l, i) => assert.ok(Math.abs(medie[i] - l.media) < l.media * 0.3, `${l.id}: ${medie[i]}`));
-  assert.equal(livelloBot('esperto').media, 60);
-  assert.equal(livelloBot('boh').id, 'medio');
 });

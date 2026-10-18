@@ -64,7 +64,7 @@ export default async function view([tipo]) {
     return { html: html`${topbar(TIPO_INFO[tipo].label, { back: '/tipo' })}${emptyState('Tipo completato', 'Hai fatto tutte le 20 sessioni di questo tipo. Complimenti!')}` };
   }
   const info = sessionInfo(tipo, k);
-  if (tipo === 'partita') return partitaView({ pid, k, info });
+  if (tipo === 'partita') return partitaView({ pid, k, info, trainings });
   const sig = sigFromInfo(info);
   const precedenti = trainings.filter((t) => t.tipo === tipo && signatureOf(t) === sig && Number.isFinite(t.metrica));
   const record = tipo === 'partita' || !precedenti.length ? null : Math.max(...precedenti.map((t) => t.metrica));

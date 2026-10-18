@@ -1,5 +1,5 @@
 /** Calcoli puri sulle sessioni di allenamento (nessuna dipendenza dal browser). */
-import { TIPI, SESSIONI_PER_TIPO, TOTALE_SESSIONI, faseOf, signatureOf, DOPPIE_BERSAGLI } from './catalogo.js';
+import { TIPI, SESSIONI_PER_TIPO, TOTALE_SESSIONI, faseOf, signatureOf, DOPPIE_BERSAGLI, meglioSeBasso } from './catalogo.js';
 
 const num = (v) => (Number.isFinite(v) ? v : 0);
 export const sum = (a) => a.reduce((s, v) => s + num(v), 0);
@@ -43,7 +43,7 @@ export function metricOf(tipo, d) {
     case 'doppie': return doppieResult(d).hit;
     case 'checkout': return checkoutResult(d).riusciti;
     case 'pressione': return pressioneResult(d).riuscite;
-    case 'partita': return Number.isFinite(d.average) ? d.average : null;
+    case 'partita': return Number.isFinite(d.bestLeg) ? d.bestLeg : null;
     default: return null;
   }
 }
@@ -57,6 +57,12 @@ export function headline(t) {
     case 'checkout': { const r = checkoutResult(d); return { big: String(r.riusciti), unit: '/ 16', sub: `${r.pct}% di chiusure` }; }
     case 'pressione': { const r = pressioneResult(d); return { big: String(r.riuscite), unit: '/ 12', sub: `miglior serie: ${r.best}` }; }
     default: {
+      if (d.versione === 2) {
+        return {
+          big: Number.isFinite(d.bestLeg) ? String(d.bestLeg) : '—', unit: 'frecce',
+          sub: `miglior leg · ${d.io} ${d.io === 1 ? 'leg' : 'leg'}${Number.isFinite(d.average) ? ` · media ${fmt1(d.average)}` : ''}`,
+        };
+      }
       if (d.avvTipo === 'solo') return { big: Number.isFinite(d.average) ? fmt1(d.average) : '—', unit: 'media', sub: `${d.io} ${d.io === 1 ? 'leg chiuso' : 'leg chiusi'} da solo` };
       const res = Number.isFinite(d.io) && Number.isFinite(d.avv) ? `${d.io} – ${d.avv}` : '—';
       return { big: res, unit: '', sub: Number.isFinite(d.average) ? `media ${String(d.average).replace('.', ',')}` : 'leg vinti' };
@@ -64,16 +70,27 @@ export function headline(t) {
   }
 }
 
-/** previous: sessioni confrontabili dello stesso tipo, dalla piu' recente. */
-export function compareWith(current, previous) {
+/** previous: sessioni confrontabili dello stesso tipo, dalla piu' recente. lower: meno e' meglio (frecce per chiudere). */
+export function compareWith(current, previous, lower = false) {
   const m = current.metrica;
   if (!Number.isFinite(m)) return { kind: 'none' };
   const vals = previous.map((p) => p.metrica).filter(Number.isFinite);
   if (!vals.length) return { kind: 'first' };
+  const migliore = (a, b) => (lower ? a < b : a > b);
   const last = vals[0];
-  const best = Math.max(...vals);
-  if (m > best) return { kind: 'pb', delta: m - last, last, best };
-  return { kind: m > last ? 'up' : m === last ? 'same' : 'down', delta: m - last, last, best };
+  const best = lower ? Math.min(...vals) : Math.max(...vals);
+  if (migliore(m, best)) return { kind: 'pb', delta: m - last, last, best };
+  return { kind: migliore(m, last) ? 'up' : m === last ? 'same' : 'down', delta: m - last, last, best };
+}
+
+/** Il risultato da battere per un tipo: massimo, oppure (partita) il minimo di frecce. Null se non c'e'. */
+export function bestOf(trainings, tipo) {
+  if (tipo === 'pressione') return null;
+  const v = trainings
+    .filter((t) => t.tipo === tipo && Number.isFinite(t.metrica) && (tipo !== 'partita' || t.dati?.versione === 2))
+    .map((t) => t.metrica);
+  if (!v.length) return null;
+  return tipo === 'partita' ? Math.min(...v) : Math.max(...v);
 }
 
 export const comparable = (a, b) => a.tipo === b.tipo && signatureOf(a) === signatureOf(b);
@@ -152,7 +169,8 @@ export function recordsOf(trainings) {
   crono.forEach((t, i) => {
     if (!Number.isFinite(t.metrica)) return;
     const prev = crono.slice(0, i).filter((p) => comparable(t, p) && Number.isFinite(p.metrica));
-    if (prev.length && t.metrica > Math.max(...prev.map((p) => p.metrica))) n++;
+    const valori = prev.map((p) => p.metrica);
+    if (prev.length && (meglioSeBasso(t) ? t.metrica < Math.min(...valori) : t.metrica > Math.max(...valori))) n++;
   });
   return n;
 }

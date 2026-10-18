@@ -5,20 +5,21 @@ import { topbar, emptyState } from '../ui.js';
 import { badgeTile } from './ui.js';
 import { newBadges } from './badges.js';
 import { riepilogoLeg } from './scorer.js';
-import { livelloBot } from './bot.js';
-import { TIPO_INFO, sessionInfo } from './catalogo.js';
+import { TIPO_INFO, sessionInfo, meglioSeBasso } from './catalogo.js';
 import {
   headline, compareWith, comparable, scoringResult, doppieResult, checkoutResult, pressioneResult, fmt1,
   isChallengeSession, challengeResults,
 } from './calc.js';
 
-function message(cmp) {
-  const d = (n) => fmt1(Math.abs(n));
+function message(cmp, lower = false) {
+  const u = lower ? ' frecce' : '';
+  const d = (n) => `${fmt1(Math.abs(n))}${u}`;
+  const best = `${fmt1(cmp.best)}${u}`;
   switch (cmp.kind) {
-    case 'pb': return { cls: 'pb', title: 'Nuovo record personale!', text: `+${d(cmp.delta)} rispetto all'ultima volta` };
-    case 'up': return { cls: 'up', title: `+${d(cmp.delta)} rispetto all'ultima volta`, text: `Il tuo record resta ${fmt1(cmp.best)}: ci sei vicino.` };
+    case 'pb': return { cls: 'pb', title: 'Nuovo record personale!', text: lower ? `${d(cmp.delta)} in meno dell'ultima volta` : `+${d(cmp.delta)} rispetto all'ultima volta` };
+    case 'up': return { cls: 'up', title: lower ? `${d(cmp.delta)} in meno dell'ultima volta` : `+${d(cmp.delta)} rispetto all'ultima volta`, text: `Il tuo record resta ${best}: ci sei vicino.` };
     case 'same': return { cls: 'same', title: 'Come l\'ultima volta', text: 'Costanza: è già un buon segno.' };
-    case 'down': return { cls: 'down', title: `${d(cmp.delta)} in meno dell'ultima volta`, text: `Capita: il tuo record è ${fmt1(cmp.best)}. La prossima è un'altra occasione.` };
+    case 'down': return { cls: 'down', title: lower ? `${d(cmp.delta)} in più dell'ultima volta` : `${d(cmp.delta)} in meno dell'ultima volta`, text: `Capita: il tuo record è ${best}. La prossima è un'altra occasione.` };
     case 'first': return { cls: 'first', title: 'Primo risultato', text: 'Da qui si migliora: la prossima volta ti confronterai con questo.' };
     default: return null;
   }
@@ -49,19 +50,17 @@ function details(t) {
     }
     default: {
       const rows = [
-        ['Media', d.average], ['Media first 9', d.first9], ['Doppie chiuse', d.doppieChiuse], ['Frecce alle doppie', d.frecceDoppie],
-        ['Miglior checkout', d.bestCheckout], ['Miglior leg (frecce)', d.bestLeg],
+        ['Miglior leg (frecce)', d.bestLeg], ['Frecce per leg (media)', d.mediaFrecce], ['Media su 3 frecce', d.average],
+        ['Media first 9', d.first9], ['Miglior checkout', d.bestCheckout],
         ['Visite 100-139', d.v100], ['Visite 140-179', d.v140], ['180', d.v180],
       ].filter(([, v]) => Number.isFinite(v));
-      const opp = { solo: 'Da solo', bot: d.botLivello ? `Bot ${livelloBot(d.botLivello).nome}` : 'Bot', amico: 'Amico', club: 'Club', torneo: 'Torneo' }[d.avvTipo];
       const legs = Array.isArray(d.legs) ? d.legs : [];
       return html`
-        ${opp ? html`<p class="muted small">Avversario: <b>${opp}</b></p>` : ''}
         ${rows.length ? html`<ul class="kv">${rows.map(([l, v]) => html`<li><span>${l}</span><b>${fmt1(v)}</b></li>`)}</ul>`
           : html`<p class="muted small">Nessun dato aggiuntivo inserito.</p>`}
         ${legs.length ? html`<h3 class="subsec">Leg per leg</h3><ul class="kv">${legs.map((l, i) => {
           const r = riepilogoLeg(l);
-          return html`<li><span>Leg ${i + 1} · ${r.vinto ? 'vinto' : 'perso'}${r.vinto ? ` in ${r.frecce} frecce` : ''}</span><b>${r.media != null ? fmt1(r.media) : '—'}</b></li>`;
+          return html`<li><span>Leg ${i + 1} · chiuso in ${r.frecce} frecce</span><b>${r.media != null ? fmt1(r.media) : '—'}</b></li>`;
         })}</ul>` : ''}`;
     }
   }
@@ -74,7 +73,7 @@ export default async function view([id]) {
   const [all, tests] = await Promise.all([listTrainings(t.playerId), listTests(t.playerId)]);
   const prev = all
     .filter((x) => x.id !== t.id && comparable(t, x) && (x.creataIl || 0) < (t.creataIl || 0));
-  const cmp = message(compareWith(t, prev));
+  const cmp = message(compareWith(t, prev, meglioSeBasso(t)), meglioSeBasso(t));
   const h = headline(t);
   const info = sessionInfo(t.tipo, t.k);
   let sfida = null;
