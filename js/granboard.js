@@ -11,6 +11,19 @@ const SERVICE = '442f1570-8a00-9a28-cbe1-e1d4212d53eb';
 const NOTIFY = '442f1571-8a00-9a28-cbe1-e1d4212d53eb';
 const WRITE = '442f1572-8a00-9a28-cbe1-e1d4212d53eb';
 const STANDARD = ['generic_access', 'generic_attribute', 'device_information', 'battery_service', SERVICE];
+// Comandi ai led registrati dall'app ufficiale (16 byte ciascuno).
+const PROVE = [
+  ['Avvio 1', '1600000000000000000000006e000000'],
+  ['Avvio 2', '147d00007d0000000000000205010000'],
+  ['Avvio 3', '0d7d0000000000000000000205020000'],
+  ['Doppio', '027d00007d0000000000190014000000'],
+  ['Singolo', '017d00007d0000000000190014000000'],
+  ['Triplo', '110000ff00ffff0000000a0005020000'],
+  ['Bull', '1f4b007d4b007d00487d000023010000'],
+  ['Fine turno', '0c000000000000000000000010000000'],
+  ['Altro 11', '117d00007d0000000000100005000000'],
+  ['Spento', '01000000000000000000000000000000'],
+];
 const KEY = 'fd.granboard.uuids';
 const MAP_KEY = 'fd.granboard.map';
 const CODICE = /^(\d+)\.(\d+)@$/;
@@ -50,6 +63,11 @@ root.innerHTML = html`
     <button type="button" class="btn sec" id="clear">Svuota</button>
   </div>
 
+  <section class="card">
+    <b>Prove dei led</b>
+    <p class="muted small">Comandi registrati dall'app ufficiale. Collega la tavola, tocca un pulsante e scrivi nel registro cosa si accende.</p>
+    <div class="opts wrap">${PROVE.map(([nome, h]) => html`<button type="button" class="btn sec" data-prova="${h}">${nome}</button>`)}</div>
+  </section>
   <details class="more">
     <summary>Opzioni avanzate</summary>
     <label class="field">UUID aggiuntivi dei servizi (facoltativo, uno per riga)
@@ -234,6 +252,17 @@ $(root, '#send').addEventListener('click', async () => {
     else await writeChar.writeValue(bytes);
     out(`>>> INVIATO hex[${hex(new DataView(bytes.buffer))}]`);
   } catch (e) { out(`Invio fallito: ${e.name}: ${e.message}`); }
+});
+root.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-prova]');
+  if (!b) return;
+  if (!writeChar) { out('Prima collega la tavola.'); return; }
+  const bytes = parseHexBytes(b.dataset.prova);
+  try {
+    if (writeChar.properties.writeWithoutResponse) await writeChar.writeValueWithoutResponse(bytes);
+    else await writeChar.writeValue(bytes);
+    out(`>>> PROVA ${b.textContent}: hex[${hex(new DataView(bytes.buffer))}]`);
+  } catch (err) { out(`Invio fallito: ${err.name}: ${err.message}`); }
 });
 $(root, '#nota').addEventListener('keydown', (e) => { if (e.key === 'Enter') $(root, '#addnota').click(); });
 $(root, '#addnota').addEventListener('click', () => {

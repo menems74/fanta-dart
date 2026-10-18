@@ -9,3 +9,4 @@ Thumbs.db
 # chiavi di servizio: non vanno mai nel repository
 *serviceAccount*.json
 *-adminsdk-*.json
+log/
