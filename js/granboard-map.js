@@ -98,6 +98,8 @@ export const codiceDaTesto = (testo) => {
 
 /** La freccia descritta da un messaggio della tavola: { id, valore, moltiplicatore, nome } oppure null. */
 export function dardoDaTesto(testo) {
+  // freccia fuori dal bersaglio (sul bordo): la tavola manda "OUT@"
+  if (String(testo).trim() === 'OUT@') return { id: 'X', valore: 0, moltiplicatore: 0, nome: 'Fuori' };
   const id = TABELLA[codiceDaTesto(testo)];
   const s = id && segmento(id);
   return s ? { id, valore: s.valore, moltiplicatore: s.moltiplicatore, nome: s.nome } : null;

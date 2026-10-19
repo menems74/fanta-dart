@@ -5,8 +5,11 @@ import { dardoDaTesto } from '../granboard-map.js';
 
 const SERVICE = '442f1570-8a00-9a28-cbe1-e1d4212d53eb';
 const NOTIFY = '442f1571-8a00-9a28-cbe1-e1d4212d53eb';
+const WRITE = '442f1572-8a00-9a28-cbe1-e1d4212d53eb';
 
 let device = null;
+let scrittura = null;
+let coda = Promise.resolve();
 let stato = 'scollegata'; // scollegata | collego | collegata
 const dardiCb = new Set();
 const statoCb = new Set();
@@ -35,7 +38,9 @@ export async function collega() {
   try {
     device.addEventListener('gattserverdisconnected', () => imposta('scollegata'));
     const server = await device.gatt.connect();
-    const char = await (await server.getPrimaryService(SERVICE)).getCharacteristic(NOTIFY);
+    const servizio = await server.getPrimaryService(SERVICE);
+    const char = await servizio.getCharacteristic(NOTIFY);
+    scrittura = await servizio.getCharacteristic(WRITE).catch(() => null);
     char.addEventListener('characteristicvaluechanged', (ev) => ricevi(new TextDecoder().decode(ev.target.value)));
     await char.startNotifications();
     imposta('collegata');
@@ -47,6 +52,13 @@ export async function collega() {
 }
 
 export const scollega = () => device?.gatt?.disconnect();
+
+/** Manda un comando alla tavola (led). In coda, perche' il Bluetooth accetta una scrittura alla volta. Senza tavola non fa nulla. */
+export function scrivi(bytes) {
+  if (!bytes || stato !== 'collegata' || !scrittura) return;
+  coda = coda.then(() => (scrittura.properties.writeWithoutResponse ? scrittura.writeValueWithoutResponse(bytes) : scrittura.writeValue(bytes)))
+    .catch((e) => console.warn('Comando ai led non riuscito', e));
+}
 
 // Solo per le prove senza la tavola.
 export const simula = ricevi;

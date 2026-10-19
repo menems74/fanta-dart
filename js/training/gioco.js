@@ -6,7 +6,8 @@ import { listSessioni, saveSessione } from '../db.js';
 import { segmento, etichettaDardo } from '../dartboard.js';
 import { loadDraft, saveDraft, clearDraft } from './store.js';
 import { keepAwake } from './awake.js';
-import { onDardo, onStato, tavolaStato } from './tavola.js';
+import { onDardo, onStato, tavolaStato, scrivi } from './tavola.js';
+import { EFFETTI, comandoColpo, effettoTurno } from './led.js';
 import { suona, sbloccaAudio } from './suono.js';
 import { visitaValida, applicaVisita } from './scorer.js';
 import { gioco, rigioca, numeriCheckout, record, migliora, REGOLE } from './giochi.js';
@@ -41,6 +42,8 @@ export default async function giocoView([id]) {
   let awake = null;
   let contoTimer = null;
   const ac = new AbortController();
+  let ledSpeciale = false; // effetto speciale in corso: a fine pausa si spengono i led
+  let ledTimer = null;
 
   const rec = () => record(mie, g.id, st.opzioni?.modo);
   const persist = () => {
@@ -98,6 +101,12 @@ export default async function giocoView([id]) {
     st.eventi.push(ev);
     s = g.passo(structuredClone(s), ev);
     if (ev.t === 'd') {
+      // led: il settore colpito, oppure a fine turno l'effetto speciale (180, tre tripli uguali, 100 o piu')
+      const speciale = s.fineTurno ? effettoTurno(s.ultimo) : null;
+      clearTimeout(ledTimer);
+      scrivi(speciale || comandoColpo(ev.id));
+      ledSpeciale = !!speciale;
+      if (s.fineTurno && !speciale && !s.finito) ledTimer = setTimeout(() => scrivi(EFFETTI.cambioTurno), 1500);
       const ok = bersagliPrima.length ? bersagliPrima.includes(ev.id) : ev.id !== 'X';
       const sg = segmento(ev.id);
       suona(ev.id === 'X' ? 'fuori' : sg && (sg.moltiplicatore > 1 || sg.id === 'B25') ? 'speciale' : 'singolo');
@@ -159,12 +168,15 @@ export default async function giocoView([id]) {
     contoTimer = setInterval(disegna, 250);
   }
   function chiudiConto() {
+    if (ledSpeciale) { scrivi(EFFETTI.spento); ledSpeciale = false; }
     clearInterval(contoTimer);
     st.bloccoFino = 0;
     if (overlay().querySelector('.conto')) overlay().innerHTML = '';
   }
 
   function fine() {
+    clearTimeout(ledTimer);
+    setTimeout(() => scrivi(EFFETTI.fine), ledSpeciale ? 3000 : 800);
     chiudiConto();
     const valore = g.valore(s);
     const voto = Math.round(g.voto(valore, st.opzioni));
@@ -196,6 +208,7 @@ export default async function giocoView([id]) {
   }
 
   function ancora() {
+    scrivi(EFFETTI.inizio);
     overlay().innerHTML = '';
     st.opzioni = opzioniNuove(g, st.opzioni);
     st.eventi = [];
@@ -210,13 +223,14 @@ export default async function giocoView([id]) {
     mount(el) {
       root = el;
       if (ripresa) toast('Partita ripresa da dove eri rimasto');
+      if (s) scrivi(EFFETTI.inizio);
       render();
       const sig = { signal: ac.signal };
       el.addEventListener('click', (e) => {
         const b = e.target.closest('button');
         if (!b || b.disabled) return;
         const d = b.dataset;
-        if (d.modo) { st.opzioni = { modo: d.modo }; s = rigioca(g, st.opzioni, []); render(); }
+        if (d.modo) { st.opzioni = { modo: d.modo }; s = rigioca(g, st.opzioni, []); scrivi(EFFETTI.inizio); render(); }
         else if (d.ev) invia(JSON.parse(d.ev));
         else if (d.k) tasto(d.k);
         else if (d.act === 'info') regole();
@@ -246,14 +260,16 @@ export default async function giocoView([id]) {
           if (!s || s.finito || Date.now() < st.bloccoFino || st.chiusura) return;
           invia({ t: 'd', id: dd.id }, { daTavola: true });
         }),
-        onStato(() => render()),
+        onStato((stt) => { if (stt === 'collegata' && s && !s.finito) scrivi(EFFETTI.inizio); render(); }),
       ];
       awake = keepAwake(() => {});
     },
     unmount() {
+      clearTimeout(ledTimer);
       ac.abort();
       offs.forEach((f) => f());
       chiudiConto();
+      scrivi(EFFETTI.attesa);
       overlay().innerHTML = '';
       awake?.release();
       root = null;
