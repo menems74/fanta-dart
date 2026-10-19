@@ -258,9 +258,3 @@ svg.line text { fill: var(--mu); font-size: 16px; }
 #overlay .regole .btn { flex: none; }
 
 
-/* account: cambio PIN ed esci */
-.tr .account { display: flex; gap: 10px; }
-.tr .account .btn { min-height: 46px; font-size: 16px; }
-#overlay .pinform { width: min(420px, 100%); display: grid; gap: 14px; }
-#overlay .pinform h2 { font-size: 22px; }
-#overlay .pinform input { font-size: 24px; letter-spacing: .3em; }

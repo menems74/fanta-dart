@@ -1,7 +1,7 @@
 // Home degli allenamenti: figurina con la Skill, menu (progressi, squadra, sfida) e griglia dei giochi.
-import { html, fmtDate, todayIso, toast } from '../util.js';
-import { session, logout, changeOwnPin, PIN_RE } from '../auth.js';
-import { listTutteSessioni, setPin } from '../db.js';
+import { html, fmtDate, todayIso } from '../util.js';
+import { session } from '../auth.js';
+import { listTutteSessioni } from '../db.js';
 import { tavolaDisponibile, tavolaStato } from './tavola.js';
 import {
   GIOCHI, gioco, votoGioco, skill, trendGioco, record, settimana, prossimoSabato, sfidaDel, classificaSfida, badgePresi, BADGES,
@@ -19,7 +19,6 @@ export default async function homeView() {
   const classifica = classificaSfida(tutte, sabato);
   const recSfida = record(mie, sfida.id);
   const collega = tavolaDisponibile() && tavolaStato() !== 'collegata';
-  const ac = new AbortController();
 
   return {
     html: html`
@@ -38,7 +37,6 @@ export default async function homeView() {
               <b>Sfida del sabato · ${sfida.nome}${sabato === oggi ? ' · oggi!' : ''}</b>
               <span>${fmtDate(sabato)}${recSfida != null ? ` · il tuo record ${recSfida}` : ''}${classifica.length ? ` · in testa con ${classifica[0].valore}` : ''}</span></a>
           </nav>
-          <div class="account"><button type="button" class="btn" data-act="pin">Cambia PIN</button><button type="button" class="btn" data-act="esci">Esci</button></div>
           <p class="firma">Powered by <b>Cleopatra</b></p>
         </aside>
         <section class="giochi">
@@ -60,37 +58,5 @@ export default async function homeView() {
           })}
         </section>
       </div>`,
-    mount(root) {
-      const ov = document.getElementById('overlay');
-      root.addEventListener('click', (e) => {
-        const b = e.target.closest('[data-act="pin"], [data-act="esci"]');
-        if (!b) return;
-        if (b.dataset.act === 'esci') { if (confirm('Vuoi uscire?')) logout(); return; }
-        ov.innerHTML = html`<div class="modal"><form class="card pinform" novalidate>
-          <header><h2>Cambia PIN</h2></header>
-          <label class="field">Nuovo PIN (4 cifre)<input name="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" required></label>
-          <p class="error" role="alert"></p>
-          <div class="azioni"><button type="button" class="btn" data-chiudi>Annulla</button><button class="btn pri">Salva PIN</button></div>
-        </form></div>`.s;
-        const f = ov.querySelector('form');
-        f.pin.focus();
-        ov.querySelector('[data-chiudi]').addEventListener('click', () => { ov.innerHTML = ''; });
-        f.addEventListener('submit', async (ev) => {
-          ev.preventDefault();
-          const pin = f.pin.value.trim();
-          const err = f.querySelector('.error');
-          if (!PIN_RE.test(pin)) { err.textContent = 'Il PIN è di 4 cifre.'; return; }
-          try {
-            await changeOwnPin(pin);
-            await setPin(session.account.playerId, pin).catch((e2) => console.warn('PIN non aggiornato', e2));
-            ov.innerHTML = '';
-            toast('PIN aggiornato');
-          } catch (e2) {
-            err.textContent = e2.code === 'auth/requires-recent-login' ? 'Per sicurezza esci, rientra e riprova.' : 'Aggiornamento non riuscito.';
-          }
-        });
-      }, { signal: ac.signal });
-    },
-    unmount() { ac.abort(); document.getElementById('overlay').innerHTML = ''; },
   };
 }
