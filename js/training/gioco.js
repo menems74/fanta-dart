@@ -9,11 +9,13 @@ import { keepAwake } from './awake.js';
 import { onDardo, onStato, tavolaStato, scrivi } from './tavola.js';
 import { EFFETTI, comandoColpo, effettoTurno } from './led.js';
 import { suona, sbloccaAudio } from './suono.js';
+import { parla, nomeColpo, sbloccaVoce } from './voce.js';
 import { visitaValida, applicaVisita } from './scorer.js';
 import { gioco, rigioca, numeriCheckout, record, migliora, REGOLE } from './giochi.js';
 import { pannello, comandi } from './pannelli.js';
 import { barra, bersaglio, svg } from './grafica.js';
 
+const VOCE = new Set(['x501']); // giochi con la voce al posto del bip (prova)
 const PAUSA_MS = 6000; // dopo 3 frecce dal Granboard: il tempo di togliere le freccette
 const overlay = () => document.getElementById('overlay');
 
@@ -109,16 +111,27 @@ export default async function giocoView([id]) {
       if (s.fineTurno && !speciale && !s.finito) ledTimer = setTimeout(() => scrivi(EFFETTI.cambioTurno), 1500);
       const ok = bersagliPrima.length ? bersagliPrima.includes(ev.id) : ev.id !== 'X';
       const sg = segmento(ev.id);
-      suona(ev.id === 'X' ? 'fuori' : sg && (sg.moltiplicatore > 1 || sg.id === 'B25') ? 'speciale' : 'singolo');
+      if (VOCE.has(g.id)) parla(nomeColpo(ev.id));
+      else suona(ev.id === 'X' ? 'fuori' : sg && (sg.moltiplicatore > 1 || sg.id === 'B25') ? 'speciale' : 'singolo');
       persist();
       render();
       lampeggia(ev.id, ok);
     } else { persist(); render(); }
+    if (VOCE.has(g.id) && s.fineTurno) annunciaTurno();
     if (s.finito) { setTimeout(fine, 600); return; }
     if (s.fineTurno) {
-      setTimeout(() => suona('fine'), 350);
+      if (!VOCE.has(g.id)) setTimeout(() => suona('fine'), 350);
       if (daTavola) contoAllaRovescia(s.ultimo);
     }
+  }
+
+  /** 501: a fine turno la voce dice il totale, "Sballato" o la chiusura. */
+  function annunciaTurno() {
+    const punti = s.visite.at(-1);
+    if (s.finito) parla(`Chiuso in ${s.frecce} frecce!`);
+    else if (punti === 0 && s.ultimo.some((id) => id !== 'X')) parla('Sballato');
+    else if (punti === 180) parla('Centottanta!');
+    else parla(punti >= 100 ? `${punti}!` : String(punti));
   }
 
   function annulla() {
@@ -243,6 +256,7 @@ export default async function giocoView([id]) {
       // tocco sul bersaglio: pointerdown e' piu' immediato del click
       el.addEventListener('pointerdown', (e) => {
         sbloccaAudio();
+        sbloccaVoce();
         awake?.retry();
         const p = e.target.closest('#board [data-id]');
         if (p && s && !s.finito) { e.preventDefault(); invia({ t: 'd', id: p.dataset.id }); }
