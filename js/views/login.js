@@ -29,6 +29,7 @@ export default async function view() {
           <button class="btn primary" id="go">Entra</button>
         </form>
         <p class="muted small">Non hai il PIN? Chiedilo a un admin.</p>
+        <p class="firma">Powered by <b>Cleopatra</b></p>
       </section>`,
     mount(root) {
       const f = $(root, '#f');
