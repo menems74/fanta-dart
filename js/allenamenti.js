@@ -1,27 +1,22 @@
 // Pagina "Allenamenti": si apre in una scheda a parte (allenamenti.html) e condivide l'accesso con l'app.
-// Percorso di 100 sessioni (vedi js/training/): home, scelta del tipo, inserimento, risultato, progressi.
+// Pensata per tablet in orizzontale. Giochi liberi (js/training/giochi.js), Granboard collegato una volta per tutti.
 import { watchSession, session } from './auth.js';
-import { html } from './util.js';
+import { html, toast } from './util.js';
 import { topbar, emptyState } from './ui.js';
-import { toApp } from './training/ui.js';
+import { collega, onStato, tavolaStato } from './training/tavola.js';
+import { sbloccaAudio } from './training/suono.js';
+import { schermoIntero } from './training/grafica.js';
 import home from './training/home.js';
-import tipo from './training/tipo.js';
-import sessione from './training/sessione.js';
-import risultato from './training/risultato.js';
-import miei from './training/miei.js';
-import skill from './training/skill.js';
-import skillrisultato from './training/skillrisultato.js';
+import gioco from './training/gioco.js';
+import progressi from './training/progressi.js';
 import squadra from './training/squadra.js';
 
 const root = document.getElementById('view');
 const routes = [
   [/^\/$/, home],
-  [/^\/tipo$/, tipo],
-  [/^\/sessione\/([^/]+)$/, sessione],
-  [/^\/risultato\/([^/]+)$/, risultato],
-  [/^\/miei$/, miei],
-  [/^\/test$/, skill],
-  [/^\/test\/([^/]+)$/, skillrisultato],
+  [/^\/gioco\/([^/]+)$/, gioco],
+  [/^\/progressi$/, progressi],
+  [/^\/progressi\/([^/]+)$/, progressi],
   [/^\/squadra$/, squadra],
 ];
 let ready = false;
@@ -29,7 +24,7 @@ let token = 0;
 let unmount = null;
 
 const loginNeeded = () => html`
-  ${topbar('Allenamenti', { right: toApp })}
+  ${topbar('Allenamenti')}
   ${emptyState('Accedi per continuare',
     'Gli allenamenti sono riservati ai giocatori della squadra.',
     html`<a class="btn primary" href="./#/login">Vai all'accesso</a>`)}`;
@@ -79,3 +74,22 @@ const syncOnline = () => document.body.classList.toggle('offline', !navigator.on
 window.addEventListener('online', syncOnline);
 window.addEventListener('offline', syncOnline);
 syncOnline();
+
+// Comandi validi in ogni schermata: collegare il Granboard e lo schermo intero.
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-act="tavola"], [data-act="full"]');
+  if (!b) return;
+  if (b.dataset.act === 'full') { schermoIntero(); return; }
+  if (tavolaStato() !== 'scollegata') return;
+  try { await collega(); } catch (err) { console.error(err); toast('Collegamento non riuscito: chiudi le altre app del Granboard e riprova'); }
+});
+// Aggiorna il pulsante del Granboard in alto senza ridisegnare la pagina.
+onStato((st) => {
+  for (const b of document.querySelectorAll('.board-chip')) {
+    b.className = `board-chip ${st}`;
+    b.lastChild.textContent = st === 'collegata' ? 'Granboard collegato' : st === 'collego' ? 'Collegamento…' : 'Collega Granboard';
+  }
+  if (st === 'collegata') { document.querySelector('.card.collega')?.remove(); toast('Granboard collegato'); }
+  if (st === 'scollegata') toast('Granboard scollegato');
+});
+document.addEventListener('pointerdown', sbloccaAudio, { passive: true });

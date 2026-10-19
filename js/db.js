@@ -29,33 +29,18 @@ export const savePlayer = (id, data) => setDoc(doc(db, 'players', id), data, { m
 export const getPin = async (playerId) => (await one(doc(db, 'pins', playerId)))?.pin ?? null;
 export const setPin = (playerId, pin) => setDoc(doc(db, 'pins', playerId), { pin });
 
-// ---------- allenamenti ----------
-export const listTrainings = async (playerId) =>
-  (await list(query(collection(db, 'trainings'), where('playerId', '==', playerId))))
-    .sort((a, b) => (b.creataIl || 0) - (a.creataIl || 0));
-export const getTraining = (id) => one(doc(db, 'trainings', id));
-export async function saveTraining(data) {
-  const ref = doc(collection(db, 'trainings'));
-  await setDoc(ref, { ...data, creataIl: Date.now() });
-  return ref.id;
+// ---------- allenamenti: una sessione per ogni gioco finito ----------
+const perTs = (a, b) => (a.ts || 0) - (b.ts || 0);
+export const listSessioni = async (playerId) =>
+  (await list(query(collection(db, 'sessioni'), where('playerId', '==', playerId)))).sort(perTs);
+export const listTutteSessioni = async () => (await list(collection(db, 'sessioni'))).sort(perTs);
+/** Salva e restituisce subito l'id: con la cache offline la scrittura parte appena torna la rete. */
+export function saveSessione(data) {
+  const ref = doc(collection(db, 'sessioni'));
+  const fatto = setDoc(ref, data);
+  return { id: ref.id, fatto };
 }
-export const deleteTraining = (id) => deleteDoc(doc(db, 'trainings', id));
-
-// ---------- skill test ----------
-export const listTests = async (playerId) =>
-  (await list(query(collection(db, 'skilltests'), where('playerId', '==', playerId))))
-    .sort((a, b) => (b.creataIl || 0) - (a.creataIl || 0));
-export const getTest = (id) => one(doc(db, 'skilltests', id));
-export async function saveTest(data) {
-  const ref = doc(collection(db, 'skilltests'));
-  await setDoc(ref, { ...data, creataIl: Date.now() });
-  return ref.id;
-}
-export const deleteTest = (id) => deleteDoc(doc(db, 'skilltests', id));
-
-// ---------- squadra: tutte le sessioni e i test (leggibili da ogni giocatore) ----------
-export const listAllTrainings = () => list(collection(db, 'trainings'));
-export const listAllTests = () => list(collection(db, 'skilltests'));
+export const deleteSessione = (id) => deleteDoc(doc(db, 'sessioni', id));
 
 // ---------- stagioni ----------
 export const listSeasons = async () =>

@@ -1,0 +1,252 @@
+/* Allenamenti: pensati per tablet in orizzontale, funzionano anche in verticale e sul telefono. Si aggiunge ad app.css. */
+.tr, #overlay {
+  --or: #f59e0b;
+  --r: 18px;
+  --gap: clamp(10px, 1.6vmin, 18px);
+  --side: clamp(12px, 2.4vw, 28px);
+}
+.tr { min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+.tr .mu, #overlay .mu { color: var(--mu); }
+.tr .sm, #overlay .sm { font-size: 15px; }
+.tr .card { box-shadow: none; }
+.tr .btn, #overlay .btn { flex: 1; width: auto; min-height: 52px; height: auto; padding: 0 18px; white-space: nowrap; }
+.tr .btn.pri, #overlay .btn.pri { background: var(--gd); color: #2b1d00; border: 0; }
+.tr .btn:disabled { opacity: .4; }
+
+/* ---------- barra in alto ---------- */
+.tr .top { display: flex; align-items: center; gap: 12px; padding: calc(env(safe-area-inset-top) + 8px) var(--side) 8px; min-height: 62px; }
+.tr .top h1 { font-size: clamp(20px, 2.6vmin + 8px, 28px); font-weight: 800; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tr .iconbtn { width: 46px; height: 46px; border-radius: 14px; background: var(--c1); border: 1px solid var(--ln); flex: none; }
+.tr .iconbtn svg, #overlay .iconbtn svg { width: 24px; height: 24px; }
+.board-chip { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--ln-bright); background: var(--c1); color: var(--tx); font: inherit; font-weight: 700; font-size: 16px; white-space: nowrap; cursor: pointer; }
+.board-chip .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--mu); }
+.board-chip.collego .dot { background: var(--gd); animation: blink 1s infinite; }
+.board-chip.collegata { border-color: var(--gr); }
+.board-chip.collegata .dot { background: var(--gr); box-shadow: 0 0 10px var(--gr); }
+@keyframes blink { 50% { opacity: .3; } }
+
+.tr .page { padding: 0 var(--side) 24px; }
+.tr .sezione { font-size: 20px; margin: 10px 0 0; }
+
+/* ---------- pollici ---------- */
+.pol { position: absolute; top: 12px; right: 12px; width: 44px; height: 44px; flex: none; border-radius: 50%; display: grid; place-items: center; }
+.pol.statico { position: static; }
+.pol svg { width: 26px; height: 26px; }
+.pol.su { background: rgba(16, 185, 129, 0.18); color: var(--gr-tx); }
+.pol.giu { background: rgba(239, 68, 68, 0.18); color: var(--rd-tx); }
+.pol.pari { background: rgba(245, 158, 11, 0.18); color: var(--or); }
+.pol.nuovo { background: rgba(148, 169, 203, 0.15); color: var(--mu); font-size: 10px; font-weight: 800; }
+
+/* ---------- home ---------- */
+.tr .home { display: grid; gap: var(--gap); grid-template-columns: minmax(280px, 340px) 1fr; align-items: start; }
+.tr .side { display: grid; gap: var(--gap); position: sticky; top: 8px; }
+.figurina { position: relative; padding: 18px; border-radius: 22px; overflow: hidden;
+  background: linear-gradient(160deg, #3a2a05 0%, #1a1405 45%, #0d1b34 100%); border: 2px solid var(--gd); box-shadow: 0 0 30px rgba(251, 191, 36, 0.18); }
+.figurina .head { display: flex; align-items: center; gap: 14px; }
+.figurina .voto { font-size: 64px; font-weight: 800; line-height: .9; color: var(--gd); text-shadow: 0 0 24px var(--gd-glow); font-variant-numeric: tabular-nums; min-width: 70px; }
+.figurina .nome { font-size: 22px; font-weight: 800; line-height: 1.2; }
+.figurina .lbl { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--gd); font-weight: 700; }
+.figurina .attr { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; margin-top: 14px; }
+.figurina .attr div { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 15px; border-bottom: 1px solid rgba(251, 191, 36, 0.18); padding: 3px 0; }
+.figurina .attr span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.figurina .attr b { font-size: 18px; font-variant-numeric: tabular-nums; }
+
+.tr .menu { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tr .menu a { display: flex; flex-direction: column; gap: 4px; padding: 14px; border-radius: 16px; background: var(--c2); border: 1px solid var(--ln); min-height: 84px; }
+.tr .menu a:active { transform: scale(.98); }
+.tr .menu b { font-size: 17px; }
+.tr .menu span { font-size: 14px; color: var(--mu); }
+.tr .menu .sfida { grid-column: 1 / -1; background: linear-gradient(120deg, rgba(239, 68, 68, 0.28), rgba(24, 45, 84, 0.9)); border-color: rgba(239, 68, 68, 0.5); }
+.tr .menu .sfida.oggi { border-color: var(--gd); box-shadow: 0 0 20px rgba(251, 191, 36, 0.25); }
+
+.tr .giochi { display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.tr .collega { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; border-color: var(--gr); }
+.tr .collega div { flex: 1; }
+.tr .collega .btn { flex: none; min-width: 140px; }
+.tr .gioco { position: relative; display: grid; grid-template-rows: auto auto 1fr auto; gap: 6px; padding: 16px; min-height: 178px;
+  border-radius: var(--r); background: var(--c1); border: 1px solid var(--ln); transition: transform .12s, border-color .12s; }
+.tr .gioco:active { transform: scale(.98); border-color: var(--gd); }
+.tr .gioco h3 { font-size: 21px; font-weight: 800; padding-right: 50px; }
+.tr .gioco .desc { font-size: 14px; color: var(--mu); }
+.tr .gioco .nums { display: flex; gap: 14px; align-items: flex-end; }
+.tr .gioco .nums div { display: grid; }
+.tr .gioco .nums small { font-size: 12px; color: var(--mu); text-transform: uppercase; letter-spacing: .06em; }
+.tr .gioco .nums b { font-size: 24px; font-variant-numeric: tabular-nums; }
+.tr svg.spark { width: 100%; height: 38px; }
+
+/* ---------- grafici ---------- */
+.tr svg.line, #overlay svg.line { width: 100%; height: 90px; }
+svg.line .area, svg.spark .area { opacity: .18; }
+svg.line path.l, svg.spark path.l { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+svg.line circle { stroke: var(--bg); stroke-width: 1.5; }
+svg.line .ax { stroke: var(--ln); stroke-width: 1; }
+svg.line text { fill: var(--mu); font-size: 16px; }
+.tr .vuoto { display: grid; place-items: center; min-height: 60px; }
+
+/* ---------- gioco ---------- */
+.tr .play { display: grid; gap: var(--gap); height: calc(100dvh - 62px - env(safe-area-inset-top)); padding: 0 var(--side) clamp(10px, 2vmin, 20px);
+  grid-template-columns: auto minmax(0, 1fr); align-items: center; }
+.tr .bersaglio { height: min(calc(100dvh - 86px), 54vw); aspect-ratio: 1; justify-self: center; }
+.tr .bersaglio svg { width: 100%; height: 100%; display: block; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.tr .bersaglio .seg { fill: #12203d; stroke: rgba(59, 130, 246, 0.35); stroke-width: .4; cursor: pointer; transition: fill .15s; }
+.tr .bersaglio .seg.alt { fill: #0a1226; }
+.tr .bersaglio .seg.ring { fill: #1b3466; }
+.tr .bersaglio .seg.ring.alt { fill: #3a1420; }
+.tr .bersaglio .seg.bull { fill: #1d4d3a; }
+.tr .bersaglio .seg.target { fill: rgba(251, 191, 36, 0.35); stroke: var(--gd); stroke-width: .6; }
+.tr .bersaglio .seg.target.ring, .tr .bersaglio .seg.target.bull { fill: rgba(251, 191, 36, 0.6); }
+.tr .bersaglio .seg.hit { fill: #fff; transition: none; }
+.tr .bersaglio .seg.hitok { fill: var(--gr); transition: none; }
+.tr .bersaglio text { fill: var(--tx); font-size: 9px; font-weight: 800; text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
+.tr .bersaglio text.tg { fill: var(--gd); font-size: 11px; }
+.tr .bersaglio .miss { fill: transparent; cursor: pointer; }
+
+.tr .panel { display: grid; gap: var(--gap); align-content: center; min-width: 0; max-height: 100%; overflow-y: auto; }
+.tscore { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.tscore .big { font-size: clamp(56px, 11vmin, 110px); font-weight: 800; line-height: .9; font-variant-numeric: tabular-nums; }
+.tscore .sub { text-align: right; flex: none; }
+.tscore .sub b { font-size: 24px; color: var(--gd); }
+.tr .serie { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+.tr .serie.sei { grid-template-columns: repeat(6, 1fr); }
+.tr .serie.sette { grid-template-columns: repeat(7, 1fr); }
+.tr .serie span, .tr .pallini span, .tr .giro span { min-height: clamp(34px, 6vmin, 46px); border-radius: 10px; display: grid; place-items: center; align-content: center; font-weight: 800; font-size: clamp(14px, 2.4vmin, 18px); background: var(--c1); border: 1px solid var(--ln); color: var(--mu); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.tr .serie span small { font-size: 11px; font-weight: 600; }
+.tr .serie span.fatta { color: var(--tx); background: var(--c2); }
+.tr .serie span.ora, .tr .pallini span.ora, .tr .giro span.ora { border: 2px solid var(--gd); color: var(--gd); }
+.tr .pallini { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.tr .pallini span.ok, .tr .giro span.ok { background: rgba(16, 185, 129, 0.25); border-color: var(--gr); color: var(--gr-tx); }
+.tr .pallini span.ko { background: rgba(239, 68, 68, 0.18); border-color: rgba(239, 68, 68, 0.5); color: var(--rd-tx); }
+.tr .giro { display: grid; grid-template-columns: repeat(11, 1fr); gap: 5px; }
+.tr .giro.treno { grid-template-columns: repeat(7, 1fr); }
+.tr .frecce { display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; }
+.tr .frecce.tre { grid-template-columns: repeat(3, 1fr); }
+.tr .frecce span { min-height: clamp(36px, 6.5vmin, 56px); border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: clamp(15px, 2.8vmin, 22px); background: var(--c1); border: 1px dashed var(--ln-bright); color: var(--mu); }
+.tr .frecce span.v0 { border-style: solid; }
+.tr .frecce span.v1 { border: 0; background: #1d4ed8; color: #fff; }
+.tr .frecce span.v2 { border: 0; background: var(--gr); color: #fff; }
+.tr .frecce span.v3 { border: 0; background: var(--gd); color: #2b1d00; }
+
+.tr .quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; }
+.tr .quick button { min-height: clamp(60px, 11vmin, 92px); border-radius: 18px; font: inherit; font-weight: 800; font-size: clamp(17px, 2.8vmin, 22px); color: var(--tx); background: var(--c2); border: 1px solid var(--ln-bright); display: grid; place-items: center; align-content: center; line-height: 1.15; cursor: pointer; }
+.tr .quick button small { display: block; font-size: 13px; font-weight: 600; color: var(--mu); }
+.tr .quick .q0 { border-color: var(--mu); }
+.tr .quick .q1 { border-color: #3b82f6; }
+.tr .quick .q2 { border-color: var(--gr); }
+.tr .quick .q3 { border-color: var(--gd); }
+.tr .quick button:active { transform: scale(.96); background: var(--ln-bright); }
+
+.tr .tast { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.tr .tast .kdisp { grid-column: 1 / -1; height: clamp(48px, 8vmin, 64px); font-size: clamp(28px, 5vmin, 38px); }
+.tr .tast .kdisp.vuoto { font-size: 18px; }
+.tr .tast button { min-height: clamp(50px, 9vmin, 70px); border-radius: 14px; font: inherit; font-size: clamp(22px, 4vmin, 28px); font-weight: 700; color: var(--tx); cursor: pointer; border: 1px solid var(--ln); background: var(--c1); }
+.tr .tast button:active { transform: scale(.95); background: var(--c2); }
+.tr .tast button.ok { background: var(--gr); border-color: var(--gr); color: #03210e; }
+.tr .azioni, #overlay .azioni { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.tr .modi { display: grid; gap: var(--gap); max-width: 900px; margin: 0 auto; padding-top: 4vh; }
+.tr .modi .intro { font-size: 20px; }
+.tr .modigrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); }
+.tr .modo { display: grid; gap: 8px; text-align: left; min-height: 150px; align-content: start; font: inherit; color: inherit; cursor: pointer; }
+.tr .modo b { font-size: 28px; }
+.tr .modo:active { border-color: var(--gd); transform: scale(.98); }
+
+/* conto alla rovescia a schermo intero */
+#overlay .conto { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  background: rgba(3, 7, 15, 0.92); backdrop-filter: blur(8px); }
+#overlay .conto p { font-size: clamp(24px, 5vmin, 40px); font-weight: 700; }
+#overlay .conto .n { font-size: clamp(140px, 38vmin, 300px); font-weight: 800; line-height: 1; color: var(--gd); text-shadow: 0 0 50px var(--gd-glow); font-variant-numeric: tabular-nums; }
+#overlay .conto .riep { font-size: clamp(18px, 3vmin, 26px); color: var(--mu); }
+#overlay .conto .riep b { color: var(--tx); }
+#overlay .conto .btn { flex: none; min-width: 220px; margin-top: 10px; }
+
+/* fine gioco */
+#overlay .fine, #overlay .modal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 16px; background: rgba(3, 7, 15, 0.84); backdrop-filter: blur(6px); }
+#overlay .fine .card { width: min(560px, 100%); text-align: center; display: grid; gap: 12px; padding: 26px; border-color: var(--gd); }
+#overlay .fine .big { font-size: clamp(64px, 14vmin, 96px); font-weight: 800; color: var(--gd); line-height: 1; }
+#overlay .fine .big small { font-size: 24px; color: var(--mu); }
+#overlay .fine .esito { font-size: 20px; font-weight: 700; }
+
+/* ---------- progressi ---------- */
+.tr .progressi { display: grid; gap: var(--gap); }
+.tstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
+.tstats .card { text-align: center; }
+.tstats b { display: block; font-size: 30px; font-variant-numeric: tabular-nums; }
+.tstats span { font-size: 14px; color: var(--mu); }
+.tr .focus { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+.tr .focus h2 { font-size: 18px; margin-bottom: 8px; }
+.tr .focus .bad { border-color: rgba(239, 68, 68, 0.55); }
+.tr .focus .good { border-color: rgba(16, 185, 129, 0.55); }
+.tr .focus ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.tr .focus li { display: flex; justify-content: space-between; gap: 10px; font-size: 17px; }
+.tr .charts { display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.tr .chartcard { position: relative; text-align: left; display: grid; gap: 6px; font: inherit; color: inherit; cursor: pointer; }
+.tr .chartcard:disabled { opacity: .55; cursor: default; }
+.tr .chartcard h3 { font-size: 18px; padding-right: 50px; }
+.tr .bdgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.tr .bdg { display: grid; gap: 4px; padding: 12px 14px; border-radius: 14px; border: 1px dashed var(--ln); opacity: .5; }
+.tr .bdg.on { opacity: 1; border: 1px solid var(--gd); background: rgba(251, 191, 36, 0.10); }
+.tr .bdg b { font-size: 16px; }
+.tr .bdg span { font-size: 13px; color: var(--mu); }
+
+#overlay .modal .card { width: min(900px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto; display: grid; gap: 12px; }
+#overlay .modal header { display: flex; align-items: center; gap: 12px; }
+#overlay .modal header h2 { flex: 1; font-size: 22px; }
+#overlay .modal .iconbtn { border-radius: 14px; }
+#overlay .modal svg.line { height: min(46dvh, 320px); }
+#overlay .storico { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+#overlay .storico li { display: grid; grid-template-columns: 1fr auto auto 42px; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--ln); }
+#overlay .storico b { font-size: 18px; }
+#overlay .iconbtn.piccolo { width: 40px; height: 40px; color: var(--rd-tx); }
+
+/* ---------- squadra ---------- */
+.tr .squadra { display: grid; gap: var(--gap); }
+.tr .sfidabox { display: grid; gap: 10px; border-color: rgba(239, 68, 68, 0.5); }
+.tr .sfidabox.oggi { border-color: var(--gd); }
+.tr .sfidabox h2 { font-size: 22px; }
+.tr .sfidabox h3 { font-size: 18px; margin-top: 6px; }
+.tr .sfidabox .btn { flex: none; max-width: 320px; }
+.tr .classifica { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.tr .classifica li { display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; background: var(--c2); }
+.tr .classifica li.me { border: 1px solid var(--gd); }
+.tr .classifica .pos { font-weight: 800; color: var(--gd); }
+.tr .team { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
+.tr .player { display: grid; grid-template-columns: 54px 1fr auto auto; align-items: center; gap: 14px; }
+.tr .player.me { border-color: var(--gd); }
+.tr .player .av { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 20px; background: var(--c2); border: 2px solid var(--ln-bright); }
+.tr .player b { font-size: 19px; }
+.tr .player .sk { font-size: 32px; font-weight: 800; color: var(--gd); font-variant-numeric: tabular-nums; }
+
+/* ---------- verticale e schermi piccoli ---------- */
+@media (orientation: portrait) {
+  .tr .home { grid-template-columns: 1fr; }
+  .tr .side { position: static; }
+  .tr .play { grid-template-columns: 1fr; height: auto; min-height: calc(100dvh - 62px); align-content: start; }
+  .tr .bersaglio { height: auto; width: min(92vw, 46dvh); }
+  .tr .panel { overflow: visible; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  /* telefono in orizzontale: tutto piu' compatto */
+  .tr .top { min-height: 50px; padding-top: calc(env(safe-area-inset-top) + 4px); padding-bottom: 4px; }
+  .tr .bersaglio { height: min(calc(100dvh - 62px), 48vw); }
+  .tscore .big { font-size: 50px; }
+  .tr .quick button { min-height: 50px; }
+  .tr .tast { gap: 6px; }
+  .tr .tast button { min-height: 38px; font-size: 20px; }
+  .tr .tast .kdisp { height: 38px; font-size: 26px; }
+  .tr .panel > p.mu.sm { display: none; }
+  .tr .play { padding-bottom: 4px; height: calc(100dvh - 54px); }
+  .tr .btn { min-height: 42px; }
+  .tr .panel { gap: 8px; }
+  .tr .serie span, .tr .frecce span, .tr .pallini span, .tr .giro span { min-height: 30px; }
+  .tr .home { grid-template-columns: 280px 1fr; }
+}
+@media (max-width: 640px) {
+  .tstats { grid-template-columns: 1fr 1fr; }
+  .tr .focus { grid-template-columns: 1fr; }
+  .tr .modigrid { grid-template-columns: 1fr; }
+  .tr .frecce { gap: 4px; }
+  .tr .serie { gap: 4px; }
+  .tr .team { grid-template-columns: 1fr; }
+  .tr .giro { grid-template-columns: repeat(7, 1fr); }
+  .board-chip { padding: 8px 12px; font-size: 14px; }
+}

@@ -38,25 +38,13 @@ service cloud.firestore {
         && request.resource.data.pin.matches('^[0-9]{4}$');
     }
 
-    // Sessioni di allenamento: tutti i giocatori le leggono (classifica di squadra), ognuno scrive le proprie.
-    match /trainings/{id} {
+    // Allenamenti: una sessione per ogni gioco finito. Ognuno scrive le proprie, tutti le leggono.
+    match /sessioni/{id} {
       allow read: if hasAccount();
       allow create: if hasAccount() && request.resource.data.playerId == myPlayerId()
-        && request.resource.data.tipo in ['scoring', 'doppie', 'checkout', 'pressione', 'partita']
-        && request.resource.data.k is int && request.resource.data.k >= 1 && request.resource.data.k <= 20
-        && request.resource.data.numero is int && request.resource.data.numero >= 1 && request.resource.data.numero <= 100;
-      allow update, delete: if hasAccount() && (resource.data.playerId == myPlayerId() || isAdmin());
-    }
-
-    // Skill test (iniziale, intermedio, finale): come gli allenamenti, ognuno scrive i propri.
-    match /skilltests/{id} {
-      allow read: if hasAccount();
-      allow create: if hasAccount() && request.resource.data.playerId == myPlayerId()
-        && request.resource.data.tipo in ['iniziale', 'intermedio', 'finale']
-        && request.resource.data.scoring is int && request.resource.data.scoring >= 0 && request.resource.data.scoring <= 90
-        && request.resource.data.doppie is int && request.resource.data.doppie >= 0 && request.resource.data.doppie <= 20
-        && request.resource.data.bull is int && request.resource.data.bull >= 0 && request.resource.data.bull <= 40
-        && request.resource.data.checkout is int && request.resource.data.checkout >= 0 && request.resource.data.checkout <= 7;
+        && request.resource.data.gioco in ['x501', 'target20', 'targetbull', 'scoring', 'checkout', 'doppie', 'rotation', 'cricket']
+        && request.resource.data.valore is number && request.resource.data.valore >= 0
+        && request.resource.data.voto is number && request.resource.data.voto >= 0 && request.resource.data.voto <= 100;
       allow update, delete: if hasAccount() && (resource.data.playerId == myPlayerId() || isAdmin());
     }
 

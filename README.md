@@ -10,7 +10,7 @@ App web installabile (PWA) per la squadra di freccette: gli admin inseriscono le
 - **Pagellini**: voto 1–10, singoli (max 4) e doppi (max 2) giocati e vinti (un doppio vinto vale una partita a testa), commento, flag **MVP** (uno per serata). Restano in bozza finché l'admin non preme **Pubblica serata**.
 - **Profilo** con media voto, partite, vinte e MVP (per stagione e carriera) e **classifica**.
 - **Esporta il pagellino come immagine** e condividilo su WhatsApp.
-- **Allenamenti**: pagina separata (`allenamenti.html`), aperta in una nuova scheda dal link nella sezione Partite. Percorso di 100 sessioni in 4 fasi (scoring, doppie, checkout, pressione, partita) con inserimento rapido mentre ci si allena, record personali con obiettivo da battere, mappa del percorso, badge, serie di settimane, confronto primo/secondo giro, punti da lavorare e **Skill test** (iniziale, intermedio, finale) con Skill Score su 100. Le sessioni di **partita** sono un contapunti 501 sempre da solo, da 1 a 5 leg: si scrive la somma di ogni turno da 3 frecce e con quale freccia si chiude. Il dato da battere è con quante frecce si chiude un 501. Ogni sabato c'è la **sfida del sabato** (scoring, doppie e checkout a rotazione): si può sfidare la squadra o solo se stessi. La pagina Squadra mostra la sfida e chi si sta allenando. La bozza della sessione resta sul telefono.
+- **Allenamenti**: pagina separata (`allenamenti.html`), pensata per tablet in orizzontale (va anche in verticale e sul telefono). Otto giochi liberi da ripetere quando si vuole: 501, Target 20, Target Bull, Scoring, Checkout, Doppie, Rotation e Cricket Train. Il Granboard si collega una volta all'avvio e segna le frecce da solo in tutti i giochi, con 6 secondi di pausa a schermo intero dopo ogni turno; senza tavola si tocca il bersaglio disegnato o si usano i pulsanti rapidi. Ogni gioco dà un voto da 0 a 100 (media delle ultime 10 sessioni) e la **Skill giocatore** è la media dei voti. Pollice verde, rosso o arancione per chi migliora, peggiora o è stabile. Progressi con un grafico per gioco, squadra con il dettaglio di ognuno, badge e **sfida del sabato** a rotazione. Le regole dei giochi sono in `js/training/giochi.js`.
 - Funziona anche offline in lettura.
 
 ## Tecnologie
@@ -35,8 +35,7 @@ tests/                                      test dei calcoli (npm test)
 | `players/{tessera}` | nome, cognome, tessera, ruolo, attivo (id = tessera con `-` al posto di `/`) |
 | `seasons/{id}` | nome, squadra, roster (`playerIds`) |
 | `matches/{id}` | stagione, data, luogo, avversario, punti, `mvpPlayerId`, `pubblicata` |
-| `trainings/{id}` | sessione di allenamento: giocatore, tipo, numero (1-100), data, durata, risultato principale e dati della prova |
-| `skilltests/{id}` | Skill test: tipo, punti delle quattro prove e Skill Score |
+| `sessioni/{id}` | allenamento finito: giocatore, gioco, valore (frecce, punti o colpi), voto 0-100, data, opzioni e dettagli del gioco |
 | `pins/{tessera}` | PIN in chiaro, leggibile solo dagli admin |
 | `reportCards/{matchId_playerId}` | voto, singoli giocati/vinti (max 4), doppi giocati/vinti (max 2), testo, `pubblicata` |
 

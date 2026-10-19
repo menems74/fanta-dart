@@ -1,81 +1,61 @@
-import { html, icon, fullName, todayIso, fmtDate } from '../util.js';
+// Home degli allenamenti: figurina con la Skill, menu (progressi, squadra, sfida) e griglia dei giochi.
+import { html, fmtDate, todayIso } from '../util.js';
 import { session } from '../auth.js';
-import { listTrainings, listTests } from '../db.js';
-import { topbar, avatar } from '../ui.js';
-import { toApp } from './ui.js';
+import { listTutteSessioni } from '../db.js';
+import { tavolaDisponibile, tavolaStato } from './tavola.js';
 import {
-  progress, sessionsThisWeek, weeklyStreak, GOAL_SETTIMANALE, skillScore, testDue, fmt1,
-  nextSaturday, challengeFor,
-} from './calc.js';
-import { TIPO_INFO } from './catalogo.js';
-import { BADGES, earnedBadges } from './badges.js';
+  GIOCHI, gioco, votoGioco, skill, trendGioco, record, settimana, prossimoSabato, sfidaDel, classificaSfida, badgePresi, BADGES,
+} from './giochi.js';
+import { barra, pollice, linea, COLORE, nomeGiocatore } from './grafica.js';
 
-const TITOLO = { iniziale: 'Fai il test iniziale', intermedio: 'Rifai lo Skill test', finale: 'Fai il test finale' };
-
-export default async function view() {
-  const p = session.player;
+export default async function homeView() {
   const pid = session.account.playerId;
-  const [trainings, tests] = await Promise.all([listTrainings(pid), listTests(pid)]);
-  const today = todayIso();
-  const pr = progress(trainings);
-  const week = sessionsThisWeek(trainings, today);
-  const streak = weeklyStreak(trainings, today);
-  const earned = earnedBadges(trainings, tests);
-  const due = testDue(tests, pr.done);
-  const last = tests[0];
-  const first = tests.length > 1 ? tests.at(-1) : null;
-  const sat = nextSaturday(today);
-  const sfidaTipo = challengeFor(sat);
-  const oggi = sat === today;
-  const recordSfida = trainings.filter((t) => t.tipo === sfidaTipo && Number.isFinite(t.metrica))
-    .reduce((m, t) => Math.max(m, t.metrica), -Infinity);
-  const delta = last && first ? Math.round((skillScore(last) - skillScore(first)) * 10) / 10 : null;
+  const tutte = await listTutteSessioni();
+  const mie = tutte.filter((x) => x.playerId === pid);
+  const oggi = todayIso();
+  const sk = skill(mie);
+  const sabato = prossimoSabato(oggi);
+  const sfida = gioco(sfidaDel(sabato));
+  const classifica = classificaSfida(tutte, sabato);
+  const recSfida = record(mie, sfida.id);
+  const collega = tavolaDisponibile() && tavolaStato() !== 'collegata';
 
   return {
     html: html`
-      ${topbar('Allenamenti', { right: toApp })}
-      <section class="hero">
-        ${avatar(p, 'xl')}
-        <div class="grow"><h2>${p ? fullName(p) : 'Giocatore'}</h2>${p ? html`<p class="muted">Tessera ${p.tessera}</p>` : ''}</div>
-      </section>
-      <a class="btn primary big" href="#/tipo">${icon('play', 22)} Inizia allenamento</a>
-
-      <div class="train-links">
-        <a class="prog-card" href="#/miei">
-          <span class="prog-head">${icon('user', 26)}<b>I miei progressi</b>${icon('chevron', 22)}</span>
-          <span class="pbar" aria-hidden="true"><i style="width:${pr.done}%"></i></span>
-          <span class="prog-stats">
-            <span><b>${pr.done}/${pr.total}</b><small>Sessioni</small></span>
-            <span><b>${week}/${GOAL_SETTIMANALE}</b><small>Questa settimana</small></span>
-            <span><b>${earned.size}/${BADGES.length}</b><small>Badge</small></span>
-          </span>
-          <span class="streakline">${icon('flame', 18)} ${streak > 0
-            ? `${streak} ${streak === 1 ? 'settimana' : 'settimane'} di fila con ${GOAL_SETTIMANALE} sessioni`
-            : `Obiettivo: ${GOAL_SETTIMANALE} sessioni a settimana`} · ${pr.fase.nome}</span>
-        </a>
-
-        ${last ? html`
-          <a class="card skill-card" href="#/test/${last.id}">
-            <span class="badge-ico">${icon('star', 24)}</span>
-            <div class="grow"><strong>Skill Score</strong>
-              <span class="muted small">${delta == null ? 'Il tuo punto di partenza' : `${delta > 0 ? '+' : ''}${String(delta).replace('.', ',')} dal primo test`}</span></div>
-            <b class="skill-num">${fmt1(skillScore(last))}<small>/100</small></b>
-          </a>` : html`
-          <a class="card skill-card dashed" href="#/test">
-            <span class="badge-ico">${icon('star', 24)}</span>
-            <div class="grow"><strong>Skill test</strong>
-              <span class="muted small">Facoltativo: misura il tuo punto di partenza</span></div>
-            ${icon('chevron', 22)}
-          </a>`}
-        ${due && last ? html`<a class="btn sec" href="#/test">${icon('target', 18)} ${TITOLO[due]}</a>` : ''}
-
-        <a class="card skill-card ${oggi ? 'now' : ''}" href="#/squadra">
-          <span class="badge-ico">${icon('flag', 24)}</span>
-          <div class="grow"><strong>Sfida del sabato${oggi ? ' · oggi!' : ''}</strong>
-            <span class="muted small">${TIPO_INFO[sfidaTipo].label} · ${fmtDate(sat)}${Number.isFinite(recordSfida) ? ` · record ${fmt1(recordSfida)}` : ''}</span></div>
-          ${icon('chevron', 22)}
-        </a>
-        <a class="pill-btn" href="#/squadra">${icon('users', 24)} Progressi della squadra</a>
+      ${barra('Allenamenti', { home: true })}
+      <div class="page home">
+        <aside class="side">
+          <section class="figurina">
+            <div class="head"><div class="voto">${sk ?? '–'}</div>
+              <div><p class="lbl">Skill giocatore</p><p class="nome">${nomeGiocatore()}</p></div></div>
+            <div class="attr">${GIOCHI.map((g) => html`<div><span>${g.nome}</span><b>${votoGioco(mie, g.id) ?? '–'}</b></div>`)}</div>
+          </section>
+          <nav class="menu">
+            <a href="#/progressi"><b>I miei progressi</b><span>${mie.length} ${mie.length === 1 ? 'sessione' : 'sessioni'} · ${settimana(mie, oggi)} questa settimana · ${badgePresi(mie).size}/${BADGES.length} badge</span></a>
+            <a href="#/squadra"><b>Squadra</b><span>Skill e progressi di tutti</span></a>
+            <a class="sfida ${sabato === oggi ? 'oggi' : ''}" href="${sabato === oggi ? `#/gioco/${sfida.id}` : '#/squadra'}">
+              <b>Sfida del sabato · ${sfida.nome}${sabato === oggi ? ' · oggi!' : ''}</b>
+              <span>${fmtDate(sabato)}${recSfida != null ? ` · il tuo record ${recSfida}` : ''}${classifica.length ? ` · in testa con ${classifica[0].valore}` : ''}</span></a>
+          </nav>
+        </aside>
+        <section class="giochi">
+          ${collega ? html`<div class="card collega"><div><b>Hai il Granboard?</b><p class="mu sm">Collegalo ora: resta attivo in tutti i giochi e segna le frecce da solo. Senza, inserisci a mano.</p></div>
+            <button type="button" class="btn pri" data-act="tavola">Collega</button></div>` : ''}
+          ${GIOCHI.map((g) => {
+            const t = trendGioco(mie, g.id);
+            const lista = mie.filter((x) => x.gioco === g.id);
+            const ultima = lista.at(-1);
+            const v = votoGioco(mie, g.id);
+            return html`<a class="gioco" href="#/gioco/${g.id}">
+              ${pollice(t)}
+              <h3>${g.nome}</h3><p class="desc">${g.desc}</p>
+              ${lista.length >= 2 ? linea(lista.slice(-10).map((x) => x.voto), { w: 200, h: 38, colore: COLORE[t], cls: 'spark' }) : html`<p class="mu sm">${lista.length ? '1 sessione' : 'Mai giocato'}</p>`}
+              <div class="nums"><div><small>Record</small><b>${record(mie, g.id, ultima?.opzioni?.modo) ?? '–'}</b></div>
+                <div><small>Ultima</small><b>${ultima ? ultima.valore : '–'}</b></div>
+                <div><small>Voto</small><b>${v ?? '–'}</b></div></div>
+            </a>`;
+          })}
+        </section>
       </div>`,
   };
 }
