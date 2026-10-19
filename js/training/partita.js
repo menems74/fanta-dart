@@ -14,7 +14,7 @@ import {
 } from './scorer.js';
 
 const MAX_LEG = 5;
-const PAUSA_MS = 4000; // dopo 3 frecce la tavola non registra: il tempo di togliere le freccette
+const PAUSA_MS = 6000; // dopo 3 frecce la tavola non registra: il tempo di togliere le freccette
 const dardoDaId = (id) => {
   const g = segmento(id);
   return g ? { id, v: g.valore, m: g.moltiplicatore } : { id: 'X', v: 0, m: 1 };
@@ -114,7 +114,7 @@ export default function partitaView({ pid, k, info, trainings }) {
     </div>`;
   };
   const frecceTurno = () => html`
-    ${Date.now() < bloccoFino ? html`<p class="conto" id="conto">Togli le freccette… <b id="contoN">${Math.ceil((bloccoFino - Date.now()) / 1000)}</b></p>` : ''}
+    ${Date.now() < bloccoFino ? html`<div class="conto" id="conto" role="status"><span>Togli le freccette</span><b id="contoN">${Math.ceil((bloccoFino - Date.now()) / 1000)}</b></div>` : ''}
     <div class="dardi" aria-live="polite">${[0, 1, 2].map((i) => html`<span class="dardo ${s.turno[i] ? '' : 'vuoto'}">${s.turno[i] ? etichettaDardo(s.turno[i].id) : '–'}</span>`)}</div>
     <div class="actions tight">
       <button type="button" class="btn sec" id="fuori">Freccia fuori</button>
