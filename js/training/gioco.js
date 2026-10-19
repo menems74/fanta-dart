@@ -9,13 +9,13 @@ import { keepAwake } from './awake.js';
 import { onDardo, onStato, tavolaStato, scrivi } from './tavola.js';
 import { EFFETTI, comandoColpo, effettoTurno } from './led.js';
 import { suona, sbloccaAudio } from './suono.js';
-import { parla, nomeColpo, sbloccaVoce } from './voce.js';
+import { parla, sbloccaVoce } from './voce.js';
 import { visitaValida, applicaVisita } from './scorer.js';
 import { gioco, rigioca, numeriCheckout, record, migliora, REGOLE } from './giochi.js';
 import { pannello, comandi } from './pannelli.js';
 import { barra, bersaglio, svg } from './grafica.js';
 
-const VOCE = new Set(['x501']); // giochi con la voce al posto del bip (prova)
+const VOCE = new Set(['x501']); // giochi in cui la voce annuncia il turno (prova)
 const PAUSA_MS = 6000; // dopo 3 frecce dal Granboard: il tempo di togliere le freccette
 const overlay = () => document.getElementById('overlay');
 
@@ -111,8 +111,7 @@ export default async function giocoView([id]) {
       if (s.fineTurno && !speciale && !s.finito) ledTimer = setTimeout(() => scrivi(EFFETTI.cambioTurno), 1500);
       const ok = bersagliPrima.length ? bersagliPrima.includes(ev.id) : ev.id !== 'X';
       const sg = segmento(ev.id);
-      if (VOCE.has(g.id)) parla(nomeColpo(ev.id));
-      else suona(ev.id === 'X' ? 'fuori' : sg && (sg.moltiplicatore > 1 || sg.id === 'B25') ? 'speciale' : 'singolo');
+      suona(ev.id === 'X' ? 'fuori' : sg && (sg.moltiplicatore > 1 || sg.id === 'B25') ? 'speciale' : 'singolo');
       persist();
       render();
       lampeggia(ev.id, ok);
@@ -125,13 +124,13 @@ export default async function giocoView([id]) {
     }
   }
 
-  /** 501: a fine turno la voce dice il totale, "Sballato" o la chiusura. */
+  /** 501: a fine turno la voce dice la somma delle 3 frecce e, da 170 in giu', quanto manca a zero. */
   function annunciaTurno() {
     const punti = s.visite.at(-1);
-    if (s.finito) parla(`Chiuso in ${s.frecce} frecce!`);
-    else if (punti === 0 && s.ultimo.some((id) => id !== 'X')) parla('Sballato');
-    else if (punti === 180) parla('Centottanta!');
-    else parla(punti >= 100 ? `${punti}!` : String(punti));
+    if (s.finito) { parla(`Chiuso in ${s.frecce} frecce!`); return; }
+    const sballo = punti === 0 && s.ultimo.some((id) => id !== 'X');
+    const somma = sballo ? 'Sballato' : punti === 180 ? 'Centottanta!' : punti >= 100 ? `${punti}!` : String(punti);
+    parla(s.resto <= 170 ? `${somma}${somma.endsWith('!') ? '' : '.'} Mancano ${s.resto}` : somma);
   }
 
   function annulla() {
