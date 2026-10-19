@@ -68,6 +68,13 @@ root.innerHTML = html`
     <p class="muted small">Comandi registrati dall'app ufficiale. Collega la tavola, tocca un pulsante e scrivi nel registro cosa si accende.</p>
     <div class="opts wrap">${PROVE.map(([nome, h]) => html`<button type="button" class="btn sec" data-prova="${h}">${nome}</button>`)}</div>
   </section>
+  <section class="card">
+    <b>Mappa dei numeri</b>
+    <p class="muted small">La pagina accende un valore alla volta: tocca il numero che si illumina sulla tavola (o "Niente") e passa da sola al valore dopo. Il risultato finisce nel registro.</p>
+    <p class="mappa-val">Valore <b id="mval">0</b></p>
+    <div class="mappa">${[...Array.from({ length: 20 }, (_, i) => String(i + 1)), 'Bull', 'Niente'].map((n) => html`<button type="button" class="btn sec" data-mappa="${n}">${n}</button>`)}</div>
+    <div class="opts wrap"><button type="button" class="btn sec" id="mprev">Valore prima</button><button type="button" class="btn sec" id="msend">Rimanda</button><button type="button" class="btn sec" id="mnext">Salta</button></div>
+  </section>
   <details class="more">
     <summary>Opzioni avanzate</summary>
     <label class="field">UUID aggiuntivi dei servizi (facoltativo, uno per riga)
@@ -264,6 +271,34 @@ root.addEventListener('click', async (e) => {
     out(`>>> PROVA ${b.textContent}: hex[${hex(new DataView(bytes.buffer))}]`);
   } catch (err) { out(`Invio fallito: ${err.name}: ${err.message}`); }
 });
+// Mappa dei numeri: l'11° byte del comando "singolo" sceglie il settore, con un codice interno della tavola.
+const MAPPA_KEY = 'fd.granboard.ledmap';
+let mval = Number(store.get(MAPPA_KEY + '.val', '0')) || 0;
+const mappa = (() => { try { return JSON.parse(store.get(MAPPA_KEY, '{}')) || {}; } catch { return {}; } })();
+const comandoNumero = (v) => Uint8Array.from([0x01, 0x7d, 0, 0, 0x7d, 0, 0, 0, 0, 0, v, 0, 0x14, 0, 0, 0]);
+async function mandaValore() {
+  $(root, '#mval').textContent = mval;
+  if (!writeChar) { out('Prima collega la tavola.'); return; }
+  const bytes = comandoNumero(mval);
+  try {
+    if (writeChar.properties.writeWithoutResponse) await writeChar.writeValueWithoutResponse(bytes);
+    else await writeChar.writeValue(bytes);
+  } catch (err) { out(`Invio fallito: ${err.name}: ${err.message}`); }
+}
+$(root, '#mval').textContent = mval;
+root.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-mappa]');
+  if (!b) return;
+  mappa[mval] = b.dataset.mappa;
+  out(`>>> MAPPA valore ${mval} = ${b.dataset.mappa}`);
+  store.set(MAPPA_KEY, JSON.stringify(mappa));
+  mval = Math.min(255, mval + 1);
+  store.set(MAPPA_KEY + '.val', String(mval));
+  mandaValore();
+});
+$(root, '#msend').addEventListener('click', mandaValore);
+$(root, '#mnext').addEventListener('click', () => { mval = Math.min(255, mval + 1); store.set(MAPPA_KEY + '.val', String(mval)); mandaValore(); });
+$(root, '#mprev').addEventListener('click', () => { mval = Math.max(0, mval - 1); store.set(MAPPA_KEY + '.val', String(mval)); mandaValore(); });
 $(root, '#nota').addEventListener('keydown', (e) => { if (e.key === 'Enter') $(root, '#addnota').click(); });
 $(root, '#addnota').addEventListener('click', () => {
   const n = $(root, '#nota');

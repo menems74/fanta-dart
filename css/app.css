@@ -1021,3 +1021,9 @@ a.pill-btn { text-decoration: none; }
 .firma { text-align: center; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--mu); opacity: .8; padding: 4px 0; }
 .firma b { color: var(--gd); font-weight: 800; }
 .login .firma { margin-top: 28px; }
+
+/* Pagina di prova del Granboard: mappa dei numeri dei led */
+.mappa { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; margin: 10px 0; }
+.mappa .btn { height: 52px; font-size: 20px; }
+.mappa-val { font-size: 20px; margin-top: 8px; }
+.mappa-val b { color: var(--gd); font-size: 28px; }
