@@ -250,3 +250,9 @@ svg.line text { fill: var(--mu); font-size: 16px; }
   .tr .giro { grid-template-columns: repeat(7, 1fr); }
   .board-chip { padding: 8px 12px; font-size: 14px; }
 }
+
+/* regole del gioco */
+.tr .iconbtn.info { color: var(--gd); border-color: rgba(251, 191, 36, 0.5); }
+#overlay .regole { width: min(640px, 100%); }
+#overlay .regole ul { margin: 0; padding-left: 22px; display: grid; gap: 10px; font-size: 18px; line-height: 1.45; }
+#overlay .regole .btn { flex: none; }

@@ -12,6 +12,7 @@ const SVG = {
   full: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
   chiudi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-5M12 8h.01"/></svg>',
   cestino: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
 };
 export const svg = (n) => raw(SVG[n]);
@@ -22,12 +23,13 @@ export const pollice = (t, statico = false) =>
   html`<span class="pol ${t} ${statico ? 'statico' : ''}" title="${TREND_TITOLO[t]}" aria-label="${TREND_TITOLO[t]}">${t === 'nuovo' ? 'NUOVO' : svg(t)}</span>`;
 
 /** Barra in alto: indietro, titolo, stato del Granboard, schermo intero. */
-export function barra(titolo, { back = null, home = false } = {}) {
+export function barra(titolo, { back = null, home = false, info = false } = {}) {
   const st = tavolaStato();
   return html`<header class="top">
     ${back ? html`<a class="iconbtn" href="#${back}" aria-label="Indietro">${svg('back')}</a>` : ''}
     ${home ? html`<a class="iconbtn" href="./#/partite" aria-label="Torna a Fanta Dart" title="Torna a Fanta Dart">${svg('home')}</a>` : ''}
     <h1>${titolo}</h1>
+    ${info ? html`<button type="button" class="iconbtn info" data-act="info" aria-label="Regole del gioco" title="Regole del gioco">${svg('info')}</button>` : ''}
     ${tavolaDisponibile() ? html`<button type="button" class="board-chip ${st}" data-act="tavola">
       <span class="dot"></span>${st === 'collegata' ? 'Granboard collegato' : st === 'collego' ? 'Collegamento…' : 'Collega Granboard'}</button>` : ''}
     <button type="button" class="iconbtn" data-act="full" aria-label="Schermo intero">${svg('full')}</button>

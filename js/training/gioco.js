@@ -9,9 +9,9 @@ import { keepAwake } from './awake.js';
 import { onDardo, onStato, tavolaStato } from './tavola.js';
 import { suona, sbloccaAudio } from './suono.js';
 import { visitaValida, applicaVisita } from './scorer.js';
-import { gioco, rigioca, numeriCheckout, record, migliora } from './giochi.js';
+import { gioco, rigioca, numeriCheckout, record, migliora, REGOLE } from './giochi.js';
 import { pannello, comandi } from './pannelli.js';
-import { barra, bersaglio } from './grafica.js';
+import { barra, bersaglio, svg } from './grafica.js';
 
 const PAUSA_MS = 6000; // dopo 3 frecce dal Granboard: il tempo di togliere le freccette
 const overlay = () => document.getElementById('overlay');
@@ -81,7 +81,7 @@ export default async function giocoView([id]) {
   const render = () => {
     if (!root) return;
     const titolo = g.id === 'rotation' && s ? `Rotation · ${g.MODI[s.modo]}` : g.nome;
-    root.innerHTML = html`${barra(titolo, { back: '/' })}${s ? gioca() : sceltaModo()}`.s;
+    root.innerHTML = html`${barra(titolo, { back: '/', info: true })}${s ? gioca() : sceltaModo()}`.s;
   };
 
   const lampeggia = (dId, ok) => {
@@ -184,6 +184,17 @@ export default async function giocoView([id]) {
     </div></div>`.s;
   }
 
+  function regole() {
+    overlay().innerHTML = html`<div class="modal" data-act="chiudi"><div class="card regole" data-stop>
+      <header><h2>Come si gioca · ${g.nome}</h2>
+        <button type="button" class="iconbtn" data-act="chiudi" aria-label="Chiudi">${svg('chiudi')}</button></header>
+      <ul>${REGOLE[g.id].map((r) => html`<li>${r}</li>`)}</ul>
+      <p class="mu sm">${tavolaStato() === 'collegata' ? 'Con il Granboard le frecce si segnano da sole: dopo ogni turno hai 6 secondi per togliere le freccette.'
+        : 'Senza Granboard tocca sul bersaglio il settore colpito, oppure usa i pulsanti.'}</p>
+      <button type="button" class="btn pri" data-act="chiudi">Ho capito</button>
+    </div></div>`.s;
+  }
+
   function ancora() {
     overlay().innerHTML = '';
     st.opzioni = opzioniNuove(g, st.opzioni);
@@ -208,6 +219,7 @@ export default async function giocoView([id]) {
         if (d.modo) { st.opzioni = { modo: d.modo }; s = rigioca(g, st.opzioni, []); render(); }
         else if (d.ev) invia(JSON.parse(d.ev));
         else if (d.k) tasto(d.k);
+        else if (d.act === 'info') regole();
         else if (d.act === 'annulla') annulla();
         else if (d.act === 'manuale') { st.manuale = !st.manuale; render(); }
         else if (d.act === 'abbandona') {
@@ -223,6 +235,8 @@ export default async function giocoView([id]) {
       }, sig);
       const ov = (e) => {
         const b = e.target.closest('button');
+        const chiudi = e.target.closest('[data-act="chiudi"]');
+        if (chiudi && !(chiudi.classList.contains('modal') && e.target.closest('[data-stop]'))) { overlay().innerHTML = ''; return; }
         if (b?.dataset.act === 'pronto') chiudiConto();
         else if (b?.dataset.act === 'ancora') ancora();
       };

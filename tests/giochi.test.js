@@ -180,3 +180,8 @@ test('badge, settimana e sfida del sabato', () => {
   assert.equal(cl.length, 2);
   assert.deepEqual(cl[0], gioco(id).basso ? { playerId: 'a', valore: 10 } : { playerId: 'a', valore: 12 });
 });
+
+import { REGOLE } from '../js/training/giochi.js';
+test('ogni gioco ha le sue regole', () => {
+  for (const g of GIOCHI) assert.ok(REGOLE[g.id]?.length >= 3, g.id);
+});

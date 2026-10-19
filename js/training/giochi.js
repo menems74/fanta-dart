@@ -356,3 +356,53 @@ export function classificaSfida(sessioni, sabato) {
   }
   return [...best].map(([playerId, valore]) => ({ playerId, valore })).sort((a, b) => (g.basso ? a.valore - b.valore : b.valore - a.valore));
 }
+
+// Regole spiegate nel riquadro "i" di ogni gioco.
+export const REGOLE = {
+  x501: [
+    'Parti da 501 e scendi a zero, da solo. Ogni turno sono 3 frecce.',
+    'Si chiude solo con una doppia (vale anche il Bull 50).',
+    'Sballo: se superi lo zero, resti a 1 o arrivi a zero senza doppia, il turno non conta e valgono comunque 3 frecce.',
+    'Il risultato è il numero di frecce usate: meno è meglio.',
+  ],
+  target20: [
+    '10 serie da 9 frecce, tutte al 20.',
+    'Singolo 1 punto, doppio 2, triplo 3. Gli altri numeri valgono 0.',
+    'Massimo 27 punti a serie, 270 in tutto.',
+  ],
+  targetbull: [
+    '10 serie da 9 frecce, tutte al centro.',
+    'Bull esterno (25) 1 punto, Bull centrale (50) 3 punti, fuori 0.',
+    'Massimo 27 punti a serie, 270 in tutto.',
+  ],
+  scoring: [
+    '18 frecce, cioè 6 turni, mirando dove vuoi.',
+    'Si parte da zero e si sommano tutti i punti.',
+    'Senza Granboard scrivi la somma di ogni turno.',
+  ],
+  checkout: [
+    '16 numeri da chiudere, diversi a ogni sessione: 10 sotto il 70 e 6 dal 70 al 100.',
+    'Per ogni numero hai 3 frecce e devi chiudere in doppia (vale anche il Bull 50).',
+    'Se sballi o non chiudi in 3 frecce, quel numero vale 0.',
+    'Il risultato è quante chiusure fai su 16.',
+  ],
+  doppie: [
+    '15 frecce per ogni doppia, in quest\'ordine: D20, D16, D10, D8, D5, D4, D1.',
+    'Conta solo la doppia giusta, e si tirano sempre tutte le 15 frecce.',
+    'Il risultato è il totale dei colpi su 105 frecce.',
+  ],
+  rotation: [
+    'All\'inizio scegli se mirare al singolo, al doppio o al triplo.',
+    'Colpisci i numeri dall\'1 al 20 in ordine: passi al numero dopo solo quando lo prendi.',
+    'Alla fine il bull: nel doppio serve il Bull 50, nel singolo e nel triplo va bene qualsiasi bull.',
+    'Nel singolo conta solo il settore singolo, non il doppio o il triplo.',
+    'Il risultato è il numero di frecce: meno è meglio. Nessun limite: puoi abbandonare quando vuoi.',
+  ],
+  cricket: [
+    'Si tira al 20, poi 19, 18, 17, 16, 15 e infine il bull, 3 frecce a turno.',
+    '3 colpi sul tuo numero: passi al successivo. 2 colpi: resti. 1 o 0 colpi: torni al numero prima (sul 20 resti).',
+    'Doppio e triplo valgono un colpo, come il singolo.',
+    'Al bull basta un colpo nelle 3 frecce per finire; se lo manchi torni al 15.',
+    'Il risultato è il numero di turni: meno è meglio.',
+  ],
+};
