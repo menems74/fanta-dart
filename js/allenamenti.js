@@ -5,7 +5,7 @@ import { html, toast } from './util.js';
 import { topbar, emptyState } from './ui.js';
 import { collega, onStato, tavolaStato } from './training/tavola.js';
 import { sbloccaAudio } from './training/suono.js';
-import { schermoIntero } from './training/grafica.js';
+import { schermoIntero, etichettaStato } from './training/grafica.js';
 import home from './training/home.js';
 import gioco from './training/gioco.js';
 import progressi from './training/progressi.js';
@@ -87,7 +87,8 @@ document.addEventListener('click', async (e) => {
 onStato((st) => {
   for (const b of document.querySelectorAll('.board-chip')) {
     b.className = `board-chip ${st}`;
-    b.lastChild.textContent = st === 'collegata' ? 'Granboard collegato' : st === 'collego' ? 'Collegamento…' : 'Collega Granboard';
+    b.setAttribute('aria-label', etichettaStato(st));
+    b.title = etichettaStato(st);
   }
   if (st === 'collegata') { document.querySelector('.card.collega')?.remove(); toast('Granboard collegato'); }
   if (st === 'scollegata') toast('Granboard scollegato');

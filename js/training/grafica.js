@@ -30,11 +30,14 @@ export function barra(titolo, { back = null, home = false, info = false } = {}) 
     ${home && !session.soloAllenamenti ? html`<a class="iconbtn" href="./#/partite" aria-label="Torna a Fanta Dart" title="Torna a Fanta Dart">${svg('home')}</a>` : ''}
     <h1>${titolo}</h1>
     ${info ? html`<button type="button" class="iconbtn info" data-act="info" aria-label="Regole del gioco" title="Regole del gioco">${svg('info')}</button>` : ''}
-    ${tavolaDisponibile() ? html`<button type="button" class="board-chip ${st}" data-act="tavola">
-      <span class="dot"></span>${st === 'collegata' ? 'Granboard collegato' : st === 'collego' ? 'Collegamento…' : 'Collega Granboard'}</button>` : ''}
+    ${tavolaDisponibile() ? html`<button type="button" class="board-chip ${st}" data-act="tavola" aria-label="${etichettaStato(st)}" title="${etichettaStato(st)}">
+      <span class="dot"></span>Granboard</button>` : ''}
     <button type="button" class="iconbtn" data-act="full" aria-label="Schermo intero">${svg('full')}</button>
   </header>`;
 }
+
+/** Stato del Granboard per chi legge lo schermo: nel pulsante si vede solo il pallino colorato. */
+export const etichettaStato = (st) => (st === 'collegata' ? 'Granboard collegato' : st === 'collego' ? 'Collegamento al Granboard…' : 'Collega il Granboard');
 
 export const nomeGiocatore = () => (session.player ? fullName(session.player) : 'Giocatore');
 

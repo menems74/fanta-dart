@@ -258,3 +258,8 @@ svg.line text { fill: var(--mu); font-size: 16px; }
 #overlay .regole .btn { flex: none; }
 
 
+
+/* tasto cancella distinto dai numeri; Annulla e Abbandona piu' piccoli (si usano di rado) */
+.tr .tast button.canc { color: var(--rd-tx); border-color: rgba(239, 68, 68, 0.45); background: rgba(239, 68, 68, 0.08); }
+.tr .azioni .btn { min-height: 40px; font-size: 15px; font-weight: 600; color: var(--mu); }
+.tr .azioni .btn.pri { color: #2b1d00; }

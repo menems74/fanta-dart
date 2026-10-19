@@ -90,9 +90,8 @@ export const pannello = (g, s, ctx) => PANNELLI[g.id](g, s, ctx);
 const tastierino = (input, testo) => html`
   <div class="tast">
     <div class="kdisp ${input ? '' : 'vuoto'}">${input || testo}</div>
-    ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => html`<button type="button" data-k="${n}">${n}</button>`)}
-    <button type="button" data-k="back" aria-label="Cancella">⌫</button>
-    <button type="button" data-k="0">0</button>
+    ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((n) => html`<button type="button" data-k="${n}">${n}</button>`)}
+    <button type="button" data-k="back" class="canc" aria-label="Cancella l'ultima cifra">⌫</button>
     <button type="button" data-k="ok" class="ok">OK</button>
   </div>`;
 const rapido = (e, testo, sotto, cls = '') => html`<button type="button" class="${cls}" data-ev="${ev(e)}">${testo}${sotto != null ? html`<small>${sotto}</small>` : ''}</button>`;
