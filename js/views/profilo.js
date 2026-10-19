@@ -1,5 +1,5 @@
 import { html, $, $$, fmtDate, icon, fullName, toast, votoClass } from '../util.js';
-import { session, logout, changeOwnPin, PIN_RE } from '../auth.js';
+import { session, logout, changeOwnPin, PIN_RE, nomeRuolo } from '../auth.js';
 import { getPlayer, listCards, listMatches, listSeasons, setPin } from '../db.js';
 import { playerStats, gamesOf, fmtMedia, fmtPerc } from '../stats.js';
 import { topbar, avatar, votoBadge, emptyState } from '../ui.js';
@@ -79,7 +79,7 @@ export default async function view([paramId]) {
       })}
       <section class="hero">
         <span class="avatar-wrap" id="avwrap">${avatar(player, 'xl')}<span class="avatar-star" aria-hidden="true">${icon('star', 16)}</span></span>
-        <div><h2>${fullName(player)}</h2><p class="muted">Tessera ${player.tessera} · ${player.ruolo === 'admin' ? 'Admin' : 'Player'}</p></div>
+        <div><h2>${fullName(player)}</h2><p class="muted">Tessera ${player.tessera} · ${nomeRuolo(player.ruolo)}</p></div>
       </section>
       ${season ? html`<div class="seg" role="tablist">
         <button data-s="stagione" role="tab">${season.nome}</button>

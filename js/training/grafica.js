@@ -27,7 +27,7 @@ export function barra(titolo, { back = null, home = false, info = false } = {}) 
   const st = tavolaStato();
   return html`<header class="top">
     ${back ? html`<a class="iconbtn" href="#${back}" aria-label="Indietro">${svg('back')}</a>` : ''}
-    ${home ? html`<a class="iconbtn" href="./#/partite" aria-label="Torna a Fanta Dart" title="Torna a Fanta Dart">${svg('home')}</a>` : ''}
+    ${home && !session.soloAllenamenti ? html`<a class="iconbtn" href="./#/partite" aria-label="Torna a Fanta Dart" title="Torna a Fanta Dart">${svg('home')}</a>` : ''}
     <h1>${titolo}</h1>
     ${info ? html`<button type="button" class="iconbtn info" data-act="info" aria-label="Regole del gioco" title="Regole del gioco">${svg('info')}</button>` : ''}
     ${tavolaDisponibile() ? html`<button type="button" class="board-chip ${st}" data-act="tavola">

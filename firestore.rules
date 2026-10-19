@@ -12,6 +12,12 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data.ruolo == 'admin';
     }
 
+    // Chi e' "Solo allenamenti" non vede stagioni, partite e pagelle di Fanta Dart.
+    function isTeam() {
+      return hasAccount()
+        && get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data.ruolo != 'allenamenti';
+    }
+
     function validCard(c) {
       return c.voto is int && c.voto >= 1 && c.voto <= 10
         && c.singoliGiocati is int && c.singoliGiocati >= 0 && c.singoliGiocati <= 4
@@ -54,18 +60,18 @@ service cloud.firestore {
     }
 
     match /seasons/{id} {
-      allow read: if hasAccount();
+      allow read: if isTeam();
       allow write: if isAdmin();
     }
 
     // I Player vedono solo le serate pubblicate.
     match /matches/{id} {
-      allow read: if isAdmin() || (hasAccount() && resource.data.pubblicata == true);
+      allow read: if isAdmin() || (isTeam() && resource.data.pubblicata == true);
       allow write: if isAdmin();
     }
 
     match /reportCards/{id} {
-      allow read: if isAdmin() || (hasAccount() && resource.data.pubblicata == true);
+      allow read: if isAdmin() || (isTeam() && resource.data.pubblicata == true);
       // Voto 1-10; al massimo 4 singoli e 2 doppi giocati, con vittorie non superiori ai giocati.
       allow create, update: if isAdmin() && validCard(request.resource.data);
       allow delete: if isAdmin();

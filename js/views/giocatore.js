@@ -25,8 +25,9 @@ export default async function view([param]) {
         </label>
         <label class="field">Ruolo
           <select name="ruolo" ${isSelf ? 'disabled' : ''}>
-            <option value="player" ${p?.ruolo !== 'admin' ? 'selected' : ''}>Player (sola lettura)</option>
             <option value="admin" ${p?.ruolo === 'admin' ? 'selected' : ''}>Admin</option>
+            <option value="player" ${!['admin', 'allenamenti'].includes(p?.ruolo) ? 'selected' : ''}>Player</option>
+            <option value="allenamenti" ${p?.ruolo === 'allenamenti' ? 'selected' : ''}>Solo allenamenti</option>
           </select>
         </label>
         ${isNew ? html`

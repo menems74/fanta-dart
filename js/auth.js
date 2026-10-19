@@ -12,6 +12,8 @@ export const PIN_RE = /^\d{4}$/;
 // Firebase vuole email e password >= 6 caratteri: tessera e PIN vengono "travestiti".
 // Ogni reset del PIN da parte di un admin crea un nuovo account con versione successiva.
 export const MAX_VERSIONS = 3;
+/** Nome del ruolo da mostrare. */
+export const nomeRuolo = (r) => ({ admin: 'Admin', allenamenti: 'Solo allenamenti' }[r] || 'Player');
 export const playerIdOf = (tessera) => tessera.replace('/', '-');
 export const emailFor = (tessera, version = 0) =>
   `${playerIdOf(tessera)}${version ? `.r${version}` : ''}@fantadart.app`;
@@ -27,6 +29,7 @@ export const session = {
   player: null,
   error: null,
   get isAdmin() { return this.account?.ruolo === 'admin'; },
+  get soloAllenamenti() { return this.account?.ruolo === 'allenamenti'; },
 };
 
 let probing = false; // true mentre login() prova le versioni dell'account: gli eventi di auth vanno ignorati

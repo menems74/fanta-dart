@@ -5,7 +5,8 @@ import { setSelectedSeason } from '../season.js';
 
 export default async function view([param]) {
   const isNew = param === 'nuova';
-  const [seasons, players] = await Promise.all([listSeasons(), listPlayers()]);
+  const [seasons, tutti] = await Promise.all([listSeasons(), listPlayers()]);
+  const players = tutti.filter((p) => p.ruolo !== 'allenamenti'); // chi fa solo allenamenti non gioca a Fanta Dart
   const season = isNew ? null : await getSeason(param);
   if (!isNew && !season) return { html: html`${topbar('Stagione', { back: '/gestione' })}<p class="muted">Stagione non trovata.</p>` };
 

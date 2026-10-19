@@ -58,6 +58,7 @@ async function navigate() {
   const my = ++token;
   let path = decodeURI(location.hash.slice(1)) || '/partite';
   if (!session.user && path !== '/login') { location.replace('#/login'); return; }
+  if (session.soloAllenamenti) { location.replace('allenamenti.html'); return; } // vede solo gli allenamenti
   if (session.user && path === '/login') { location.replace('#/partite'); return; }
 
   let route = null;

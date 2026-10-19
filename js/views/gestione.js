@@ -1,4 +1,5 @@
 import { html, icon, fullName } from '../util.js';
+import { nomeRuolo } from '../auth.js';
 import { listSeasons, listPlayers } from '../db.js';
 import { topbar, avatar } from '../ui.js';
 
@@ -29,7 +30,7 @@ export default async function view() {
           <li><a class="card row ${p.attivo === false ? 'off' : ''}" href="#/giocatore/${p.id}">
             ${avatar(p)}
             <div class="grow"><strong>${fullName(p)}</strong>
-              <span class="muted small">${p.ruolo === 'admin' ? 'Admin' : 'Player'}${p.attivo === false ? ' · non attivo' : ''}</span></div>
+              <span class="muted small">${nomeRuolo(p.ruolo)}${p.attivo === false ? ' · non attivo' : ''}</span></div>
             <span class="tessera" aria-label="Tessera ${p.tessera}">${p.tessera}</span>
           </a></li>`)}
       </ul>`,
