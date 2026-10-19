@@ -14,10 +14,11 @@ export const EFFETTI = {
   fine: hex('147d00007d0000000000000205010000'),
   cambioTurno: hex('117d00007d0000000000100005000000'),
   ton: hex('12ff6600000000000000370105050000'), // turno da 100 o piu'
-  treTripli: hex('0c000000000000000000000010000000'), // tre tripli uguali
+  treTripli: hex('0c000000000000000000000010000000'), // tre tripli uguali o tre bull
   max: hex('0f000000000000000000030005100000'), // 180
   fuori: hex('174b007d00000000000000000b010000'),
-  bull: hex('1f4b007d4b007d00487d000023010000'),
+  bull: hex('1f4b007d4b007d00487d000023010000'), // bull centrale (50)
+  bull25: hex('187d00007d00007d0000000014000000'), // bull esterno (25)
   spento: hex('01000000000000000000000000000000'),
 };
 
@@ -27,7 +28,8 @@ export const codiceLed = (n) => (25 + 3 * SETTORI.indexOf(n)) % 60;
 /** Comando per accendere il settore colpito: id come 'S20o', 'D16', 'T19', 'B50' o 'X' (fuori). */
 export function comandoColpo(id, colore = ROSSO) {
   if (id === 'X') return EFFETTI.fuori;
-  if (id === 'B25' || id === 'B50') return EFFETTI.bull;
+  if (id === 'B50') return EFFETTI.bull;
+  if (id === 'B25') return EFFETTI.bull25;
   const m = /^([SDT])(\d+)/.exec(id);
   if (!m) return null;
   const anello = { S: 1, D: 2, T: 3 }[m[1]];
@@ -41,12 +43,13 @@ const punti = (id) => {
   return m ? Number(m[2]) * { S: 1, D: 2, T: 3 }[m[1]] : 0;
 };
 
-/** Effetto speciale a fine turno (3 frecce): 180, tre tripli uguali, 100 o piu'. Null per un turno normale. */
+/** Effetto speciale a fine turno (3 frecce): 180, tre tripli uguali o tre bull, 100 o piu'. Null per un turno normale. */
 export function effettoTurno(ids) {
   if (ids.length !== 3) return null;
   const tot = ids.reduce((t, id) => t + punti(id), 0);
   if (tot === 180) return EFFETTI.max;
   if (ids[0].startsWith('T') && ids.every((id) => id === ids[0])) return EFFETTI.treTripli;
+  if (ids.every((id) => id === 'B25' || id === 'B50')) return EFFETTI.treTripli; // tre bull: vince anche sui 100
   if (tot >= 100) return EFFETTI.ton;
   return null;
 }

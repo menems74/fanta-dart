@@ -19,6 +19,7 @@ test('comandi dei colpi uguali a quelli dell\'app ufficiale', () => {
   assert.equal(hex(comandoColpo('T19')), '037d00007d00007d00003a0014000000');
   assert.equal(comandoColpo('X'), EFFETTI.fuori);
   assert.equal(comandoColpo('B50'), EFFETTI.bull);
+  assert.equal(hex(comandoColpo('B25')), '187d00007d00007d0000000014000000');
   assert.equal(comandoColpo('S20o').length, 16);
 });
 
@@ -27,6 +28,8 @@ test('effetti di fine turno: 180, tre tripli uguali, 100 o piu\'', () => {
   assert.equal(effettoTurno(['T1', 'T1', 'T1']), EFFETTI.treTripli);
   assert.equal(effettoTurno(['T20', 'T19', 'T18']), EFFETTI.ton);
   assert.equal(effettoTurno(['B50', 'B50', 'S1o']), EFFETTI.ton);
+  assert.equal(effettoTurno(['B25', 'B25', 'B50']), EFFETTI.treTripli); // visto nel log: tre bull, anche se fa 100
+  assert.equal(effettoTurno(['B50', 'B50', 'B50']), EFFETTI.treTripli);
   assert.equal(effettoTurno(['S20o', 'S20i', 'S20o']), null);
   assert.equal(effettoTurno(['T20', 'T20']), null);
 });
