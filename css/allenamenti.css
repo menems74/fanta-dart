@@ -256,3 +256,7 @@ svg.line text { fill: var(--mu); font-size: 16px; }
 #overlay .regole { width: min(640px, 100%); }
 #overlay .regole ul { margin: 0; padding-left: 22px; display: grid; gap: 10px; font-size: 18px; line-height: 1.45; }
 #overlay .regole .btn { flex: none; }
+
+/* firma in fondo alla colonna della home */
+.tr .firma { text-align: center; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--mu); opacity: .8; padding: 4px 0; }
+.tr .firma b { color: var(--gd); font-weight: 800; }

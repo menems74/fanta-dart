@@ -37,6 +37,7 @@ export default async function homeView() {
               <b>Sfida del sabato · ${sfida.nome}${sabato === oggi ? ' · oggi!' : ''}</b>
               <span>${fmtDate(sabato)}${recSfida != null ? ` · il tuo record ${recSfida}` : ''}${classifica.length ? ` · in testa con ${classifica[0].valore}` : ''}</span></a>
           </nav>
+          <p class="firma">Powered by <b>Cleopatra</b></p>
         </aside>
         <section class="giochi">
           ${collega ? html`<div class="card collega"><div><b>Hai il Granboard?</b><p class="mu sm">Collegalo ora: resta attivo in tutti i giochi e segna le frecce da solo. Senza, inserisci a mano.</p></div>
