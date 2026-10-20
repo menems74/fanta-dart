@@ -34,7 +34,6 @@ export default async function partita501View() {
     inizio: ripresa ? draft.inizio : Date.now(),
     input: '',
     chiusura: null,
-    manuale: false,
     bloccoFino: 0,
     finito: false,
   };
@@ -92,17 +91,25 @@ export default async function partita501View() {
     </section>`;
   };
 
-  const tastierino = () => html`
+  // Stesso tastierino con e senza Granboard. Se le frecce arrivano dalla tavola, la barra mostra il turno in corso
+  // e "Chiudi turno" lo chiude a meta' (le frecce mancanti valgono 0).
+  const tastierino = (s) => {
+    const parziale = s.turno.length > 0;
+    const punti = parziale ? s.resto - restoProvvisorio(s) : 0;
+    return html`
     <div class="inbar">
-      <div class="indisp ${st.input ? '' : 'vuoto'}">${st.input || 'Somma delle 3 frecce'}</div>
-      <button type="button" class="invia" data-k="ok">Invia</button>
+      ${parziale ? html`<div class="indisp turnoin">${s.turno.map(etichettaDardo).join(' · ')} <span>= ${punti}</span></div>
+        <button type="button" class="invia chiudi" data-act="completa">Chiudi turno</button>`
+      : html`<div class="indisp ${st.input ? '' : 'vuoto'}">${st.input || 'Somma delle 3 frecce'}</div>
+        <button type="button" class="invia" data-k="ok">Invia</button>`}
     </div>
-    <div class="k501">
+    <div class="k501 ${parziale ? 'bloccato' : ''}">
       ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => html`<button type="button" data-k="${n}">${n}</button>`)}
-      <button type="button" data-k="undo" class="annulla" aria-label="Annulla l'ultimo turno" title="Annulla l'ultimo turno">↶</button>
+      <button type="button" data-k="undo" class="annulla" aria-label="Annulla l'ultima mossa" title="Annulla l'ultima mossa">↶</button>
       <button type="button" data-k="0">0</button>
       <button type="button" data-k="back" class="canc" aria-label="Cancella l'ultima cifra">⌫</button>
     </div>`;
+  };
 
   const chiusura = () => html`
     <p class="turno">Chiuso da ${st.chiusura.resto}! Con quale freccia?</p>
@@ -111,25 +118,13 @@ export default async function partita501View() {
     <div class="azioni"><button type="button" class="btn" data-act="nochiusura">Ho sbagliato</button></div>`;
 
   const gioca = () => {
-    const collegata = tavolaStato() === 'collegata';
-    const auto = collegata && !st.manuale;
     const s = r.stati[r.cur];
     const chi = st.opzioni.n === 1 ? 'È il tuo turno!' : `Tocca a ${nomeDi(r.cur)}!`;
     return html`<div class="p501">
       <div class="carte n${st.opzioni.n}">${Array.from({ length: st.opzioni.n }, (_, i) => carta(i))}</div>
       <div class="ctrl">
-        ${st.chiusura ? chiusura() : html`
-          <p class="turno">${chi}</p>
-          ${auto ? html`
-            <div class="frecce tre">${[0, 1, 2].map((i) => (s.turno[i] ? html`<span class="v1">${etichettaDardo(s.turno[i])}</span>` : html`<span></span>`))}</div>
-            <p class="mu sm">Tira: le frecce si segnano da sole.</p>`
-            : (s.turno.length ? html`<p class="mu sm">Turno iniziato con il Granboard (${s.turno.map(etichettaDardo).join(' · ')}): finiscilo tirando, oppure chiudilo qui e le frecce mancanti valgono 0.</p>
-                <button type="button" class="btn" data-act="completa">Chiudi il turno</button>` : tastierino())}`}
-        <div class="azioni">
-          ${auto ? html`<button type="button" class="btn" data-act="annulla" ${st.eventi.length ? '' : 'disabled'}>Annulla</button>` : ''}
-          ${collegata ? html`<button type="button" class="btn" data-act="manuale">${st.manuale ? 'Granboard' : 'Tastierino'}</button>` : ''}
-          <button type="button" class="btn" data-act="abbandona">Abbandona</button>
-        </div>
+        ${st.chiusura ? chiusura() : html`<p class="turno">${chi}</p>${tastierino(s)}`}
+        <div class="azioni"><button type="button" class="btn" data-act="abbandona">Abbandona</button></div>
       </div>
     </div>`;
   };
@@ -186,6 +181,7 @@ export default async function partita501View() {
 
   function tasto(k) {
     if (k === 'undo') { annulla(); return; }
+    if (r.stati[r.cur].turno.length) return; // turno in corso dal Granboard: si finisce tirando o con "Chiudi turno"
     if (k === 'back') st.input = st.input.slice(0, -1);
     else if (k !== 'ok') { if (st.input.length < 3) st.input = st.input === '0' ? k : st.input + k; }
     else {
@@ -322,7 +318,6 @@ export default async function partita501View() {
         else if (d.act === 'completa') { const p = r.cur; while (r.cur === p && r.stati[p].turno.length && !st.finito) invia({ t: 'd', id: 'X' }); }
         else if (d.act === 'info') regole();
         else if (d.act === 'annulla') annulla();
-        else if (d.act === 'manuale') { st.manuale = !st.manuale; render(); }
         else if (d.act === 'abbandona') {
           if (!st.eventi.length || confirm('Abbandoni questa partita? Non verrà salvata.')) { clearDraft(pid, 'gioco'); location.hash = '#/'; }
         }
@@ -340,8 +335,9 @@ export default async function partita501View() {
       }, sig);
       offs = [
         onDardo((dd) => {
-          if (st.fase !== 'gioco' || st.finito || Date.now() < st.bloccoFino || st.chiusura || st.manuale) return;
+          if (st.fase !== 'gioco' || st.finito || Date.now() < st.bloccoFino || st.chiusura) return;
           if (overlay().querySelector('.fine')) return; // in attesa di "Continua" o "Fine partita"
+          st.input = '';
           invia({ t: 'd', id: dd.id }, { daTavola: true });
         }),
         onStato((stt) => { if (stt === 'collegata' && st.fase === 'gioco' && !st.finito) scrivi(EFFETTI.inizio); render(); }),

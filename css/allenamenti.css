@@ -329,3 +329,8 @@ svg.line text { fill: var(--mu); font-size: 16px; }
   .tr .invia { min-height: 42px; }
   .tr .turno { font-size: 20px; }
 }
+/* 501 con il Granboard: il turno in corso nella barra, tastierino in attesa */
+.tr .indisp.turnoin { font-size: clamp(20px, 4vmin, 30px); color: var(--gd); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tr .indisp.turnoin span { color: var(--tx); }
+.tr .invia.chiudi { background: var(--c1); color: var(--tx); border: 1px solid var(--ln-bright); padding: 0 18px; font-size: 16px; }
+.tr .k501.bloccato button:not(.annulla) { opacity: .35; }
