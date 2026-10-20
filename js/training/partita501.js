@@ -147,7 +147,7 @@ export default async function partita501View() {
       clearTimeout(ledTimer);
       scrivi(speciale || comandoColpo(ev.id));
       ledSpeciale = !!speciale;
-      if (s.fineTurno && !speciale && !s.finito) ledTimer = setTimeout(() => scrivi(EFFETTI.cambioTurno), PAUSA_MS - 3000); // quando mancano 3 secondi alla fine della pausa
+      if (s.fineTurno && !speciale && !s.finito) ledTimer = setTimeout(() => scrivi(EFFETTI.cambioTurno), PAUSA_MS - 2000); // quando mancano 2 secondi alla fine della pausa
       suona(ev.id === 'X' ? 'fuori' : 'singolo');
     }
     persist();

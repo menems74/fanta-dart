@@ -108,7 +108,7 @@ export default async function giocoView([id]) {
       clearTimeout(ledTimer);
       scrivi(speciale || comandoColpo(ev.id));
       ledSpeciale = !!speciale;
-      if (s.fineTurno && !speciale && !s.finito) ledTimer = setTimeout(() => scrivi(EFFETTI.cambioTurno), PAUSA_MS - 3000); // quando mancano 3 secondi alla fine della pausa
+      if (s.fineTurno && !speciale && !s.finito) ledTimer = setTimeout(() => scrivi(EFFETTI.cambioTurno), PAUSA_MS - 2000); // quando mancano 2 secondi alla fine della pausa
       const ok = bersagliPrima.length ? bersagliPrima.includes(ev.id) : ev.id !== 'X';
       const sg = segmento(ev.id);
       suona(ev.id === 'X' ? 'fuori' : sg && (sg.moltiplicatore > 1 || sg.id === 'B25') ? 'speciale' : 'singolo');
