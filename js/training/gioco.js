@@ -9,19 +9,19 @@ import { keepAwake } from './awake.js';
 import { onDardo, onStato, tavolaStato, scrivi } from './tavola.js';
 import { EFFETTI, comandoColpo, effettoTurno } from './led.js';
 import { suona, sbloccaAudio } from './suono.js';
-import { parla, sbloccaVoce } from './voce.js';
 import { visitaValida, applicaVisita } from './scorer.js';
 import { gioco, rigioca, numeriCheckout, record, migliora, REGOLE } from './giochi.js';
 import { pannello, comandi } from './pannelli.js';
+import partita501View from './partita501.js';
 import { barra, bersaglio, svg } from './grafica.js';
 
-const VOCE = new Set(['x501']); // giochi in cui la voce annuncia il turno (prova)
 const PAUSA_MS = 6000; // dopo 3 frecce dal Granboard: il tempo di togliere le freccette
 const overlay = () => document.getElementById('overlay');
 
 const opzioniNuove = (g, vecchie) => (g.id === 'checkout' ? { numeri: numeriCheckout() } : g.id === 'rotation' ? (vecchie?.modo ? { modo: vecchie.modo } : null) : {});
 
 export default async function giocoView([id]) {
+  if (id === 'x501') return partita501View(); // il 501 ha una schermata tutta sua, senza bersaglio
   const g = gioco(id);
   if (!g) { location.replace('#/'); return { html: html`` }; }
   const pid = session.account.playerId;
@@ -116,21 +116,11 @@ export default async function giocoView([id]) {
       render();
       lampeggia(ev.id, ok);
     } else { persist(); render(); }
-    if (VOCE.has(g.id) && s.fineTurno) annunciaTurno();
     if (s.finito) { setTimeout(fine, 600); return; }
     if (s.fineTurno) {
-      if (!VOCE.has(g.id)) setTimeout(() => suona('fine'), 350);
+      setTimeout(() => suona('fine'), 350);
       if (daTavola) contoAllaRovescia(s.ultimo);
     }
-  }
-
-  /** 501: a fine turno la voce dice la somma delle 3 frecce e, da 170 in giu', quanto manca a zero. */
-  function annunciaTurno() {
-    const punti = s.visite.at(-1);
-    if (s.finito) { parla(`Chiuso in ${s.frecce} frecce!`); return; }
-    const sballo = punti === 0 && s.ultimo.some((id) => id !== 'X');
-    const somma = sballo ? 'Sballato' : punti === 180 ? 'Centottanta!' : punti >= 100 ? `${punti}!` : String(punti);
-    parla(s.resto <= 170 ? `${somma}${somma.endsWith('!') ? '' : '.'} Mancano ${s.resto}` : somma);
   }
 
   function annulla() {
@@ -255,7 +245,6 @@ export default async function giocoView([id]) {
       // tocco sul bersaglio: pointerdown e' piu' immediato del click
       el.addEventListener('pointerdown', (e) => {
         sbloccaAudio();
-        sbloccaVoce();
         awake?.retry();
         const p = e.target.closest('#board [data-id]');
         if (p && s && !s.finito) { e.preventDefault(); invia({ t: 'd', id: p.dataset.id }); }

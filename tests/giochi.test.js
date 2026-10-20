@@ -185,3 +185,25 @@ import { REGOLE } from '../js/training/giochi.js';
 test('ogni gioco ha le sue regole', () => {
   for (const g of GIOCHI) assert.ok(REGOLE[g.id]?.length >= 3, g.id);
 });
+
+import { partita501 } from '../js/training/giochi.js';
+test('501 in due: turni alternati, vincitore e chi continua da solo', () => {
+  const t = (p, s) => ({ p, t: 'turno', s });
+  let r = partita501(2, [t(0, 60), t(1, 45)]);
+  assert.equal(r.cur, 0);
+  assert.equal(r.stati[0].resto, 441);
+  assert.equal(r.stati[1].resto, 456);
+  r = partita501(2, [{ p: 0, t: 'd', id: 'T20' }]);
+  assert.equal(r.cur, 0); // turno a meta': tocca ancora a me
+  const nove = [t(0, 180), t(1, 100), t(0, 180), t(1, 100), { p: 0, t: 'turno', s: 141, d: 3 }];
+  r = partita501(2, nove);
+  assert.equal(r.vincitore, 0);
+  assert.equal(r.cur, 1); // l'altro puo' continuare da solo
+  r = partita501(2, [...nove, t(1, 100), t(1, 100)]);
+  assert.equal(r.cur, 1);
+  assert.equal(r.stati[1].resto, 101);
+  assert.equal(r.tuttiChiusi, false);
+  r = partita501(1, [t(0, 60), t(0, 60)]);
+  assert.equal(r.cur, 0);
+  assert.equal(r.stati[0].resto, 381);
+});

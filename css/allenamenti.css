@@ -263,3 +263,69 @@ svg.line text { fill: var(--mu); font-size: 16px; }
 .tr .tast button.canc { color: var(--rd-tx); border-color: rgba(239, 68, 68, 0.45); background: rgba(239, 68, 68, 0.08); }
 .tr .azioni .btn { min-height: 40px; font-size: 15px; font-weight: 600; color: var(--mu); }
 .tr .azioni .btn.pri { color: #2b1d00; }
+
+/* ---------- 501: schede dei giocatori e tastierino grande ---------- */
+.tr .s501 { display: grid; gap: var(--gap); max-width: 820px; margin: 0 auto; padding-top: 2vh; }
+.tr .s501 h2 { font-size: 22px; }
+.tr .scelta2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+.tr .modo.sel { border: 2px solid var(--gd); background: rgba(251, 191, 36, 0.10); }
+.tr .avv { display: flex; flex-wrap: wrap; gap: 10px; }
+.tr .avv button { min-height: 52px; padding: 0 18px; border-radius: 999px; font: inherit; font-weight: 700; color: var(--tx); background: var(--c2); border: 1px solid var(--ln-bright); cursor: pointer; }
+.tr .avv button.sel { background: var(--gd); color: #2b1d00; border-color: var(--gd); }
+.tr .btn.grande { min-height: 62px; font-size: 20px; flex: none; }
+
+.tr .p501 { display: grid; gap: var(--gap); padding: 0 var(--side) clamp(10px, 2vmin, 20px); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; min-height: calc(100dvh - 62px); }
+.tr .carte { display: grid; gap: 10px; }
+.tr .carte.n2 { grid-template-columns: 1fr 1fr; }
+.tr .pcard { border-radius: 22px; padding: clamp(12px, 2vmin, 20px); background: var(--c2); border: 1px solid var(--ln); display: grid; gap: 6px; opacity: .75; transition: opacity .2s; }
+.tr .pcard.attivo { opacity: 1; background: linear-gradient(150deg, #3a2a05 0%, #1d1606 55%, #0d1b34 100%); border: 2px solid var(--gd); box-shadow: 0 0 26px rgba(251, 191, 36, 0.2); }
+.tr .pcard.chiuso { border-color: var(--gr); }
+.tr .pcard header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tr .pnome { font-size: 20px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tr .pdot { width: 14px; height: 14px; border-radius: 50%; background: var(--gd); box-shadow: 0 0 12px var(--gd); flex: none; }
+.tr .presto { font-size: clamp(64px, 14vmin, 120px); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.tr .pcard.attivo .presto { color: var(--gd); text-shadow: 0 0 24px var(--gd-glow); }
+.tr .pcard.chiuso .presto { color: var(--gr-tx); }
+.tr .pcard dl { margin: 0; display: grid; gap: 2px; }
+.tr .pcard dl div { display: flex; justify-content: space-between; gap: 8px; font-size: 15px; }
+.tr .pcard dt { color: var(--mu); }
+.tr .pcard dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tr .pchiuso { color: var(--gr-tx); font-weight: 700; }
+.tr .carte.n2 .presto { font-size: clamp(52px, 11vmin, 100px); }
+.tr .carte.n2 .pcard dl div { font-size: 13px; }
+
+.tr .ctrl { display: grid; gap: 12px; align-content: start; }
+.tr .turno { font-size: clamp(22px, 4vmin, 30px); font-weight: 800; color: var(--gd); }
+.tr .inbar { display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 999px; background: var(--c2); border: 1px solid var(--ln-bright); }
+.tr .indisp { flex: 1; padding: 0 16px; font-size: clamp(28px, 5vmin, 40px); font-weight: 800; font-variant-numeric: tabular-nums; min-width: 0; }
+.tr .indisp.vuoto { font-size: 17px; font-weight: 500; color: var(--mu); }
+.tr .invia { min-height: 54px; padding: 0 30px; border-radius: 999px; border: 0; background: var(--gr); color: #03210e; font: inherit; font-weight: 800; font-size: 19px; cursor: pointer; }
+.tr .invia:active { transform: scale(.96); }
+.tr .k501 { display: grid; grid-template-columns: repeat(3, 1fr); border-radius: 18px; overflow: hidden; border: 1px solid var(--ln); }
+.tr .k501 button { min-height: clamp(62px, 11vmin, 92px); font: inherit; font-size: clamp(30px, 6vmin, 42px); font-weight: 700; color: var(--tx); background: var(--c1); border: 0; border-right: 1px solid var(--ln); border-bottom: 1px solid var(--ln); cursor: pointer; }
+.tr .k501 button:nth-child(3n) { border-right: 0; }
+.tr .k501 button:nth-last-child(-n+3) { border-bottom: 0; }
+.tr .k501 button:active { background: var(--c2); }
+.tr .k501 .annulla { color: var(--mu); font-size: clamp(26px, 5vmin, 36px); }
+.tr .k501 .canc { color: var(--rd-tx); }
+#overlay .riep501 { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+#overlay .riep501 li { display: flex; justify-content: space-between; padding: 8px 12px; border-radius: 12px; background: var(--c2); font-size: 18px; }
+
+@media (orientation: landscape) and (min-height: 521px) {
+  .tr .p501 { align-content: center; }
+  .tr .k501 button { min-height: clamp(62px, 12.5dvh, 112px); }
+  .tr .pcard { padding: 24px; gap: 12px; }
+  .tr .pcard dl div { font-size: 17px; }
+}
+@media (orientation: portrait) {
+  .tr .p501 { grid-template-columns: 1fr; min-height: 0; }
+  .tr .k501 button { min-height: clamp(64px, 10.5dvh, 110px); }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .tr .p501 { min-height: calc(100dvh - 54px); }
+  .tr .presto { font-size: 46px; }
+  .tr .carte.n2 .presto { font-size: 40px; }
+  .tr .k501 button { min-height: 44px; font-size: 24px; }
+  .tr .invia { min-height: 42px; }
+  .tr .turno { font-size: 20px; }
+}

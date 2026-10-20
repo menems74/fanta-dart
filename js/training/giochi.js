@@ -360,7 +360,8 @@ export function classificaSfida(sessioni, sabato) {
 // Regole spiegate nel riquadro "i" di ogni gioco.
 export const REGOLE = {
   x501: [
-    'Parti da 501 e scendi a zero, da solo. Ogni turno sono 3 frecce.',
+    'Parti da 501 e scendi a zero, da solo o in due (contro un compagno o un ospite). Ogni turno sono 3 frecce.',
+    'In due si tira a turno e inizi tu: vince chi chiude per primo, e l\'altro può continuare da solo per chiudere.',
     'Si chiude solo con una doppia (vale anche il Bull 50).',
     'Sballo: se superi lo zero, resti a 1 o arrivi a zero senza doppia, il turno non conta e valgono comunque 3 frecce.',
     'Il risultato è il numero di frecce usate: meno è meglio.',
@@ -406,3 +407,25 @@ export const REGOLE = {
     'Il risultato è il numero di turni: meno è meglio.',
   ],
 };
+
+// ---------------------------------------------------------------- 501 in uno o due
+/**
+ * Partita a 501 per n giocatori (1 o 2) che tirano a turno, il primo e' sempre chi usa l'app.
+ * eventi: { p, ...evento del 501 } con p = indice del giocatore. Chi ha chiuso non tira piu'.
+ * Restituisce gli stati di ognuno, a chi tocca (cur) e chi ha chiuso per primo (vincitore).
+ */
+export function partita501(n, eventi) {
+  const g = gioco('x501');
+  const stati = Array.from({ length: n }, () => g.crea());
+  let cur = 0;
+  let vincitore = null;
+  for (const { p, ...ev } of eventi) {
+    stati[p] = g.passo(stati[p], ev);
+    if (stati[p].finito && vincitore === null) vincitore = p;
+    if (stati[p].fineTurno || stati[p].finito) {
+      const altro = (p + 1) % n;
+      cur = !stati[altro].finito ? altro : p;
+    }
+  }
+  return { stati, cur, vincitore, tuttiChiusi: stati.every((s) => s.finito) };
+}
