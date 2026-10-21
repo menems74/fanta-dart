@@ -210,8 +210,11 @@ const doppie = {
   valore: (s) => somma(s.colpi),
   dati: (s) => ({ colpi: s.colpi }),
   bersagli: (s) => (s.finito ? [] : [`D${DOPPIE[s.idx]}`]),
-  /** Settore da illuminare sulla tavola (in verde) prima di ogni freccia. */
-  ledBersaglio: (s) => (s.finito ? null : `D${DOPPIE[s.idx]}`),
+  /**
+   * Settore da illuminare sulla tavola (in verde) a inizio turno. Si usa la luce del singolo, piu' stretta:
+   * quella del doppio prende una zona piu' larga del numero.
+   */
+  ledBersaglio: (s) => (s.finito ? null : `S${DOPPIE[s.idx]}o`),
 };
 
 // ---------------------------------------------------------------- Rotation
