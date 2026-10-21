@@ -74,6 +74,8 @@ const SCALA = { 20: 18, bull: 9, '20-20-19': 16, '20-20-bull': 14 };
 const miraDi = (o) => (MIRE[o?.mira] ? String(o.mira) : '20');
 const puntiSu = (id, n) => (n === 25 ? ({ B25: 1, B50: 3 }[id] || 0)
   : id === `S${n}i` || id === `S${n}o` ? 1 : id === `D${n}` ? 2 : id === `T${n}` ? 3 : 0);
+/** Luce stretta (quella del singolo) sul numero n, null per il bull. */
+const luceSu = (n) => (n == null || n === 25 ? null : `S${n}o`);
 const settoriDi = (n) => (n === 25 ? ['B25', 'B50'] : [`S${n}i`, `S${n}o`, `D${n}`, `T${n}`]);
 
 /**
@@ -111,6 +113,7 @@ const target = {
   /** Numero a cui tirare la prossima freccia (25 = bull). */
   prossimo: (s) => s.seq[s.turno.length],
   bersagli: (s) => (s.finito ? [] : settoriDi(s.seq[s.turno.length])),
+  ledBersaglio: (s) => (s.finito ? null : luceSu(s.seq[s.turno.length])),
   /** Pulsanti per chi inserisce a mano, per la prossima freccia. */
   quick: (s) => {
     const n = s.seq[s.turno.length];
@@ -214,7 +217,8 @@ const doppie = {
    * Settore da illuminare sulla tavola (in verde) a inizio turno. Si usa la luce del singolo, piu' stretta:
    * quella del doppio prende una zona piu' larga del numero.
    */
-  ledBersaglio: (s) => (s.finito ? null : `S${DOPPIE[s.idx]}o`),
+  ledBersaglio: (s) => (s.finito ? null : luceSu(DOPPIE[s.idx])),
+  festa: true, // presa la doppia: gioco di luci
 };
 
 // ---------------------------------------------------------------- Rotation
@@ -248,6 +252,8 @@ const rotation = {
   valore: (s) => s.frecce,
   dati: (s) => ({ modo: s.modo, arrivo: s.idx }),
   bersagli: (s) => (s.finito ? [] : bersagliRotation(s.modo, ROTATION[s.idx])),
+  ledBersaglio: (s) => (s.finito ? null : luceSu(ROTATION[s.idx])),
+  festa: true, // preso il numero: gioco di luci e si passa al successivo
 };
 
 // ---------------------------------------------------------------- Cricket Train
@@ -286,6 +292,7 @@ const cricket = {
   },
   valore: (s) => s.turni,
   dati: (s) => ({ storia: s.storia }),
+  ledBersaglio: (s) => (s.finito ? null : luceSu(TRAIN[s.pos])),
   bersagli: (s) => {
     const n = TRAIN[s.pos];
     if (n == null) return [];

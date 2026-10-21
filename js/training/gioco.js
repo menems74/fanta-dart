@@ -128,13 +128,15 @@ export default async function giocoView([id]) {
   function invia(ev, { daTavola = false } = {}) {
     if (!s || s.finito) return;
     const bersagliPrima = g.bersagli(s);
+    const sPrima = s;
     st.eventi.push(ev);
     s = g.passo(structuredClone(s), ev);
     if (ev.t === 'd') {
       // led: il settore colpito, oppure a fine turno l'effetto speciale (180, tre tripli uguali, 100 o piu')
       const speciale = s.fineTurno ? effettoTurno(s.ultimo) : null;
-      // giochi con il bersaglio illuminato (Doppie): se lo prendi parte un gioco di luci
-      const preso = !!g.ledBersaglio && bersagliPrima.includes(ev.id);
+      // giochi con il bersaglio illuminato: in Doppie e Rotation, se lo prendi parte un gioco di luci
+      const preso = !!g.festa && bersagliPrima.includes(ev.id);
+      const lucePrima = g.ledBersaglio?.(sPrima);
       clearTimeout(ledTimer);
       clearTimeout(bersTimer);
       scrivi(speciale || (preso ? EFFETTI.festa : comandoColpo(ev.id)));
@@ -143,6 +145,8 @@ export default async function giocoView([id]) {
       if (g.ledBersaglio && !s.finito) {
         // il bersaglio si accende solo a inizio turno (prima delle 3 frecce): la tavola non lo tiene acceso fisso
         if (s.fineTurno && (!daTavola || !pausaMs())) illuminaBersaglio(ritardoCambioTurno() + 1500);
+        // a meta' turno solo se il numero da colpire e' cambiato (Rotation dopo un colpo, Target 20-20-19 alla terza)
+        else if (!s.fineTurno && g.ledBersaglio(s) !== lucePrima) illuminaBersaglio(preso ? 1500 : 1000);
         // con la pausa il bersaglio si riaccende alla fine del conto alla rovescia
       }
       const ok = bersagliPrima.length ? bersagliPrima.includes(ev.id) : ev.id !== 'X';
