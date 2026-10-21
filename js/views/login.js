@@ -1,4 +1,5 @@
 import { html, $, formatTessera } from '../util.js';
+import { firma } from '../versione.js';
 import { login, session, normalizeTessera, TESSERA_RE, PIN_RE, orphanMessage } from '../auth.js';
 
 const MESSAGES = {
@@ -29,7 +30,7 @@ export default async function view() {
           <button class="btn primary" id="go">Entra</button>
         </form>
         <p class="muted small">Non hai il PIN? Chiedilo a un admin.</p>
-        <p class="firma">Powered by <b>Cleopatra</b></p>
+        ${firma()}
       </section>`,
     mount(root) {
       const f = $(root, '#f');

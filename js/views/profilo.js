@@ -4,6 +4,7 @@ import { getPlayer, listCards, listMatches, listSeasons, setPin } from '../db.js
 import { playerStats, gamesOf, fmtMedia, fmtPerc } from '../stats.js';
 import { topbar, avatar, votoBadge, emptyState } from '../ui.js';
 import { getSelectedSeason } from '../season.js';
+import { firma } from '../versione.js';
 
 const starIcon = icon('star', 22).s;
 
@@ -105,7 +106,8 @@ export default async function view([paramId]) {
         <div class="actions">
           <button class="btn sec" id="pinBtn">Cambia PIN</button>
           <button class="btn sec" id="out">${icon('logout', 18)} Esci</button>
-        </div>` : ''}`,
+        </div>` : ''}
+      ${firma()}`,
     mount(root) {
       draw(root);
       $(root, '.seg')?.addEventListener('click', (e) => {

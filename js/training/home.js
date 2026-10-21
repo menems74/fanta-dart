@@ -1,6 +1,7 @@
 // Home degli allenamenti: figurina con la Skill, menu (progressi, squadra, sfida) e griglia dei giochi.
 import { html, fmtDate, todayIso } from '../util.js';
 import { session } from '../auth.js';
+import { firma } from '../versione.js';
 import { listTutteSessioni } from '../db.js';
 import { tavolaDisponibile, tavolaStato } from './tavola.js';
 import {
@@ -44,7 +45,7 @@ export default async function homeView() {
             <span><b>Pausa dopo il turno</b><small>Con il Granboard: tempo per togliere le freccette</small></span>
             <em id="pausaval">${etichettaPausa(pausaSecondi())}</em>
           </button>
-          <p class="firma">Powered by <b>Cleopatra</b></p>
+          ${firma()}
         </aside>
         <section class="giochi">
           ${collega ? html`<div class="card collega"><div><b>Hai il Granboard?</b><p class="mu sm">Collegalo ora: resta attivo in tutti i giochi e segna le frecce da solo. Senza, inserisci a mano.</p></div>

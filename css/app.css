@@ -1027,3 +1027,5 @@ a.pill-btn { text-decoration: none; }
 .mappa .btn { height: 52px; font-size: 20px; }
 .mappa-val { font-size: 20px; margin-top: 8px; }
 .mappa-val b { color: var(--gd); font-size: 28px; }
+.firma .ver { text-transform: none; letter-spacing: .04em; }
+.app > .firma { margin-top: 24px; }
