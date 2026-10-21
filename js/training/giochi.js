@@ -67,47 +67,66 @@ export const restoProvvisorio = (s) => (s.turno.length ? elaboraTurno(s.resto, s
 // ---------------------------------------------------------------- Target 20 / Target Bull
 const PER_SERIE = 9;
 const nSerie = (o) => Number(o?.serie) || 10; // le sessioni salvate prima della scelta erano tutte da 10 serie
+// Bersaglio di ogni freccia del turno (25 = bull): tutte al 20, tutte al bull o le combinazioni 20-20-19 e 20-20-bull.
+const MIRE = { 20: [20, 20, 20], bull: [25, 25, 25], '20-20-19': [20, 20, 19], '20-20-bull': [20, 20, 25] };
+// Media a serie (su 27) che vale voto 100, per ogni bersaglio: il bull e' molto piu' difficile del 20.
+const SCALA = { 20: 18, bull: 9, '20-20-19': 16, '20-20-bull': 14 };
+const miraDi = (o) => (MIRE[o?.mira] ? String(o.mira) : '20');
+const puntiSu = (id, n) => (n === 25 ? ({ B25: 1, B50: 3 }[id] || 0)
+  : id === `S${n}i` || id === `S${n}o` ? 1 : id === `D${n}` ? 2 : id === `T${n}` ? 3 : 0);
+const settoriDi = (n) => (n === 25 ? ['B25', 'B50'] : [`S${n}i`, `S${n}o`, `D${n}`, `T${n}`]);
+
 /**
- * Target: 5 o 10 serie da 9 frecce. Il totale dipende dalle serie, quindi voto, pollici e grafici usano
- * la media a serie (su 27); i record restano separati per 5 e 10 serie.
+ * Target: 5 o 10 serie da 9 frecce su un bersaglio (20, bull) o una combinazione (20-20-19, 20-20-bull: le prime
+ * due frecce del turno al 20, la terza al 19 o al bull). Singolo 1, doppio 2, triplo 3; bull 25 vale 1 e 50 vale 3.
+ * Il totale dipende dalle serie, quindi voto, pollici e grafici usano la media a serie; i record sono per bersaglio e serie.
  */
-function target({ id, nome, desc, punti, quick, bersagli, cento }) {
-  return {
-    id, nome, desc, unit: 'punti', unitGrafico: 'punti a serie', PER_SERIE, quick,
-    VARIANTI: {
-      chiave: 'serie',
-      domanda: 'Quante serie da 9 frecce vuoi tirare?',
-      lista: [[10, '10 serie', '90 frecce: l\'allenamento completo'], [5, '5 serie', '45 frecce: quando hai poco tempo']],
-    },
-    // cento: i punti su 10 serie che valgono 100
-    voto: (v, o) => lineare(v / nSerie(o), 0, cento / 10),
-    crea: (o) => ({ ...base(), punti: [], nSerie: nSerie(o) }),
-    passo(s, ev) {
-      if (ev.t !== 'd') return s;
-      s.punti.push(punti(ev.id));
-      aggiungi(s, ev.id);
-      s.finito = s.punti.length >= s.nSerie * PER_SERIE;
-      return s;
-    },
-    valore: (s) => somma(s.punti),
-    dati: (s) => ({ serie: Array.from({ length: s.nSerie }, (_, i) => somma(s.punti.slice(i * PER_SERIE, (i + 1) * PER_SERIE))) }),
-    bersagli: () => bersagli,
-    /** Valore nei grafici: media a serie, cosi' 5 e 10 serie stanno sulla stessa linea. */
-    grafico: (x) => Math.round((x.valore / nSerie(x.opzioni)) * 10) / 10,
-  };
+const target = {
+  id: 'target', nome: 'Target', desc: '20, bull o combinazioni · 5 o 10 serie', nomeSfida: 'Target 20 · 10 serie', descSfida: '10 serie da 9 frecce al 20',
+  unit: 'punti', unitGrafico: 'punti a serie', PER_SERIE, GRUPPO: 'mira',
+  SCELTE: [
+    { chiave: 'mira', titolo: 'Su cosa miri?', predefinito: '20', lista: [
+      ['20', '20', 'Tutte le frecce al 20'],
+      ['bull', 'Bull', 'Tutte le frecce al centro'],
+      ['20-20-19', '20 · 20 · 19', 'Due al 20, la terza al 19'],
+      ['20-20-bull', '20 · 20 · Bull', 'Due al 20, la terza al bull'],
+    ] },
+    { chiave: 'serie', titolo: 'Quante serie da 9 frecce?', predefinito: 10, lista: [
+      [10, '10 serie', '90 frecce: l\'allenamento completo'],
+      [5, '5 serie', '45 frecce: quando hai poco tempo'],
+    ] },
+  ],
+  voto: (v, o) => lineare(v / nSerie(o), 0, SCALA[miraDi(o)]),
+  crea: (o) => ({ ...base(), punti: [], ids: [], nSerie: nSerie(o), seq: MIRE[miraDi(o)] }),
+  passo(s, ev) {
+    if (ev.t !== 'd' || s.finito) return s;
+    s.punti.push(puntiSu(ev.id, s.seq[s.turno.length]));
+    s.ids.push(ev.id);
+    aggiungi(s, ev.id);
+    s.finito = s.punti.length >= s.nSerie * PER_SERIE;
+    return s;
+  },
+  valore: (s) => somma(s.punti),
+  dati: (s) => ({ serie: Array.from({ length: s.nSerie }, (_, i) => somma(s.punti.slice(i * PER_SERIE, (i + 1) * PER_SERIE))) }),
+  /** Numero a cui tirare la prossima freccia (25 = bull). */
+  prossimo: (s) => s.seq[s.turno.length],
+  bersagli: (s) => (s.finito ? [] : settoriDi(s.seq[s.turno.length])),
+  /** Pulsanti per chi inserisce a mano, per la prossima freccia. */
+  quick: (s) => {
+    const n = s.seq[s.turno.length];
+    return n === 25 ? [['X', 'Mancato', 0], ['B25', 'Bull 25', 1], ['B50', 'Bull 50', 3]]
+      : [['X', 'Mancato', 0], [`S${n}o`, 'Singolo', 1], [`D${n}`, 'Doppio', 2], [`T${n}`, 'Triplo', 3]];
+  },
+  /** Valore nei grafici: media a serie, cosi' 5 e 10 serie stanno sulla stessa linea. */
+  grafico: (x) => Math.round((x.valore / nSerie(x.opzioni)) * 10) / 10,
+};
+
+/** Le sessioni salvate con i vecchi giochi Target 20 e Target Bull diventano Target con il bersaglio giusto. */
+export function normalizzaSessione(x) {
+  if (x.gioco === 'target20') return { ...x, gioco: 'target', opzioni: { ...(x.opzioni || {}), mira: '20' } };
+  if (x.gioco === 'targetbull') return { ...x, gioco: 'target', opzioni: { ...(x.opzioni || {}), mira: 'bull' } };
+  return x;
 }
-const target20 = target({
-  id: 'target20', nome: 'Target 20', desc: '5 o 10 serie da 9 frecce al 20', cento: 180,
-  punti: (id) => ({ S20i: 1, S20o: 1, D20: 2, T20: 3 }[id] || 0),
-  quick: [['X', 'Mancato', 0], ['S20o', 'Singolo', 1], ['D20', 'Doppio', 2], ['T20', 'Triplo', 3]],
-  bersagli: ['S20i', 'S20o', 'D20', 'T20'],
-});
-const targetbull = target({
-  id: 'targetbull', nome: 'Target Bull', desc: '5 o 10 serie da 9 frecce al centro', cento: 90,
-  punti: (id) => ({ B25: 1, B50: 3 }[id] || 0),
-  quick: [['X', 'Mancato', 0], ['B25', 'Bull 25', 1], ['B50', 'Bull 50', 3]],
-  bersagli: ['B25', 'B50'],
-});
 
 // ---------------------------------------------------------------- Scoring
 const SCORING_FRECCE = 18;
@@ -203,11 +222,14 @@ export function bersagliRotation(modo, n) {
 }
 const rotation = {
   id: 'rotation', nome: 'Rotation', desc: 'Dall\'1 al 20, poi il bull', unit: 'frecce', basso: true, MODI, ROTATION,
-  VARIANTI: {
-    chiave: 'modo',
-    domanda: 'Colpisci i numeri dall\'1 al 20 in ordine e chiudi con il bull. Su cosa vuoi mirare?',
-    lista: [['S', 'Singolo', 'Solo il settore singolo, poi un bull'], ['D', 'Doppio', 'Doppi e alla fine il Bull 50'], ['T', 'Triplo', 'Tripli, poi un bull qualsiasi']],
-  },
+  GRUPPO: 'modo',
+  SCELTE: [
+    { chiave: 'modo', titolo: 'Colpisci i numeri dall\'1 al 20 in ordine e chiudi con il bull. Su cosa vuoi mirare?', lista: [
+      ['S', 'Singolo', 'Solo il settore singolo, poi un bull'],
+      ['D', 'Doppio', 'Doppi e alla fine il Bull 50'],
+      ['T', 'Triplo', 'Tripli, poi un bull qualsiasi'],
+    ] },
+  ],
   // il doppio e il triplo sono molto piu' difficili: scala diversa, cosi' il voto resta confrontabile
   voto: (v, o = {}) => (o.modo === 'S' ? lineare(v, 120, 25) : lineare(v, 300, 60)),
   crea: (o) => ({ ...base(), modo: o.modo, idx: 0 }),
@@ -266,7 +288,7 @@ const cricket = {
   },
 };
 
-export const GIOCHI = [x501, target20, targetbull, scoring, checkout, doppie, rotation, cricket];
+export const GIOCHI = [x501, target, scoring, checkout, doppie, rotation, cricket];
 export const gioco = (id) => GIOCHI.find((g) => g.id === id);
 
 /** Stato dopo tutti gli eventi. */
@@ -304,13 +326,30 @@ export function trend(voti) {
 export const trendGioco = (sessioni, id) => trend(sessioni.filter((x) => x.gioco === id).sort(perData).map((x) => x.voto));
 export const trendGiocatore = (sessioni) => trend([...sessioni].sort(perData).map((x) => x.voto));
 
-/** Variante scelta all\'inizio (modalita' di Rotation, numero di serie dei Target), null per gli altri giochi. */
-export function varianteDi(g, opzioni) {
-  if (!g.VARIANTI) return null;
-  if (g.VARIANTI.chiave === 'serie') return nSerie(opzioni);
-  return opzioni?.[g.VARIANTI.chiave] ?? null;
+/** Scelte fatte all\'inizio (bersaglio e serie del Target, modalita' di Rotation), con i valori predefiniti. */
+export function scelteDi(g, opzioni) {
+  const out = {};
+  for (const c of g.SCELTE || []) {
+    const v = opzioni?.[c.chiave] ?? c.predefinito;
+    out[c.chiave] = c.chiave === 'serie' ? Number(v) : v;
+  }
+  return out;
 }
-export const nomeVariante = (g, v) => g.VARIANTI?.lista.find(([k]) => String(k) === String(v))?.[1] ?? '';
+/** Chiave della variante (es. "20|10" o "T"), null per i giochi senza scelte. Serve per i record. */
+export function varianteDi(g, opzioni) {
+  if (!g.SCELTE) return null;
+  const sc = scelteDi(g, opzioni);
+  return g.SCELTE.map((c) => sc[c.chiave]).join('|');
+}
+/** Nome leggibile della variante: "20 · 20 · 19 · 10 serie". */
+export function nomeVariante(g, chiave) {
+  if (!g.SCELTE || chiave == null) return '';
+  const valori = String(chiave).split('|');
+  return g.SCELTE.map((c, i) => c.lista.find(([k]) => String(k) === valori[i])?.[1] ?? '').filter(Boolean).join(' · ');
+}
+/** Valore della scelta che divide i grafici (bersaglio del Target, modalita' di Rotation). */
+export const gruppoDi = (g, opzioni) => (g.GRUPPO ? scelteDi(g, opzioni)[g.GRUPPO] : null);
+export const nomeGruppo = (g, v) => g.SCELTE?.find((c) => c.chiave === g.GRUPPO)?.lista.find(([k]) => String(k) === String(v))?.[1] ?? '';
 
 /** Record: il valore migliore, nella stessa variante se indicata (Rotation in triplo, Target su 5 serie...). */
 export function record(sessioni, id, variante = null) {
@@ -350,8 +389,8 @@ export const BADGES = [
   { id: 'ton', nome: 'Ton', desc: 'Un turno da 100 o più (501 o Scoring)', ok: (s) => maxTurno(s) >= 100 },
   { id: 'max', nome: '180!', desc: 'Il massimo in un turno', ok: (s) => maxTurno(s) >= 180 },
   { id: 'rapido', nome: 'Chiusura rapida', desc: '501 in 30 frecce o meno', ok: (s) => alPiu(migliore(s, 'x501'), 30) },
-  { id: 'serie', nome: 'Serie d\'oro', desc: 'Target 20: almeno 130 punti', ok: (s) => almeno(migliore(s, 'target20'), 130) },
-  { id: 'bull', nome: 'Occhio di bue', desc: 'Target Bull: almeno 40 punti', ok: (s) => almeno(migliore(s, 'targetbull'), 40) },
+  { id: 'serie', nome: 'Serie d\'oro', desc: 'Target al 20, 10 serie: almeno 130 punti', ok: (s) => almeno(migliore(s, 'target', (x) => varianteDi(target, x.opzioni) === '20|10'), 130) },
+  { id: 'bull', nome: 'Occhio di bue', desc: 'Target al bull, 10 serie: almeno 40 punti', ok: (s) => almeno(migliore(s, 'target', (x) => varianteDi(target, x.opzioni) === 'bull|10'), 40) },
   { id: 'doppie', nome: 'Re delle doppie', desc: 'Doppie: almeno 30 colpi', ok: (s) => almeno(migliore(s, 'doppie'), 30) },
   { id: 'checkout', nome: 'Sangue freddo', desc: 'Checkout: almeno 8 chiusure', ok: (s) => almeno(migliore(s, 'checkout'), 8) },
   { id: 'triplo', nome: 'Giro dei tripli', desc: 'Rotation completata in triplo', ok: (s) => s.some((x) => x.gioco === 'rotation' && x.opzioni?.modo === 'T') },
@@ -360,7 +399,7 @@ export const BADGES = [
 export const badgePresi = (sessioni) => new Set(BADGES.filter((b) => b.ok(sessioni)).map((b) => b.id));
 
 // Sfida del sabato: un gioco a rotazione, una settimana dopo l'altra.
-export const SFIDA = ['target20', 'doppie', 'checkout', 'scoring', 'x501'];
+export const SFIDA = ['target', 'doppie', 'checkout', 'scoring', 'x501'];
 export function prossimoSabato(oggi) {
   const d = new Date(`${oggi}T12:00:00`);
   d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7));
@@ -375,8 +414,8 @@ export function classificaSfida(sessioni, sabato) {
   const id = sfidaDel(sabato);
   const g = gioco(id);
   const best = new Map();
-  // nei Target la sfida vale solo sulle 10 serie
-  const valida = (y) => g.VARIANTI?.chiave !== 'serie' || varianteDi(g, y.opzioni) === 10;
+  // nel Target la sfida e' al 20 su 10 serie
+  const valida = (y) => g.id !== 'target' || varianteDi(g, y.opzioni) === '20|10';
   for (const x of sessioni.filter((y) => y.gioco === id && y.data === sabato && valida(y))) {
     const b = best.get(x.playerId);
     if (b == null || (g.basso ? x.valore < b : x.valore > b)) best.set(x.playerId, x.valore);
@@ -393,15 +432,12 @@ export const REGOLE = {
     'Sballo: se superi lo zero, resti a 1 o arrivi a zero senza doppia, il turno non conta e valgono comunque 3 frecce.',
     'Il risultato è il numero di frecce usate: meno è meglio.',
   ],
-  target20: [
-    'All\'inizio scegli 10 serie o 5 serie da 9 frecce, tutte al 20.',
-    'Singolo 1 punto, doppio 2, triplo 3. Gli altri numeri valgono 0.',
-    'Massimo 27 punti a serie. Voto e progressi guardano la media a serie; i record sono separati per 5 e 10 serie e la sfida del sabato vale solo sulle 10 serie.',
-  ],
-  targetbull: [
-    'All\'inizio scegli 10 serie o 5 serie da 9 frecce, tutte al centro.',
-    'Bull esterno (25) 1 punto, Bull centrale (50) 3 punti, fuori 0.',
-    'Massimo 27 punti a serie. Voto e progressi guardano la media a serie; i record sono separati per 5 e 10 serie e la sfida del sabato vale solo sulle 10 serie.',
+  target: [
+    'All\'inizio scegli il bersaglio e 10 o 5 serie da 9 frecce.',
+    '20 o Bull: tutte le frecce lì. 20 · 20 · 19 e 20 · 20 · Bull: in ogni turno le prime due frecce al 20 e la terza al 19 o al bull. Il bersaglio evidenzia dove tirare.',
+    'Singolo 1 punto, doppio 2, triplo 3; bull esterno 1 e bull centrale 3. Fuori dal bersaglio giusto vale 0.',
+    'Massimo 27 punti a serie. Voto e grafici guardano la media a serie; i record sono per bersaglio e numero di serie.',
+    'La sfida del sabato del Target è al 20 su 10 serie.',
   ],
   scoring: [
     '18 frecce, cioè 6 turni, mirando dove vuoi.',

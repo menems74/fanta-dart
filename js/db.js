@@ -1,4 +1,5 @@
 import { db } from './firebase.js';
+import { normalizzaSessione } from './training/giochi.js';
 import {
   collection, doc, getDoc, getDocs, setDoc, deleteDoc, query, where, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
@@ -32,8 +33,8 @@ export const setPin = (playerId, pin) => setDoc(doc(db, 'pins', playerId), { pin
 // ---------- allenamenti: una sessione per ogni gioco finito ----------
 const perTs = (a, b) => (a.ts || 0) - (b.ts || 0);
 export const listSessioni = async (playerId) =>
-  (await list(query(collection(db, 'sessioni'), where('playerId', '==', playerId)))).sort(perTs);
-export const listTutteSessioni = async () => (await list(collection(db, 'sessioni'))).sort(perTs);
+  (await list(query(collection(db, 'sessioni'), where('playerId', '==', playerId)))).map(normalizzaSessione).sort(perTs);
+export const listTutteSessioni = async () => (await list(collection(db, 'sessioni'))).map(normalizzaSessione).sort(perTs);
 /** Salva e restituisce subito l'id: con la cache offline la scrittura parte appena torna la rete. */
 export function saveSessione(data) {
   const ref = doc(collection(db, 'sessioni'));

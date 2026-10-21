@@ -338,3 +338,9 @@ svg.line text { fill: var(--mu); font-size: 16px; }
 .tr .serie.n5 { grid-template-columns: repeat(5, 1fr); }
 .tr .modigrid.n2 { grid-template-columns: repeat(2, 1fr); }
 @media (max-width: 640px) { .tr .modigrid.n2 { grid-template-columns: 1fr; } }
+/* Target: scelta del bersaglio (4) e delle serie (2) nella stessa schermata */
+.tr .modigrid.n4 { grid-template-columns: repeat(4, 1fr); }
+.tr .modigrid.scelta .modo { min-height: 0; padding: 14px 16px; }
+.tr .modigrid.scelta .modo b { font-size: 22px; }
+.tr .modi .btn.grande { justify-self: start; min-width: 240px; }
+@media (max-width: 900px) { .tr .modigrid.n4 { grid-template-columns: repeat(2, 1fr); } }

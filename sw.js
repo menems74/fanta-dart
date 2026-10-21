@@ -1,5 +1,5 @@
 // Service worker: l'app si apre anche offline. I dati li gestisce la cache offline di Firestore.
-const CACHE = 'fanta-dart-v31';
+const CACHE = 'fanta-dart-v32';
 const SHELL = [
   './', 'index.html', 'allenamenti.html', 'manifest.webmanifest', 'css/app.css',
   'js/app.js', 'js/allenamenti.js', 'js/auth.js', 'js/db.js', 'js/firebase.js', 'js/season.js', 'js/stats.js', 'js/ui.js', 'js/util.js',

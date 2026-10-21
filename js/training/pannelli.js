@@ -26,8 +26,7 @@ const PANNELLI = {
     ${turno(s)}
     <p class="mu sm">${s.visite.length ? `Ultimo turno: ${s.visite.at(-1)} · media ${s.frecce ? ((501 - s.resto) / s.frecce * 3).toFixed(1) : 0}` : 'Primo turno: tocca a te'}</p>`,
 
-  target20: pannelloTarget(['0', 'S', 'D', 'T']),
-  targetbull: pannelloTarget(['0', '25', '', '50']),
+  target: pannelloTarget(),
 
   scoring: (g, s, { rec }) => {
     const visite = [...s.visite, ...(s.turno.length ? [s.parziale] : [])];
@@ -66,21 +65,23 @@ const PANNELLI = {
   },
 };
 
-function pannelloTarget(etichette) {
+function pannelloTarget() {
   return (g, s, { rec }) => {
     const n = s.punti.length;
     const ora = Math.min(Math.floor(n / g.PER_SERIE), s.nSerie - 1);
     const serie = (i) => s.punti.slice(i * g.PER_SERIE, (i + 1) * g.PER_SERIE);
     const cur = serie(ora);
+    const ids = s.ids.slice(ora * g.PER_SERIE);
+    const prossimo = g.prossimo(s);
     return html`
-      ${testa(g.valore(s), `Serie ${ora + 1} di ${s.nSerie}`, recordBox(rec, `punti in ${s.nSerie} serie`))}
+      ${testa(g.valore(s), `Serie ${ora + 1} di ${s.nSerie}${s.finito ? '' : ` · ora al ${prossimo === 25 ? 'bull' : prossimo}`}`, recordBox(rec, `punti in ${s.nSerie} serie`))}
       <div class="serie n${s.nSerie}">${Array.from({ length: s.nSerie }, (_, i) => {
         const x = serie(i);
         const fatta = x.length === g.PER_SERIE;
         return html`<span class="${fatta ? 'fatta' : i === ora ? 'ora' : ''}">${fatta || i === ora ? somma(x) : ''}</span>`;
       })}</div>
       <div class="frecce">${Array.from({ length: g.PER_SERIE }, (_, i) => (i < cur.length
-        ? html`<span class="v${cur[i]}">${etichette[cur[i]]}</span>` : html`<span></span>`))}</div>`;
+        ? html`<span class="v${cur[i]}">${cur[i] ? etichettaDardo(ids[i]) : '0'}</span>` : html`<span></span>`))}</div>`;
   };
 }
 
@@ -108,9 +109,8 @@ export function comandi(g, s, ctx) {
       }
       return s.turno.length ? '' : tastierino(ctx.input, 'Somma del turno');
     case 'scoring': return s.turno.length ? '' : tastierino(ctx.input, 'Somma del turno');
-    case 'target20':
-    case 'targetbull':
-      return html`<div class="quick">${g.quick.map(([id, testo, v], i) => dardoBtn(id, testo, v, `q${Math.min(i, 3)}`))}</div>`;
+    case 'target':
+      return html`<div class="quick">${g.quick(s).map(([id, testo, v], i) => dardoBtn(id, testo, v, `q${Math.min(i, 3)}`))}</div>`;
     case 'checkout':
       return s.turno.length ? '' : html`<div class="quick">${rapido({ t: 'esito', ok: true }, 'Chiuso', 'entro 3 frecce', 'q2')}${rapido({ t: 'esito', ok: false }, 'Non chiuso', 'o sballato', 'q0')}</div>`;
     case 'doppie': {

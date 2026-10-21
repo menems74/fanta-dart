@@ -3,24 +3,26 @@ import { html, fmtDate, todayIso, toast, fullName } from '../util.js';
 import { session } from '../auth.js';
 import { listSessioni, deleteSessione, getPlayer } from '../db.js';
 import {
-  GIOCHI, gioco, votoGioco, skill, trendGioco, record, settimana, BADGES, badgePresi, varianteDi, nomeVariante,
+  GIOCHI, gioco, votoGioco, skill, trendGioco, record, settimana, BADGES, badgePresi, varianteDi, nomeVariante, gruppoDi, nomeGruppo,
 } from './giochi.js';
 import { barra, pollice, linea, COLORE, svg } from './grafica.js';
 
 /**
- * Sessioni da mettere nel grafico. Rotation: solo la modalita' giocata per ultima (frecce non confrontabili).
- * Target: tutte, perche' il grafico usa la media a serie; il record e' quello della variante giocata per ultima.
+ * Sessioni da mettere nel grafico: solo quelle dello stesso gruppo dell\'ultima (bersaglio del Target, modalita'
+ * di Rotation), perche' tra gruppi i numeri non si confrontano. Il record e' quello della variante giocata per ultima.
  */
 function serieDi(sessioni, id) {
   const g = gioco(id);
   let lista = sessioni.filter((x) => x.gioco === id);
-  const variante = lista.length ? varianteDi(g, lista.at(-1).opzioni) : null;
-  if (g.VARIANTI?.chiave === 'modo' && variante) lista = lista.filter((x) => varianteDi(g, x.opzioni) === variante);
-  const titolo = g.VARIANTI?.chiave === 'modo' && variante ? ` · ${nomeVariante(g, variante)}` : '';
+  const ultima = lista.at(-1);
+  const variante = ultima ? varianteDi(g, ultima.opzioni) : null;
+  const gruppo = ultima ? gruppoDi(g, ultima.opzioni) : null;
+  if (gruppo != null) lista = lista.filter((x) => String(gruppoDi(g, x.opzioni)) === String(gruppo));
+  const titolo = gruppo != null ? ` · ${nomeGruppo(g, gruppo)}` : '';
   return { lista, variante, titolo };
 }
 const valoreGrafico = (g, x) => (g.grafico ? g.grafico(x) : x.valore);
-const etichettaVariante = (g, x) => (g.VARIANTI ? ` · ${nomeVariante(g, varianteDi(g, x.opzioni))}` : '');
+const etichettaVariante = (g, x) => (g.SCELTE ? ` · ${nomeVariante(g, varianteDi(g, x.opzioni))}` : '');
 
 export default async function progressiView([altro]) {
   const mio = session.account.playerId;
@@ -75,7 +77,7 @@ export default async function progressiView([altro]) {
             const rec = record(sessioni, g.id, variante);
             return html`<button type="button" class="card chartcard" data-chart="${g.id}" ${lista.length ? '' : 'disabled'}>
               ${pollice(t)}<h3>${g.nome}${tv}</h3>
-              <p class="mu sm">${lista.length ? `Voto ${votoGioco(sessioni, g.id)} · record ${rec} ${g.unit}${g.VARIANTI?.chiave === 'serie' ? ` in ${variante} serie` : ''}${g.basso ? ' · meno è meglio' : ''}` : 'Mai giocato'}</p>
+              <p class="mu sm">${lista.length ? `Voto ${votoGioco(sessioni, g.id)} · record ${rec} ${g.unit}${g.id === 'target' ? ` (${nomeVariante(g, variante)})` : ''}${g.basso ? ' · meno è meglio' : ''}` : 'Mai giocato'}</p>
               ${linea(lista.slice(-20).map((x) => valoreGrafico(g, x)), { colore: COLORE[t], basso: g.basso })}
             </button>`;
           })}

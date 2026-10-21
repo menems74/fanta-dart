@@ -35,10 +35,10 @@ export default async function squadraView() {
       ${barra('Squadra', { back: '/' })}
       <div class="page squadra">
         <section class="card sfidabox ${inCorso ? 'oggi' : ''}">
-          <h2>Sfida del sabato · ${gProssimo.nome}${inCorso ? ' · oggi!' : ''}</h2>
-          <p class="mu">${fmtDate(sabato, true)} · ${gProssimo.desc}. Conta il miglior risultato fatto quel giorno: puoi sfidare la squadra o solo te stesso.</p>
+          <h2>Sfida del sabato · ${gProssimo.nomeSfida || gProssimo.nome}${inCorso ? ' · oggi!' : ''}</h2>
+          <p class="mu">${fmtDate(sabato, true)} · ${gProssimo.descSfida || gProssimo.desc}. Conta il miglior risultato fatto quel giorno: puoi sfidare la squadra o solo te stesso.</p>
           ${inCorso ? html`<a class="btn pri" href="#/gioco/${gProssimo.id}">Gioca la sfida</a>` : ''}
-          <h3>${inCorso ? 'Classifica di oggi' : `Sabato scorso · ${gMostrato.nome}`}</h3>
+          <h3>${inCorso ? 'Classifica di oggi' : `Sabato scorso · ${gMostrato.nomeSfida || gMostrato.nome}`}</h3>
           ${classifica.length ? html`<ol class="classifica">${classifica.map((r, i) => html`<li class="${r.playerId === me ? 'me' : ''}">
             <span class="pos">${i + 1}</span><span>${byId.get(r.playerId) ? fullName(byId.get(r.playerId)) : 'Giocatore'}</span><b>${r.valore} ${gMostrato.unit}</b></li>`)}</ol>`
             : html`<p class="mu sm">Nessun risultato${inCorso ? ' per ora: inizia tu!' : '.'}</p>`}

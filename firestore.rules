@@ -51,7 +51,7 @@ service cloud.firestore {
       allow create: if hasAccount()
         && (request.resource.data.playerId == myPlayerId()
           || (request.resource.data.gioco == 'x501' && request.resource.data.inseritoDa == myPlayerId()))
-        && request.resource.data.gioco in ['x501', 'target20', 'targetbull', 'scoring', 'checkout', 'doppie', 'rotation', 'cricket']
+        && request.resource.data.gioco in ['x501', 'target', 'target20', 'targetbull', 'scoring', 'checkout', 'doppie', 'rotation', 'cricket']
         && request.resource.data.valore is number && request.resource.data.valore >= 0
         && request.resource.data.voto is number && request.resource.data.voto >= 0 && request.resource.data.voto <= 100;
       allow update, delete: if hasAccount()

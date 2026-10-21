@@ -34,7 +34,7 @@ export default async function homeView() {
             <a href="#/progressi"><b>I miei progressi</b><span>${mie.length} ${mie.length === 1 ? 'sessione' : 'sessioni'} · ${settimana(mie, oggi)} questa settimana · ${badgePresi(mie).size}/${BADGES.length} badge</span></a>
             <a href="#/squadra"><b>Squadra</b><span>Skill e progressi di tutti</span></a>
             <a class="sfida ${sabato === oggi ? 'oggi' : ''}" href="${sabato === oggi ? `#/gioco/${sfida.id}` : '#/squadra'}">
-              <b>Sfida del sabato · ${sfida.nome}${sabato === oggi ? ' · oggi!' : ''}</b>
+              <b>Sfida del sabato · ${sfida.nomeSfida || sfida.nome}${sabato === oggi ? ' · oggi!' : ''}</b>
               <span>${fmtDate(sabato)}${recSfida != null ? ` · il tuo record ${recSfida}` : ''}${classifica.length ? ` · in testa con ${classifica[0].valore}` : ''}</span></a>
           </nav>
           <p class="firma">Powered by <b>Cleopatra</b></p>

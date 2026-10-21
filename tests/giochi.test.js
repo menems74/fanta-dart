@@ -8,9 +8,9 @@ import {
 const d = (...ids) => ids.map((id) => ({ t: 'd', id }));
 const gioca = (id, eventi, opzioni = {}) => rigioca(gioco(id), opzioni, eventi);
 
-test('8 giochi con id unici e i campi necessari', () => {
-  assert.equal(GIOCHI.length, 8);
-  assert.equal(new Set(GIOCHI.map((g) => g.id)).size, 8);
+test('7 giochi con id unici e i campi necessari', () => {
+  assert.equal(GIOCHI.length, 7);
+  assert.equal(new Set(GIOCHI.map((g) => g.id)).size, 7);
   for (const g of GIOCHI) for (const k of ['nome', 'desc', 'unit', 'voto', 'crea', 'passo', 'valore', 'dati', 'bersagli']) assert.ok(g[k] != null, `${g.id}.${k}`);
 });
 
@@ -50,17 +50,39 @@ test('501 dal tastierino: chiusura con la freccia scelta, "non in doppia" e sbal
   assert.equal(s.visite.at(-1), 0);
 });
 
-test('Target 20 e Target Bull: punti, 90 frecce, turni da 3', () => {
-  const g = gioco('target20');
-  let s = gioca('target20', d('S20i', 'S20o', 'D20', 'T20', 'S1o', 'X'));
+test('Target al 20 e al bull: punti, 90 frecce, turni da 3', () => {
+  const g = gioco('target');
+  let s = gioca('target', d('S20i', 'S20o', 'D20', 'T20', 'S1o', 'X'), { mira: '20' });
   assert.equal(g.valore(s), 7);
   assert.equal(s.fineTurno, true);
-  s = gioca('target20', d(...Array(90).fill('T20')));
+  s = gioca('target', d(...Array(90).fill('T20')), { mira: '20', serie: 10 });
   assert.equal(s.finito, true);
   assert.equal(g.valore(s), 270);
   assert.equal(g.dati(s).serie.length, 10);
-  const b = gioco('targetbull');
-  assert.equal(b.valore(gioca('targetbull', d('B25', 'B50', 'S20o', 'X'))), 4);
+  assert.equal(g.valore(gioca('target', d('B25', 'B50', 'S20o', 'X'), { mira: 'bull' })), 4);
+});
+
+test('Target con le combinazioni: la terza freccia del turno al 19 o al bull', () => {
+  const g = gioco('target');
+  let s = gioca('target', [], { mira: '20-20-19' });
+  assert.equal(g.prossimo(s), 20);
+  s = gioca('target', d('T20', 'S20o'), { mira: '20-20-19' });
+  assert.equal(g.prossimo(s), 19);
+  assert.deepEqual(g.bersagli(s), ['S19i', 'S19o', 'D19', 'T19']);
+  assert.equal(g.quick(s)[3][0], 'T19');
+  s = gioca('target', d('T20', 'S20o', 'T19', 'T19', 'T20', 'S20i'), { mira: '20-20-19' });
+  assert.equal(g.valore(s), 3 + 1 + 3 + 0 + 3 + 0); // T19 al primo tiro del turno vale 0: li' si mira al 20
+  s = gioca('target', d('S20o', 'S20o', 'B50'), { mira: '20-20-bull' });
+  assert.equal(g.valore(s), 5);
+  assert.deepEqual(g.bersagli(s), ['S20i', 'S20o', 'D20', 'T20']);
+  assert.deepEqual(g.quick(gioca('target', d('X', 'X'), { mira: '20-20-bull' })).map((q) => q[0]), ['X', 'B25', 'B50']);
+});
+
+test('vecchie sessioni Target 20 e Target Bull diventano Target', () => {
+  assert.deepEqual(normalizzaSessione({ gioco: 'target20', valore: 100, opzioni: {} }).opzioni, { mira: '20' });
+  assert.equal(normalizzaSessione({ gioco: 'targetbull', valore: 30 }).gioco, 'target');
+  assert.equal(normalizzaSessione({ gioco: 'targetbull', valore: 30 }).opzioni.mira, 'bull');
+  assert.equal(normalizzaSessione({ gioco: 'doppie', valore: 3 }).gioco, 'doppie');
 });
 
 test('Scoring: 18 frecce, a mano o freccia per freccia', () => {
@@ -148,8 +170,8 @@ test('Cricket Train: avanti, resti, indietro e bull', () => {
 
 test('Skill, voti e pollici', () => {
   const sess = (gioco_, voti) => voti.map((voto, i) => ({ gioco: gioco_, voto, valore: voto, ts: i, data: '2026-10-19' }));
-  const tutte = [...sess('target20', [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100]), ...sess('doppie', [50])];
-  assert.equal(votoGioco(tutte, 'target20'), 72); // ultime 10: da 30 a 100
+  const tutte = [...sess('target', [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100]), ...sess('doppie', [50])];
+  assert.equal(votoGioco(tutte, 'target'), 72); // ultime 10: da 30 a 100
   assert.equal(skill(tutte), 61);
   assert.equal(skill([]), null);
   assert.equal(trend([50, 50, 50]), 'nuovo');
@@ -186,7 +208,7 @@ test('ogni gioco ha le sue regole', () => {
   for (const g of GIOCHI) assert.ok(REGOLE[g.id]?.length >= 3, g.id);
 });
 
-import { partita501 } from '../js/training/giochi.js';
+import { partita501, normalizzaSessione } from '../js/training/giochi.js';
 test('501 in due: turni alternati, vincitore e chi continua da solo', () => {
   const t = (p, s) => ({ p, t: 'turno', s });
   let r = partita501(2, [t(0, 60), t(1, 45)]);
@@ -208,29 +230,36 @@ test('501 in due: turni alternati, vincitore e chi continua da solo', () => {
   assert.equal(r.stati[0].resto, 381);
 });
 
-import { varianteDi } from '../js/training/giochi.js';
+import { varianteDi, nomeVariante } from '../js/training/giochi.js';
 test('Target su 5 o 10 serie: fine, voto sulla media a serie, record e sfida', () => {
-  const g = gioco('target20');
-  let s = gioca('target20', d(...Array(45).fill('S20o')), { serie: 5 });
+  const g = gioco('target');
+  let s = gioca('target', d(...Array(45).fill('S20o')), { mira: '20', serie: 5 });
   assert.equal(s.finito, true);
   assert.equal(g.valore(s), 45);
   assert.equal(g.dati(s).serie.length, 5);
-  assert.equal(gioca('target20', d(...Array(45).fill('S20o')), {}).finito, false); // senza scelta: 10 serie
-  assert.equal(g.voto(90, { serie: 5 }), g.voto(180, { serie: 10 })); // stessa media a serie, stesso voto
+  assert.equal(gioca('target', d(...Array(45).fill('S20o')), {}).finito, false); // senza scelta: 10 serie al 20
+  assert.equal(g.voto(90, { mira: '20', serie: 5 }), g.voto(180, { mira: '20', serie: 10 }));
   assert.equal(g.voto(180, {}), 100);
-  assert.equal(varianteDi(g, {}), 10);
+  assert.equal(g.voto(90, { mira: 'bull' }), 100); // il bull ha una scala sua
+  assert.equal(varianteDi(g, {}), '20|10');
+  assert.equal(varianteDi(g, { mira: 'bull', serie: 5 }), 'bull|5');
+  assert.equal(nomeVariante(g, '20-20-19|5'), '20 · 20 · 19 · 5 serie');
   assert.equal(g.grafico({ valore: 50, opzioni: { serie: 5 } }), 10);
   const sess = [
-    { gioco: 'target20', valore: 120, opzioni: {} },
-    { gioco: 'target20', valore: 70, opzioni: { serie: 5 } },
+    { gioco: 'target', valore: 120, opzioni: { mira: '20' } },
+    { gioco: 'target', valore: 70, opzioni: { mira: '20', serie: 5 } },
+    { gioco: 'target', valore: 40, opzioni: { mira: 'bull', serie: 10 } },
   ];
-  assert.equal(record(sess, 'target20', 10), 120);
-  assert.equal(record(sess, 'target20', 5), 70);
-  // la sfida sui Target vale solo sulle 10 serie
-  const sab = ['2026-10-24', '2026-10-31', '2026-11-07', '2026-11-14', '2026-11-21'].find((x) => sfidaDel(x) === 'target20');
+  assert.equal(record(sess, 'target', '20|10'), 120);
+  assert.equal(record(sess, 'target', '20|5'), 70);
+  assert.equal(record(sess, 'target', 'bull|10'), 40);
+  assert.equal(varianteDi(gioco('rotation'), { modo: 'T' }), 'T');
+  // la sfida del Target vale al 20 su 10 serie
+  const sab = ['2026-10-24', '2026-10-31', '2026-11-07', '2026-11-14', '2026-11-21'].find((x) => sfidaDel(x) === 'target');
   const cl = classificaSfida([
-    { playerId: 'a', gioco: 'target20', valore: 100, data: sab, opzioni: { serie: 10 } },
-    { playerId: 'b', gioco: 'target20', valore: 90, data: sab, opzioni: { serie: 5 } },
+    { playerId: 'a', gioco: 'target', valore: 100, data: sab, opzioni: { mira: '20', serie: 10 } },
+    { playerId: 'b', gioco: 'target', valore: 90, data: sab, opzioni: { mira: '20', serie: 5 } },
+    { playerId: 'c', gioco: 'target', valore: 150, data: sab, opzioni: { mira: 'bull', serie: 10 } },
   ], sab);
   assert.deepEqual(cl, [{ playerId: 'a', valore: 100 }]);
 });

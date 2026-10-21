@@ -10,7 +10,7 @@ import { onDardo, onStato, tavolaStato, scrivi } from './tavola.js';
 import { EFFETTI, comandoColpo, effettoTurno } from './led.js';
 import { suona, sbloccaAudio } from './suono.js';
 import { visitaValida, applicaVisita } from './scorer.js';
-import { gioco, rigioca, numeriCheckout, record, migliora, varianteDi, nomeVariante, REGOLE } from './giochi.js';
+import { gioco, rigioca, numeriCheckout, record, migliora, varianteDi, nomeVariante, scelteDi, REGOLE } from './giochi.js';
 import { pannello, comandi } from './pannelli.js';
 import partita501View from './partita501.js';
 import partitaScoringView from './partitaScoring.js';
@@ -19,13 +19,10 @@ import { barra, bersaglio, svg } from './grafica.js';
 const PAUSA_MS = 6000; // dopo 3 frecce dal Granboard: il tempo di togliere le freccette
 const overlay = () => document.getElementById('overlay');
 
-// Checkout: numeri nuovi a ogni partita. Giochi con varianti (Rotation, Target): si sceglie all'inizio, "Gioca ancora" la tiene.
+// Checkout: numeri nuovi a ogni partita. Giochi con scelte (Target, Rotation): si sceglie all\'inizio, "Gioca ancora" le tiene.
 function opzioniNuove(g, vecchie) {
   if (g.id === 'checkout') return { numeri: numeriCheckout() };
-  if (g.VARIANTI) {
-    const k = g.VARIANTI.chiave;
-    return vecchie?.[k] != null ? { [k]: vecchie[k] } : null;
-  }
+  if (g.SCELTE) return vecchie && g.SCELTE.every((c) => vecchie[c.chiave] != null) ? { ...vecchie } : null;
   return {};
 }
 
@@ -48,6 +45,7 @@ export default async function giocoView([id]) {
     chiusura: null, // 501 a mano: punteggio che chiude, in attesa della freccia di chiusura
     manuale: false, // pulsanti visibili anche con il Granboard collegato
     bloccoFino: 0,
+    bozza: null, // scelte in corso nella schermata iniziale
   };
   let s = st.opzioni ? rigioca(g, st.opzioni, st.eventi) : null;
   let root = null;
@@ -59,7 +57,7 @@ export default async function giocoView([id]) {
   let ledTimer = null;
 
   const variante = () => varianteDi(g, st.opzioni);
-  const titoloGioco = () => (s && g.VARIANTI ? `${g.nome} · ${nomeVariante(g, variante())}` : g.nome);
+  const titoloGioco = () => (s && g.SCELTE ? `${g.nome} · ${nomeVariante(g, variante())}` : g.nome);
   const rec = () => record(mie, g.id, variante());
   const persist = () => {
     if (st.eventi.length) saveDraft(pid, 'gioco', { gioco: id, opzioni: st.opzioni, eventi: st.eventi, inizio: st.inizio });
@@ -67,16 +65,32 @@ export default async function giocoView([id]) {
   };
 
   // ---------- schermate ----------
-  const sceltaModo = () => html`
-    <div class="page modi">
-      <p class="intro">${g.VARIANTI.domanda}</p>
-      <div class="modigrid n${g.VARIANTI.lista.length}">${g.VARIANTI.lista.map(([k, nome, descr]) => {
-        const r = record(mie, g.id, k);
-        return html`<button type="button" class="card modo" data-modo="${k}"><b>${nome}</b>
-          <span class="mu sm">${descr}</span>
-          <span class="mu sm">${r == null ? 'Mai giocato' : `Record: ${r} ${g.unit}`}</span></button>`;
-      })}</div>
+  // Schermata iniziale per i giochi con scelte. Una sola scelta (Rotation): si tocca e si parte.
+  // Piu' scelte (Target: bersaglio e serie): si selezionano e poi "Inizia".
+  const sceltaModo = () => {
+    if (g.SCELTE.length === 1) {
+      const c = g.SCELTE[0];
+      return html`<div class="page modi">
+        <p class="intro">${c.titolo}</p>
+        <div class="modigrid n${c.lista.length}">${c.lista.map(([k, nome, descr]) => {
+          const r = record(mie, g.id, varianteDi(g, { [c.chiave]: k }));
+          return html`<button type="button" class="card modo" data-modo="${k}"><b>${nome}</b>
+            <span class="mu sm">${descr}</span>
+            <span class="mu sm">${r == null ? 'Mai giocato' : `Record: ${r} ${g.unit}`}</span></button>`;
+        })}</div>
+      </div>`;
+    }
+    st.bozza ??= scelteDi(g, mie.filter((x) => x.gioco === g.id).at(-1)?.opzioni);
+    const r = record(mie, g.id, varianteDi(g, st.bozza));
+    return html`<div class="page modi">
+      ${g.SCELTE.map((c) => html`<p class="intro">${c.titolo}</p>
+        <div class="modigrid n${c.lista.length} scelta">${c.lista.map(([k, nome, descr]) => html`<button type="button"
+          class="card modo ${String(st.bozza[c.chiave]) === String(k) ? 'sel' : ''}" data-scelta="${c.chiave}" data-val="${k}"><b>${nome}</b>
+          <span class="mu sm">${descr}</span></button>`)}</div>`)}
+      <p class="mu">${r == null ? `Mai giocato: ${nomeVariante(g, varianteDi(g, st.bozza))}` : `Record ${nomeVariante(g, varianteDi(g, st.bozza))}: ${r} ${g.unit}`}</p>
+      <button type="button" class="btn pri grande" data-act="iniziascelte">Inizia</button>
     </div>`;
+  };
 
   const gioca = () => {
     const collegata = tavolaStato() === 'collegata';
@@ -246,8 +260,15 @@ export default async function giocoView([id]) {
         if (!b || b.disabled) return;
         const d = b.dataset;
         if (d.modo) {
-          const k = g.VARIANTI.chiave;
-          st.opzioni = { [k]: k === 'serie' ? Number(d.modo) : d.modo };
+          st.opzioni = scelteDi(g, { [g.SCELTE[0].chiave]: d.modo });
+          s = rigioca(g, st.opzioni, []);
+          scrivi(EFFETTI.inizio);
+          render();
+        } else if (d.scelta) {
+          st.bozza[d.scelta] = d.scelta === 'serie' ? Number(d.val) : d.val;
+          render();
+        } else if (d.act === 'iniziascelte') {
+          st.opzioni = { ...st.bozza };
           s = rigioca(g, st.opzioni, []);
           scrivi(EFFETTI.inizio);
           render();
