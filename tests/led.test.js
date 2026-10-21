@@ -39,3 +39,12 @@ test('freccia fuori dal bersaglio: la tavola manda OUT@', () => {
   assert.equal(d.id, 'X');
   assert.equal(d.valore, 0);
 });
+
+import { comandoNumeri } from '../js/training/led.js';
+test('luce fissa sui numeri: uguale al Cricket dell\'app ufficiale', () => {
+  assert.equal(hex(comandoNumeri([15, 16, 17, 18, 19, 20])), '0000000000000000000000000000040404040404');
+  assert.equal(hex(comandoNumeri([15, 18, 20])), '0000000000000000000000000000040000040004');
+  assert.equal(hex(comandoNumeri([1])), '0400000000000000000000000000000000000000');
+  assert.equal(comandoNumeri([]).length, 20);
+  assert.equal(hex(EFFETTI.lampeggio), '177d000000000000000000000b010000');
+});

@@ -8,7 +8,7 @@ import { loadDraft, saveDraft, clearDraft } from './store.js';
 import { keepAwake } from './awake.js';
 import { pausaMs, pausaSecondi, ritardoCambioTurno } from './pausa.js';
 import { onDardo, onStato, tavolaStato, scrivi } from './tavola.js';
-import { EFFETTI, comandoColpo, effettoTurno } from './led.js';
+import { EFFETTI, comandoNumeri, comandoColpo, effettoTurno } from './led.js';
 import { suona, sbloccaAudio } from './suono.js';
 import { parla, sbloccaVoce } from './voce.js';
 import { visitaValida, applicaVisita, frecceChiusura } from './scorer.js';
@@ -45,6 +45,7 @@ export default async function partita501View() {
   let ledTimer = null;
   let ledSpeciale = false;
   const ac = new AbortController();
+  const lampeggio = () => [0, 500, 1000].forEach((ms) => setTimeout(() => scrivi(EFFETTI.lampeggio), ms)); // festa: tutta la tavola lampeggia 3 volte
 
   const nomeDi = (i) => (i === 0 ? (session.player?.nome || nomeGiocatore())
     : st.opzioni.avversario === OSPITE ? 'Ospite' : (compagni.find((p) => p.id === st.opzioni.avversario)?.nome || 'Avversario'));
@@ -153,6 +154,7 @@ export default async function partita501View() {
     persist();
     render();
     if (s.fineTurno || s.finito) annuncia(p);
+    if (s.finito) lampeggio(); // chiusura: tutta la tavola lampeggia
     if (r.tuttiChiusi) { setTimeout(fine, 700); return; }
     // in due: il primo che chiude vince, l'altro puo' continuare da solo
     if (r.vincitore !== null && vincitorePrima === null) { setTimeout(vittoria, 700); return; }

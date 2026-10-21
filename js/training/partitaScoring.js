@@ -8,7 +8,7 @@ import { loadDraft, saveDraft, clearDraft } from './store.js';
 import { keepAwake } from './awake.js';
 import { pausaMs, pausaSecondi, ritardoCambioTurno } from './pausa.js';
 import { onDardo, onStato, tavolaStato, scrivi } from './tavola.js';
-import { EFFETTI, comandoColpo, effettoTurno } from './led.js';
+import { EFFETTI, comandoNumeri, comandoColpo, effettoTurno } from './led.js';
 import { suona, sbloccaAudio } from './suono.js';
 import { visitaValida } from './scorer.js';
 import { gioco, rigioca, record, migliora, REGOLE } from './giochi.js';
@@ -40,6 +40,7 @@ export default async function partitaScoringView() {
   let ledTimer = null;
   let ledSpeciale = false;
   const ac = new AbortController();
+  const lampeggio = () => [0, 500, 1000].forEach((ms) => setTimeout(() => scrivi(EFFETTI.lampeggio), ms)); // festa: tutta la tavola lampeggia 3 volte
 
   const persist = () => {
     if (st.eventi.length) saveDraft(pid, 'gioco', { gioco: 'scoring', opzioni: {}, eventi: st.eventi, inizio: st.inizio });
@@ -181,6 +182,7 @@ export default async function partitaScoringView() {
     saveSessione(JSON.parse(JSON.stringify(nuovo))).fatto.catch((e) => { console.error(e); toast('Salvataggio non riuscito: controlla la connessione'); });
     mie.push(nuovo);
     clearDraft(pid, 'gioco');
+    if (precedente != null && migliora(g, valore, precedente)) lampeggio(); // nuovo record: tutta la tavola lampeggia
     overlay().innerHTML = html`<div class="fine"><div class="card">
       <p class="mu">Scoring · 18 frecce</p>
       <div class="big">${valore}<small> punti</small></div>

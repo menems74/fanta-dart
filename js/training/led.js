@@ -20,8 +20,19 @@ export const EFFETTI = {
   bull: hex('1f4b007d4b007d00487d000023010000'), // bull centrale (50)
   bull25: hex('187d00007d00007d0000000014000000'), // bull esterno (25)
   spento: hex('01000000000000000000000000000000'),
+  lampeggio: hex('177d000000000000000000000b010000'), // tutta la tavola lampeggia (l'app ufficiale lo manda 3 volte)
   festa: hex('18007d00007d00007d00000014000000'), // bersaglio preso: l'effetto del bull esterno, in verde (piu' leggero di quello del bull centrale)
 };
+
+/**
+ * Luce fissa sui numeri: comando da 20 byte, uno per numero (byte k = numero k+1), come i numeri aperti nel Cricket
+ * dell'app ufficiale (valore 4). Resta accesa finche' non arriva un altro comando; con numeri vuoti spegne.
+ */
+export function comandoNumeri(numeri, valore = 4) {
+  const b = new Uint8Array(20);
+  for (const n of numeri) if (n >= 1 && n <= 20) b[n - 1] = valore;
+  return b;
+}
 
 /** Codice del led per il numero n (1-20). */
 export const codiceLed = (n) => (25 + 3 * SETTORI.indexOf(n)) % 60;

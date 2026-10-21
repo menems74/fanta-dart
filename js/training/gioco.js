@@ -8,7 +8,7 @@ import { loadDraft, saveDraft, clearDraft } from './store.js';
 import { keepAwake } from './awake.js';
 import { pausaMs, pausaSecondi, ritardoCambioTurno } from './pausa.js';
 import { onDardo, onStato, tavolaStato, scrivi } from './tavola.js';
-import { EFFETTI, VERDE, comandoColpo, effettoTurno } from './led.js';
+import { EFFETTI, comandoNumeri, comandoColpo, effettoTurno } from './led.js';
 import { suona, sbloccaAudio } from './suono.js';
 import { visitaValida, applicaVisita } from './scorer.js';
 import { gioco, rigioca, numeriCheckout, record, migliora, varianteDi, nomeVariante, scelteDi, REGOLE } from './giochi.js';
@@ -53,6 +53,7 @@ export default async function giocoView([id]) {
   let awake = null;
   let contoTimer = null;
   const ac = new AbortController();
+  const lampeggio = () => [0, 500, 1000].forEach((ms) => setTimeout(() => scrivi(EFFETTI.lampeggio), ms)); // festa: tutta la tavola lampeggia 3 volte
   let ledSpeciale = false; // effetto speciale in corso: a fine pausa si spengono i led
   let ledTimer = null;
   let bersTimer = null; // riaccende in verde il bersaglio da colpire
@@ -128,7 +129,6 @@ export default async function giocoView([id]) {
   function invia(ev, { daTavola = false } = {}) {
     if (!s || s.finito) return;
     const bersagliPrima = g.bersagli(s);
-    const sPrima = s;
     st.eventi.push(ev);
     s = g.passo(structuredClone(s), ev);
     if (ev.t === 'd') {
@@ -136,7 +136,6 @@ export default async function giocoView([id]) {
       const speciale = s.fineTurno ? effettoTurno(s.ultimo) : null;
       // giochi con il bersaglio illuminato: in Doppie e Rotation, se lo prendi parte un gioco di luci
       const preso = !!g.festa && bersagliPrima.includes(ev.id);
-      const lucePrima = g.ledBersaglio?.(sPrima);
       clearTimeout(ledTimer);
       clearTimeout(bersTimer);
       scrivi(speciale || (preso ? EFFETTI.festa : comandoColpo(ev.id)));
@@ -145,8 +144,8 @@ export default async function giocoView([id]) {
       if (g.ledBersaglio && !s.finito) {
         // il bersaglio si accende solo a inizio turno (prima delle 3 frecce): la tavola non lo tiene acceso fisso
         if (s.fineTurno && (!daTavola || !pausaMs())) illuminaBersaglio(ritardoCambioTurno() + 1500);
-        // a meta' turno solo se il numero da colpire e' cambiato (Rotation dopo un colpo, Target 20-20-19 alla terza)
-        else if (!s.fineTurno && g.ledBersaglio(s) !== lucePrima) illuminaBersaglio(preso ? 1500 : 1000);
+        // a meta' turno, dopo la luce del colpo, si rimette la luce fissa sul numero da colpire
+        else if (!s.fineTurno) illuminaBersaglio(preso ? 1500 : 1000);
         // con la pausa il bersaglio si riaccende alla fine del conto alla rovescia
       }
       const ok = bersagliPrima.length ? bersagliPrima.includes(ev.id) : ev.id !== 'X';
@@ -169,7 +168,8 @@ export default async function giocoView([id]) {
     clearTimeout(bersTimer);
     bersTimer = setTimeout(() => {
       const id = s && !s.finito && Date.now() >= st.bloccoFino ? g.ledBersaglio(s) : null;
-      if (id) scrivi(comandoColpo(id, VERDE));
+      // luce fissa sul numero (quella dei numeri aperti nel Cricket): resta accesa fino al prossimo comando
+      if (id) scrivi(comandoNumeri([Number(/\d+/.exec(id)[0])]));
     }, ritardo);
   }
 
@@ -243,6 +243,7 @@ export default async function giocoView([id]) {
     mie.push(nuovo);
     clearDraft(pid, 'gioco');
     const record_ = migliora(g, valore, precedente);
+    if (record_ && precedente != null) lampeggio(); // nuovo record: tutta la tavola lampeggia
     overlay().innerHTML = html`<div class="fine"><div class="card">
       <p class="mu">${titoloGioco()}</p>
       <div class="big">${valore}<small> ${g.unit}</small></div>
@@ -342,6 +343,7 @@ export default async function giocoView([id]) {
       ac.abort();
       offs.forEach((f) => f());
       chiudiConto();
+      if (g.ledBersaglio) scrivi(comandoNumeri([])); // spegne la luce fissa
       scrivi(EFFETTI.attesa);
       overlay().innerHTML = '';
       awake?.release();
