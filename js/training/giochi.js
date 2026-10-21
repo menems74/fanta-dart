@@ -210,6 +210,8 @@ const doppie = {
   valore: (s) => somma(s.colpi),
   dati: (s) => ({ colpi: s.colpi }),
   bersagli: (s) => (s.finito ? [] : [`D${DOPPIE[s.idx]}`]),
+  /** Settore da illuminare sulla tavola (in verde) prima di ogni freccia. */
+  ledBersaglio: (s) => (s.finito ? null : `D${DOPPIE[s.idx]}`),
 };
 
 // ---------------------------------------------------------------- Rotation

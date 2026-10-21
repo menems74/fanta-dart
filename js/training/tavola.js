@@ -62,4 +62,11 @@ export function scrivi(bytes) {
 
 // Solo per le prove senza la tavola.
 export const simula = ricevi;
-export const simulaCollegamento = () => imposta('collegata');
+/** Solo per le prove: finge il collegamento; se passi un array, ci finiscono i comandi ai led (in esadecimale). */
+export const simulaCollegamento = (registro = null) => {
+  if (registro) {
+    const salva = async (b) => { registro.push([...b].map((x) => x.toString(16).padStart(2, '0')).join('')); };
+    scrittura = { properties: { writeWithoutResponse: true }, writeValueWithoutResponse: salva, writeValue: salva };
+  }
+  imposta('collegata');
+};

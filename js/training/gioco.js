@@ -8,7 +8,7 @@ import { loadDraft, saveDraft, clearDraft } from './store.js';
 import { keepAwake } from './awake.js';
 import { pausaMs, pausaSecondi, ritardoCambioTurno } from './pausa.js';
 import { onDardo, onStato, tavolaStato, scrivi } from './tavola.js';
-import { EFFETTI, comandoColpo, effettoTurno } from './led.js';
+import { EFFETTI, VERDE, comandoColpo, effettoTurno } from './led.js';
 import { suona, sbloccaAudio } from './suono.js';
 import { visitaValida, applicaVisita } from './scorer.js';
 import { gioco, rigioca, numeriCheckout, record, migliora, varianteDi, nomeVariante, scelteDi, REGOLE } from './giochi.js';
@@ -55,6 +55,7 @@ export default async function giocoView([id]) {
   const ac = new AbortController();
   let ledSpeciale = false; // effetto speciale in corso: a fine pausa si spengono i led
   let ledTimer = null;
+  let bersTimer = null; // riaccende in verde il bersaglio da colpire
 
   const variante = () => varianteDi(g, st.opzioni);
   const titoloGioco = () => (s && g.SCELTE ? `${g.nome} · ${nomeVariante(g, variante())}` : g.nome);
@@ -132,10 +133,18 @@ export default async function giocoView([id]) {
     if (ev.t === 'd') {
       // led: il settore colpito, oppure a fine turno l'effetto speciale (180, tre tripli uguali, 100 o piu')
       const speciale = s.fineTurno ? effettoTurno(s.ultimo) : null;
+      // giochi con il bersaglio illuminato (Doppie): se lo prendi parte un gioco di luci
+      const preso = !!g.ledBersaglio && bersagliPrima.includes(ev.id);
       clearTimeout(ledTimer);
-      scrivi(speciale || comandoColpo(ev.id));
+      clearTimeout(bersTimer);
+      scrivi(speciale || (preso ? EFFETTI.festa : comandoColpo(ev.id)));
       ledSpeciale = !!speciale;
       if (s.fineTurno && !speciale && !s.finito) ledTimer = setTimeout(() => scrivi(EFFETTI.cambioTurno), ritardoCambioTurno()); // quando mancano 2 secondi alla fine della pausa
+      if (g.ledBersaglio && !s.finito) {
+        if (!s.fineTurno) illuminaBersaglio(preso ? 1500 : 1000);
+        else if (!daTavola || !pausaMs()) illuminaBersaglio(ritardoCambioTurno() + 1500);
+        // con la pausa il bersaglio si riaccende alla fine del conto alla rovescia
+      }
       const ok = bersagliPrima.length ? bersagliPrima.includes(ev.id) : ev.id !== 'X';
       const sg = segmento(ev.id);
       suona(ev.id === 'X' ? 'fuori' : sg && (sg.moltiplicatore > 1 || sg.id === 'B25') ? 'speciale' : 'singolo');
@@ -150,11 +159,22 @@ export default async function giocoView([id]) {
     }
   }
 
+  /** Illumina in verde sulla tavola il bersaglio da colpire (solo nei giochi che lo prevedono). */
+  function illuminaBersaglio(ritardo = 0) {
+    if (!g.ledBersaglio) return;
+    clearTimeout(bersTimer);
+    bersTimer = setTimeout(() => {
+      const id = s && !s.finito && Date.now() >= st.bloccoFino ? g.ledBersaglio(s) : null;
+      if (id) scrivi(comandoColpo(id, VERDE));
+    }, ritardo);
+  }
+
   function annulla() {
     if (st.chiusura) { st.chiusura = null; render(); return; }
     if (!st.eventi.length) return;
     st.eventi.pop();
     s = rigioca(g, st.opzioni, st.eventi);
+    illuminaBersaglio(0);
     persist();
     render();
   }
@@ -199,9 +219,11 @@ export default async function giocoView([id]) {
   }
   function chiudiConto() {
     if (ledSpeciale) { scrivi(EFFETTI.spento); ledSpeciale = false; }
+    const eraInPausa = st.bloccoFino > 0;
     clearInterval(contoTimer);
     st.bloccoFino = 0;
     if (overlay().querySelector('.conto')) overlay().innerHTML = '';
+    if (eraInPausa) illuminaBersaglio(300);
   }
 
   function fine() {
@@ -239,6 +261,7 @@ export default async function giocoView([id]) {
 
   function ancora() {
     scrivi(EFFETTI.inizio);
+    illuminaBersaglio(2500);
     overlay().innerHTML = '';
     st.opzioni = opzioniNuove(g, st.opzioni);
     st.eventi = [];
@@ -253,7 +276,7 @@ export default async function giocoView([id]) {
     mount(el) {
       root = el;
       if (ripresa) toast('Partita ripresa da dove eri rimasto');
-      if (s) scrivi(EFFETTI.inizio);
+      if (s) { scrivi(EFFETTI.inizio); illuminaBersaglio(2500); }
       render();
       const sig = { signal: ac.signal };
       el.addEventListener('click', (e) => {
@@ -264,6 +287,7 @@ export default async function giocoView([id]) {
           st.opzioni = scelteDi(g, { [g.SCELTE[0].chiave]: d.modo });
           s = rigioca(g, st.opzioni, []);
           scrivi(EFFETTI.inizio);
+          illuminaBersaglio(2500);
           render();
         } else if (d.scelta) {
           st.bozza[d.scelta] = d.scelta === 'serie' ? Number(d.val) : d.val;
@@ -272,6 +296,7 @@ export default async function giocoView([id]) {
           st.opzioni = { ...st.bozza };
           s = rigioca(g, st.opzioni, []);
           scrivi(EFFETTI.inizio);
+          illuminaBersaglio(2500);
           render();
         }
         else if (d.ev) invia(JSON.parse(d.ev));
@@ -303,12 +328,13 @@ export default async function giocoView([id]) {
           if (!s || s.finito || Date.now() < st.bloccoFino || st.chiusura) return;
           invia({ t: 'd', id: dd.id }, { daTavola: true });
         }),
-        onStato((stt) => { if (stt === 'collegata' && s && !s.finito) scrivi(EFFETTI.inizio); render(); }),
+        onStato((stt) => { if (stt === 'collegata' && s && !s.finito) { scrivi(EFFETTI.inizio); illuminaBersaglio(2500); } render(); }),
       ];
       awake = keepAwake(() => {});
     },
     unmount() {
       clearTimeout(ledTimer);
+      clearTimeout(bersTimer);
       ac.abort();
       offs.forEach((f) => f());
       chiudiConto();
