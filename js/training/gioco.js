@@ -141,8 +141,8 @@ export default async function giocoView([id]) {
       ledSpeciale = !!speciale;
       if (s.fineTurno && !speciale && !s.finito) ledTimer = setTimeout(() => scrivi(EFFETTI.cambioTurno), ritardoCambioTurno()); // quando mancano 2 secondi alla fine della pausa
       if (g.ledBersaglio && !s.finito) {
-        if (!s.fineTurno) illuminaBersaglio(preso ? 1500 : 1000);
-        else if (!daTavola || !pausaMs()) illuminaBersaglio(ritardoCambioTurno() + 1500);
+        // il bersaglio si accende solo a inizio turno (prima delle 3 frecce): la tavola non lo tiene acceso fisso
+        if (s.fineTurno && (!daTavola || !pausaMs())) illuminaBersaglio(ritardoCambioTurno() + 1500);
         // con la pausa il bersaglio si riaccende alla fine del conto alla rovescia
       }
       const ok = bersagliPrima.length ? bersagliPrima.includes(ev.id) : ev.id !== 'X';
@@ -174,7 +174,7 @@ export default async function giocoView([id]) {
     if (!st.eventi.length) return;
     st.eventi.pop();
     s = rigioca(g, st.opzioni, st.eventi);
-    illuminaBersaglio(0);
+    if (!s.turno.length) illuminaBersaglio(0); // si torna a inizio turno
     persist();
     render();
   }
@@ -223,7 +223,7 @@ export default async function giocoView([id]) {
     clearInterval(contoTimer);
     st.bloccoFino = 0;
     if (overlay().querySelector('.conto')) overlay().innerHTML = '';
-    if (eraInPausa) illuminaBersaglio(300);
+    if (eraInPausa && g.ledBersaglio) { clearTimeout(ledTimer); illuminaBersaglio(300); } // "Sono pronto": niente cambio turno in ritardo sopra il bersaglio
   }
 
   function fine() {

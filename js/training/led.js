@@ -20,7 +20,7 @@ export const EFFETTI = {
   bull: hex('1f4b007d4b007d00487d000023010000'), // bull centrale (50)
   bull25: hex('187d00007d00007d0000000014000000'), // bull esterno (25)
   spento: hex('01000000000000000000000000000000'),
-  festa: hex('1f4b007d4b007d00487d000023010000'), // bersaglio preso: il gioco di luci del bull
+  festa: hex('18007d00007d00007d00000014000000'), // bersaglio preso: l'effetto del bull esterno, in verde (piu' leggero di quello del bull centrale)
 };
 
 /** Codice del led per il numero n (1-20). */
