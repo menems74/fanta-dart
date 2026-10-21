@@ -334,3 +334,7 @@ svg.line text { fill: var(--mu); font-size: 16px; }
 .tr .indisp.turnoin span { color: var(--tx); }
 .tr .invia.chiudi { background: var(--c1); color: var(--tx); border: 1px solid var(--ln-bright); padding: 0 18px; font-size: 16px; }
 .tr .k501.bloccato button:not(.annulla) { opacity: .35; }
+/* Target su 5 serie e scelta tra due varianti */
+.tr .serie.n5 { grid-template-columns: repeat(5, 1fr); }
+.tr .modigrid.n2 { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 640px) { .tr .modigrid.n2 { grid-template-columns: 1fr; } }

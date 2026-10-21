@@ -69,12 +69,12 @@ const PANNELLI = {
 function pannelloTarget(etichette) {
   return (g, s, { rec }) => {
     const n = s.punti.length;
-    const ora = Math.min(Math.floor(n / g.PER_SERIE), g.SERIE - 1);
+    const ora = Math.min(Math.floor(n / g.PER_SERIE), s.nSerie - 1);
     const serie = (i) => s.punti.slice(i * g.PER_SERIE, (i + 1) * g.PER_SERIE);
     const cur = serie(ora);
     return html`
-      ${testa(g.valore(s), `Serie ${ora + 1} di ${g.SERIE}`, recordBox(rec, 'punti'))}
-      <div class="serie">${Array.from({ length: g.SERIE }, (_, i) => {
+      ${testa(g.valore(s), `Serie ${ora + 1} di ${s.nSerie}`, recordBox(rec, `punti in ${s.nSerie} serie`))}
+      <div class="serie n${s.nSerie}">${Array.from({ length: s.nSerie }, (_, i) => {
         const x = serie(i);
         const fatta = x.length === g.PER_SERIE;
         return html`<span class="${fatta ? 'fatta' : i === ora ? 'ora' : ''}">${fatta || i === ora ? somma(x) : ''}</span>`;

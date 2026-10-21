@@ -207,3 +207,30 @@ test('501 in due: turni alternati, vincitore e chi continua da solo', () => {
   assert.equal(r.cur, 0);
   assert.equal(r.stati[0].resto, 381);
 });
+
+import { varianteDi } from '../js/training/giochi.js';
+test('Target su 5 o 10 serie: fine, voto sulla media a serie, record e sfida', () => {
+  const g = gioco('target20');
+  let s = gioca('target20', d(...Array(45).fill('S20o')), { serie: 5 });
+  assert.equal(s.finito, true);
+  assert.equal(g.valore(s), 45);
+  assert.equal(g.dati(s).serie.length, 5);
+  assert.equal(gioca('target20', d(...Array(45).fill('S20o')), {}).finito, false); // senza scelta: 10 serie
+  assert.equal(g.voto(90, { serie: 5 }), g.voto(180, { serie: 10 })); // stessa media a serie, stesso voto
+  assert.equal(g.voto(180, {}), 100);
+  assert.equal(varianteDi(g, {}), 10);
+  assert.equal(g.grafico({ valore: 50, opzioni: { serie: 5 } }), 10);
+  const sess = [
+    { gioco: 'target20', valore: 120, opzioni: {} },
+    { gioco: 'target20', valore: 70, opzioni: { serie: 5 } },
+  ];
+  assert.equal(record(sess, 'target20', 10), 120);
+  assert.equal(record(sess, 'target20', 5), 70);
+  // la sfida sui Target vale solo sulle 10 serie
+  const sab = ['2026-10-24', '2026-10-31', '2026-11-07', '2026-11-14', '2026-11-21'].find((x) => sfidaDel(x) === 'target20');
+  const cl = classificaSfida([
+    { playerId: 'a', gioco: 'target20', valore: 100, data: sab, opzioni: { serie: 10 } },
+    { playerId: 'b', gioco: 'target20', valore: 90, data: sab, opzioni: { serie: 5 } },
+  ], sab);
+  assert.deepEqual(cl, [{ playerId: 'a', valore: 100 }]);
+});

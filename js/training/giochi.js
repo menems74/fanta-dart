@@ -65,33 +65,45 @@ function chiudiVisita(s, punti, esito) {
 export const restoProvvisorio = (s) => (s.turno.length ? elaboraTurno(s.resto, s.turno.map(dardo)).resto : s.resto);
 
 // ---------------------------------------------------------------- Target 20 / Target Bull
-const SERIE = 10;
 const PER_SERIE = 9;
+const nSerie = (o) => Number(o?.serie) || 10; // le sessioni salvate prima della scelta erano tutte da 10 serie
+/**
+ * Target: 5 o 10 serie da 9 frecce. Il totale dipende dalle serie, quindi voto, pollici e grafici usano
+ * la media a serie (su 27); i record restano separati per 5 e 10 serie.
+ */
 function target({ id, nome, desc, punti, quick, bersagli, cento }) {
   return {
-    id, nome, desc, unit: '/ 270', SERIE, PER_SERIE, quick,
-    voto: (v) => lineare(v, 0, cento),
-    crea: () => ({ ...base(), punti: [] }),
+    id, nome, desc, unit: 'punti', unitGrafico: 'punti a serie', PER_SERIE, quick,
+    VARIANTI: {
+      chiave: 'serie',
+      domanda: 'Quante serie da 9 frecce vuoi tirare?',
+      lista: [[10, '10 serie', '90 frecce: l\'allenamento completo'], [5, '5 serie', '45 frecce: quando hai poco tempo']],
+    },
+    // cento: i punti su 10 serie che valgono 100
+    voto: (v, o) => lineare(v / nSerie(o), 0, cento / 10),
+    crea: (o) => ({ ...base(), punti: [], nSerie: nSerie(o) }),
     passo(s, ev) {
       if (ev.t !== 'd') return s;
       s.punti.push(punti(ev.id));
       aggiungi(s, ev.id);
-      s.finito = s.punti.length >= SERIE * PER_SERIE;
+      s.finito = s.punti.length >= s.nSerie * PER_SERIE;
       return s;
     },
     valore: (s) => somma(s.punti),
-    dati: (s) => ({ serie: Array.from({ length: SERIE }, (_, i) => somma(s.punti.slice(i * PER_SERIE, (i + 1) * PER_SERIE))) }),
+    dati: (s) => ({ serie: Array.from({ length: s.nSerie }, (_, i) => somma(s.punti.slice(i * PER_SERIE, (i + 1) * PER_SERIE))) }),
     bersagli: () => bersagli,
+    /** Valore nei grafici: media a serie, cosi' 5 e 10 serie stanno sulla stessa linea. */
+    grafico: (x) => Math.round((x.valore / nSerie(x.opzioni)) * 10) / 10,
   };
 }
 const target20 = target({
-  id: 'target20', nome: 'Target 20', desc: '10 serie da 9 frecce al 20', cento: 180,
+  id: 'target20', nome: 'Target 20', desc: '5 o 10 serie da 9 frecce al 20', cento: 180,
   punti: (id) => ({ S20i: 1, S20o: 1, D20: 2, T20: 3 }[id] || 0),
   quick: [['X', 'Mancato', 0], ['S20o', 'Singolo', 1], ['D20', 'Doppio', 2], ['T20', 'Triplo', 3]],
   bersagli: ['S20i', 'S20o', 'D20', 'T20'],
 });
 const targetbull = target({
-  id: 'targetbull', nome: 'Target Bull', desc: '10 serie da 9 frecce al centro', cento: 90,
+  id: 'targetbull', nome: 'Target Bull', desc: '5 o 10 serie da 9 frecce al centro', cento: 90,
   punti: (id) => ({ B25: 1, B50: 3 }[id] || 0),
   quick: [['X', 'Mancato', 0], ['B25', 'Bull 25', 1], ['B50', 'Bull 50', 3]],
   bersagli: ['B25', 'B50'],
@@ -191,6 +203,11 @@ export function bersagliRotation(modo, n) {
 }
 const rotation = {
   id: 'rotation', nome: 'Rotation', desc: 'Dall\'1 al 20, poi il bull', unit: 'frecce', basso: true, MODI, ROTATION,
+  VARIANTI: {
+    chiave: 'modo',
+    domanda: 'Colpisci i numeri dall\'1 al 20 in ordine e chiudi con il bull. Su cosa vuoi mirare?',
+    lista: [['S', 'Singolo', 'Solo il settore singolo, poi un bull'], ['D', 'Doppio', 'Doppi e alla fine il Bull 50'], ['T', 'Triplo', 'Tripli, poi un bull qualsiasi']],
+  },
   // il doppio e il triplo sono molto piu' difficili: scala diversa, cosi' il voto resta confrontabile
   voto: (v, o = {}) => (o.modo === 'S' ? lineare(v, 120, 25) : lineare(v, 300, 60)),
   crea: (o) => ({ ...base(), modo: o.modo, idx: 0 }),
@@ -287,10 +304,18 @@ export function trend(voti) {
 export const trendGioco = (sessioni, id) => trend(sessioni.filter((x) => x.gioco === id).sort(perData).map((x) => x.voto));
 export const trendGiocatore = (sessioni) => trend([...sessioni].sort(perData).map((x) => x.voto));
 
-/** Record: il valore migliore (per Rotation, nella stessa modalita'). */
-export function record(sessioni, id, modo = null) {
+/** Variante scelta all\'inizio (modalita' di Rotation, numero di serie dei Target), null per gli altri giochi. */
+export function varianteDi(g, opzioni) {
+  if (!g.VARIANTI) return null;
+  if (g.VARIANTI.chiave === 'serie') return nSerie(opzioni);
+  return opzioni?.[g.VARIANTI.chiave] ?? null;
+}
+export const nomeVariante = (g, v) => g.VARIANTI?.lista.find(([k]) => String(k) === String(v))?.[1] ?? '';
+
+/** Record: il valore migliore, nella stessa variante se indicata (Rotation in triplo, Target su 5 serie...). */
+export function record(sessioni, id, variante = null) {
   const g = gioco(id);
-  const v = sessioni.filter((x) => x.gioco === id && (!modo || x.opzioni?.modo === modo)).map((x) => x.valore);
+  const v = sessioni.filter((x) => x.gioco === id && (variante == null || String(varianteDi(g, x.opzioni)) === String(variante))).map((x) => x.valore);
   if (!v.length) return null;
   return g.basso ? Math.min(...v) : Math.max(...v);
 }
@@ -350,7 +375,9 @@ export function classificaSfida(sessioni, sabato) {
   const id = sfidaDel(sabato);
   const g = gioco(id);
   const best = new Map();
-  for (const x of sessioni.filter((y) => y.gioco === id && y.data === sabato)) {
+  // nei Target la sfida vale solo sulle 10 serie
+  const valida = (y) => g.VARIANTI?.chiave !== 'serie' || varianteDi(g, y.opzioni) === 10;
+  for (const x of sessioni.filter((y) => y.gioco === id && y.data === sabato && valida(y))) {
     const b = best.get(x.playerId);
     if (b == null || (g.basso ? x.valore < b : x.valore > b)) best.set(x.playerId, x.valore);
   }
@@ -367,14 +394,14 @@ export const REGOLE = {
     'Il risultato è il numero di frecce usate: meno è meglio.',
   ],
   target20: [
-    '10 serie da 9 frecce, tutte al 20.',
+    'All\'inizio scegli 10 serie o 5 serie da 9 frecce, tutte al 20.',
     'Singolo 1 punto, doppio 2, triplo 3. Gli altri numeri valgono 0.',
-    'Massimo 27 punti a serie, 270 in tutto.',
+    'Massimo 27 punti a serie. Voto e progressi guardano la media a serie; i record sono separati per 5 e 10 serie e la sfida del sabato vale solo sulle 10 serie.',
   ],
   targetbull: [
-    '10 serie da 9 frecce, tutte al centro.',
+    'All\'inizio scegli 10 serie o 5 serie da 9 frecce, tutte al centro.',
     'Bull esterno (25) 1 punto, Bull centrale (50) 3 punti, fuori 0.',
-    'Massimo 27 punti a serie, 270 in tutto.',
+    'Massimo 27 punti a serie. Voto e progressi guardano la media a serie; i record sono separati per 5 e 10 serie e la sfida del sabato vale solo sulle 10 serie.',
   ],
   scoring: [
     '18 frecce, cioè 6 turni, mirando dove vuoi.',

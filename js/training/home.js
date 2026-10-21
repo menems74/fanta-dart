@@ -4,7 +4,7 @@ import { session } from '../auth.js';
 import { listTutteSessioni } from '../db.js';
 import { tavolaDisponibile, tavolaStato } from './tavola.js';
 import {
-  GIOCHI, gioco, votoGioco, skill, trendGioco, record, settimana, prossimoSabato, sfidaDel, classificaSfida, badgePresi, BADGES,
+  GIOCHI, gioco, varianteDi, votoGioco, skill, trendGioco, record, settimana, prossimoSabato, sfidaDel, classificaSfida, badgePresi, BADGES,
 } from './giochi.js';
 import { barra, pollice, linea, COLORE, nomeGiocatore } from './grafica.js';
 
@@ -51,7 +51,7 @@ export default async function homeView() {
               ${pollice(t)}
               <h3>${g.nome}</h3><p class="desc">${g.desc}</p>
               ${lista.length >= 2 ? linea(lista.slice(-10).map((x) => x.voto), { w: 200, h: 38, colore: COLORE[t], cls: 'spark' }) : html`<p class="mu sm">${lista.length ? '1 sessione' : 'Mai giocato'}</p>`}
-              <div class="nums"><div><small>Record</small><b>${record(mie, g.id, ultima?.opzioni?.modo) ?? '–'}</b></div>
+              <div class="nums"><div><small>Record</small><b>${record(mie, g.id, ultima ? varianteDi(g, ultima.opzioni) : null) ?? '–'}</b></div>
                 <div><small>Ultima</small><b>${ultima ? ultima.valore : '–'}</b></div>
                 <div><small>Voto</small><b>${v ?? '–'}</b></div></div>
             </a>`;

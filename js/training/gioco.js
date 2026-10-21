@@ -10,7 +10,7 @@ import { onDardo, onStato, tavolaStato, scrivi } from './tavola.js';
 import { EFFETTI, comandoColpo, effettoTurno } from './led.js';
 import { suona, sbloccaAudio } from './suono.js';
 import { visitaValida, applicaVisita } from './scorer.js';
-import { gioco, rigioca, numeriCheckout, record, migliora, REGOLE } from './giochi.js';
+import { gioco, rigioca, numeriCheckout, record, migliora, varianteDi, nomeVariante, REGOLE } from './giochi.js';
 import { pannello, comandi } from './pannelli.js';
 import partita501View from './partita501.js';
 import { barra, bersaglio, svg } from './grafica.js';
@@ -18,7 +18,15 @@ import { barra, bersaglio, svg } from './grafica.js';
 const PAUSA_MS = 6000; // dopo 3 frecce dal Granboard: il tempo di togliere le freccette
 const overlay = () => document.getElementById('overlay');
 
-const opzioniNuove = (g, vecchie) => (g.id === 'checkout' ? { numeri: numeriCheckout() } : g.id === 'rotation' ? (vecchie?.modo ? { modo: vecchie.modo } : null) : {});
+// Checkout: numeri nuovi a ogni partita. Giochi con varianti (Rotation, Target): si sceglie all'inizio, "Gioca ancora" la tiene.
+function opzioniNuove(g, vecchie) {
+  if (g.id === 'checkout') return { numeri: numeriCheckout() };
+  if (g.VARIANTI) {
+    const k = g.VARIANTI.chiave;
+    return vecchie?.[k] != null ? { [k]: vecchie[k] } : null;
+  }
+  return {};
+}
 
 export default async function giocoView([id]) {
   if (id === 'x501') return partita501View(); // il 501 ha una schermata tutta sua, senza bersaglio
@@ -47,7 +55,9 @@ export default async function giocoView([id]) {
   let ledSpeciale = false; // effetto speciale in corso: a fine pausa si spengono i led
   let ledTimer = null;
 
-  const rec = () => record(mie, g.id, st.opzioni?.modo);
+  const variante = () => varianteDi(g, st.opzioni);
+  const titoloGioco = () => (s && g.VARIANTI ? `${g.nome} · ${nomeVariante(g, variante())}` : g.nome);
+  const rec = () => record(mie, g.id, variante());
   const persist = () => {
     if (st.eventi.length) saveDraft(pid, 'gioco', { gioco: id, opzioni: st.opzioni, eventi: st.eventi, inizio: st.inizio });
     else clearDraft(pid, 'gioco');
@@ -56,12 +66,12 @@ export default async function giocoView([id]) {
   // ---------- schermate ----------
   const sceltaModo = () => html`
     <div class="page modi">
-      <p class="intro">Colpisci i numeri dall'1 al 20 in ordine e chiudi con il bull. Su cosa vuoi mirare?</p>
-      <div class="modigrid">${Object.entries(g.MODI).map(([k, nome]) => {
+      <p class="intro">${g.VARIANTI.domanda}</p>
+      <div class="modigrid n${g.VARIANTI.lista.length}">${g.VARIANTI.lista.map(([k, nome, descr]) => {
         const r = record(mie, g.id, k);
         return html`<button type="button" class="card modo" data-modo="${k}"><b>${nome}</b>
-          <span class="mu sm">${k === 'D' ? 'Doppi e alla fine il Bull 50' : k === 'T' ? 'Tripli, poi un bull qualsiasi' : 'Solo il settore singolo, poi un bull'}</span>
-          <span class="mu sm">${r == null ? 'Mai giocato' : `Record: ${r} frecce`}</span></button>`;
+          <span class="mu sm">${descr}</span>
+          <span class="mu sm">${r == null ? 'Mai giocato' : `Record: ${r} ${g.unit}`}</span></button>`;
       })}</div>
     </div>`;
 
@@ -85,7 +95,7 @@ export default async function giocoView([id]) {
 
   const render = () => {
     if (!root) return;
-    const titolo = g.id === 'rotation' && s ? `Rotation · ${g.MODI[s.modo]}` : g.nome;
+    const titolo = titoloGioco();
     root.innerHTML = html`${barra(titolo, { back: '/', info: true })}${s ? gioca() : sceltaModo()}`.s;
   };
 
@@ -190,7 +200,7 @@ export default async function giocoView([id]) {
     clearDraft(pid, 'gioco');
     const record_ = migliora(g, valore, precedente);
     overlay().innerHTML = html`<div class="fine"><div class="card">
-      <p class="mu">${g.nome}${st.opzioni?.modo ? ` · ${g.MODI[st.opzioni.modo]}` : ''}</p>
+      <p class="mu">${titoloGioco()}</p>
       <div class="big">${valore}<small> ${g.unit}</small></div>
       <p class="esito">${precedente == null ? 'Primo risultato: da qui si migliora.' : record_ ? `Nuovo record! Il precedente era ${precedente}.` : `Il tuo record è ${precedente}.`}</p>
       <p class="mu">Voto ${voto} su 100</p>
@@ -232,7 +242,13 @@ export default async function giocoView([id]) {
         const b = e.target.closest('button');
         if (!b || b.disabled) return;
         const d = b.dataset;
-        if (d.modo) { st.opzioni = { modo: d.modo }; s = rigioca(g, st.opzioni, []); scrivi(EFFETTI.inizio); render(); }
+        if (d.modo) {
+          const k = g.VARIANTI.chiave;
+          st.opzioni = { [k]: k === 'serie' ? Number(d.modo) : d.modo };
+          s = rigioca(g, st.opzioni, []);
+          scrivi(EFFETTI.inizio);
+          render();
+        }
         else if (d.ev) invia(JSON.parse(d.ev));
         else if (d.k) tasto(d.k);
         else if (d.act === 'info') regole();
