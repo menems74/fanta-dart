@@ -344,3 +344,20 @@ svg.line text { fill: var(--mu); font-size: 16px; }
 .tr .modigrid.scelta .modo b { font-size: 22px; }
 .tr .modi .btn.grande { justify-self: start; min-width: 240px; }
 @media (max-width: 900px) { .tr .modigrid.n4 { grid-template-columns: repeat(2, 1fr); } }
+
+/* Pausa dopo il turno: riquadro nella home e finestra di scelta */
+.tr .pausa { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; border-radius: 16px; background: var(--c1); border: 1px solid var(--ln-bright); color: var(--tx); font: inherit; text-align: left; cursor: pointer; }
+.tr .pausa svg { color: var(--gd); flex: none; }
+.tr .pausa span { flex: 1; display: grid; }
+.tr .pausa b { font-size: 16px; }
+.tr .pausa small { font-size: 13px; color: var(--mu); }
+.tr .pausa em { font-style: normal; font-weight: 800; font-size: 22px; color: var(--gd); white-space: nowrap; }
+.tr .pausa:active { transform: scale(.98); }
+#overlay .pausabox { width: min(560px, 100%); }
+#overlay .pausabox .avv { display: flex; flex-wrap: wrap; gap: 10px; }
+#overlay .pausabox .avv button { min-height: 56px; min-width: 72px; padding: 0 16px; border-radius: 999px; font: inherit; font-weight: 800; font-size: 18px; color: var(--tx); background: var(--c2); border: 1px solid var(--ln-bright); cursor: pointer; }
+#overlay .pausabox .avv button.sel { background: var(--gd); color: #2b1d00; border-color: var(--gd); }
+#overlay .pausabox .btn { flex: none; min-width: 160px; }
+
+/* la Skill nella figurina non e' un voto di pagella: niente cerchio di .voto (app.css) */
+.figurina .voto { width: auto; height: auto; border: 0; border-radius: 0; background: none; box-shadow: none; display: block; font-size: 64px; color: var(--gd); }

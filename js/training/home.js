@@ -7,6 +7,7 @@ import {
   GIOCHI, gioco, varianteDi, votoGioco, skill, trendGioco, record, settimana, prossimoSabato, sfidaDel, classificaSfida, badgePresi, BADGES,
 } from './giochi.js';
 import { barra, pollice, linea, COLORE, nomeGiocatore } from './grafica.js';
+import { PAUSE, pausaSecondi, impostaPausa, etichettaPausa } from './pausa.js';
 
 export default async function homeView() {
   const pid = session.account.playerId;
@@ -19,6 +20,7 @@ export default async function homeView() {
   const classifica = classificaSfida(tutte, sabato);
   const recSfida = record(mie, sfida.id);
   const collega = tavolaDisponibile() && tavolaStato() !== 'collegata';
+  const ac = new AbortController();
 
   return {
     html: html`
@@ -37,6 +39,11 @@ export default async function homeView() {
               <b>Sfida del sabato · ${sfida.nomeSfida || sfida.nome}${sabato === oggi ? ' · oggi!' : ''}</b>
               <span>${fmtDate(sabato)}${recSfida != null ? ` · il tuo record ${recSfida}` : ''}${classifica.length ? ` · in testa con ${classifica[0].valore}` : ''}</span></a>
           </nav>
+          <button type="button" class="pausa" data-act="pausa">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+            <span><b>Pausa dopo il turno</b><small>Con il Granboard: tempo per togliere le freccette</small></span>
+            <em id="pausaval">${etichettaPausa(pausaSecondi())}</em>
+          </button>
           <p class="firma">Powered by <b>Cleopatra</b></p>
         </aside>
         <section class="giochi">
@@ -58,5 +65,30 @@ export default async function homeView() {
           })}
         </section>
       </div>`,
+    mount(root) {
+      const ov = document.getElementById('overlay');
+      const finestra = () => html`<div class="modal" data-act="chiudi"><div class="card pausabox" data-stop>
+        <header><h2>Pausa dopo il turno</h2></header>
+        <p class="mu">Quando giochi con il Granboard, dopo 3 frecce la tavola si ferma per darti il tempo di togliere le freccette. Vale per tutti i giochi, su questo dispositivo.</p>
+        <div class="avv">${PAUSE.map((x) => html`<button type="button" class="${x === pausaSecondi() ? 'sel' : ''}" data-pausa="${x}">${etichettaPausa(x)}</button>`)}</div>
+        <div class="azioni"><button type="button" class="btn pri" data-act="chiudi">Fatto</button></div>
+      </div></div>`.s;
+      root.addEventListener('click', (e) => {
+        if (e.target.closest('[data-act="pausa"]')) ov.innerHTML = finestra();
+      }, { signal: ac.signal });
+      ov.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-pausa]');
+        if (b) {
+          impostaPausa(Number(b.dataset.pausa));
+          ov.innerHTML = finestra();
+          const v = root.querySelector('#pausaval');
+          if (v) v.textContent = etichettaPausa(pausaSecondi());
+          return;
+        }
+        const c = e.target.closest('[data-act="chiudi"]');
+        if (c && !(c.classList.contains('modal') && e.target.closest('[data-stop]'))) ov.innerHTML = '';
+      }, { signal: ac.signal });
+    },
+    unmount() { ac.abort(); document.getElementById('overlay').innerHTML = ''; },
   };
 }

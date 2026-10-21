@@ -6,6 +6,7 @@ import { listSessioni, saveSessione } from '../db.js';
 import { etichettaDardo } from '../dartboard.js';
 import { loadDraft, saveDraft, clearDraft } from './store.js';
 import { keepAwake } from './awake.js';
+import { pausaMs, pausaSecondi, ritardoCambioTurno } from './pausa.js';
 import { onDardo, onStato, tavolaStato, scrivi } from './tavola.js';
 import { EFFETTI, comandoColpo, effettoTurno } from './led.js';
 import { suona, sbloccaAudio } from './suono.js';
@@ -13,7 +14,6 @@ import { visitaValida } from './scorer.js';
 import { gioco, rigioca, record, migliora, REGOLE } from './giochi.js';
 import { barra, svg, nomeGiocatore } from './grafica.js';
 
-const PAUSA_MS = 6000;
 const TURNI = 6;
 const overlay = () => document.getElementById('overlay');
 const g = gioco('scoring');
@@ -108,7 +108,7 @@ export default async function partitaScoringView() {
       clearTimeout(ledTimer);
       scrivi(speciale || comandoColpo(ev.id));
       ledSpeciale = !!speciale;
-      if (s.fineTurno && !speciale && !s.finito) ledTimer = setTimeout(() => scrivi(EFFETTI.cambioTurno), PAUSA_MS - 2000);
+      if (s.fineTurno && !speciale && !s.finito) ledTimer = setTimeout(() => scrivi(EFFETTI.cambioTurno), ritardoCambioTurno());
       suona(ev.id === 'X' ? 'fuori' : 'singolo');
     }
     persist();
@@ -146,7 +146,8 @@ export default async function partitaScoringView() {
 
   // ---------- conto alla rovescia e fine ----------
   function contoAllaRovescia(ultimo) {
-    st.bloccoFino = Date.now() + PAUSA_MS;
+    if (!pausaMs()) return; // pausa disattivata: si tira subito
+    st.bloccoFino = Date.now() + pausaMs();
     const secondi = () => Math.ceil((st.bloccoFino - Date.now()) / 1000);
     overlay().innerHTML = html`<div class="conto" role="status"><p>Togli le freccette</p><div class="n">${secondi()}</div>
       ${ultimo.length ? html`<p class="riep">Turno: <b>${ultimo.map(etichettaDardo).join(' · ')}</b> = <b>${s.visite.at(-1)}</b></p>` : ''}
@@ -202,7 +203,7 @@ export default async function partitaScoringView() {
       <header><h2>Come si gioca · Scoring</h2>
         <button type="button" class="iconbtn" data-act="chiudi" aria-label="Chiudi">${svg('chiudi')}</button></header>
       <ul>${REGOLE.scoring.map((x) => html`<li>${x}</li>`)}</ul>
-      <p class="mu sm">${tavolaStato() === 'collegata' ? 'Con il Granboard le frecce si segnano da sole: dopo ogni turno hai 6 secondi per togliere le freccette.'
+      <p class="mu sm">${tavolaStato() === 'collegata' ? `Con il Granboard le frecce si segnano da sole: ${pausaSecondi() ? `dopo ogni turno hai ${pausaSecondi()} secondi per togliere le freccette (lo cambi nella home, Pausa dopo il turno).` : 'la pausa dopo il turno è disattivata (la cambi nella home).'}`
         : 'Senza Granboard scrivi la somma delle 3 frecce e premi Invia. Con ↶ annulli l\'ultimo turno.'}</p>
       <button type="button" class="btn pri" data-act="chiudi">Ho capito</button>
     </div></div>`.s;
