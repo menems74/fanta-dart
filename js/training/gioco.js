@@ -13,6 +13,7 @@ import { visitaValida, applicaVisita } from './scorer.js';
 import { gioco, rigioca, numeriCheckout, record, migliora, varianteDi, nomeVariante, REGOLE } from './giochi.js';
 import { pannello, comandi } from './pannelli.js';
 import partita501View from './partita501.js';
+import partitaScoringView from './partitaScoring.js';
 import { barra, bersaglio, svg } from './grafica.js';
 
 const PAUSA_MS = 6000; // dopo 3 frecce dal Granboard: il tempo di togliere le freccette
@@ -29,7 +30,9 @@ function opzioniNuove(g, vecchie) {
 }
 
 export default async function giocoView([id]) {
-  if (id === 'x501') return partita501View(); // il 501 ha una schermata tutta sua, senza bersaglio
+  // 501 e Scoring hanno una schermata tutta loro, senza bersaglio, con il tastierino grande
+  if (id === 'x501') return partita501View();
+  if (id === 'scoring') return partitaScoringView();
   const g = gioco(id);
   if (!g) { location.replace('#/'); return { html: html`` }; }
   const pid = session.account.playerId;
