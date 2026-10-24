@@ -25,6 +25,36 @@ function giornateSvg(giornate) {
   }).join('') + '</svg>';
 }
 
+/** Linea della media (punti per sfida) di campionato in campionato, dal piu' vecchio al piu' recente. */
+function carrieraSvg(voci) {
+  const W = 300, H = 96, pad = 50, top = 24, base = H - 24;
+  // scala tra un po' sotto il minimo e il massimo, cosi' le differenze si vedono
+  const max = Math.max(...voci.map((v) => v.media), 0.5);
+  const min = Math.max(0, Math.min(...voci.map((v) => v.media)) - 0.5);
+  const x = (i) => (voci.length === 1 ? W / 2 : pad + (i * (W - 2 * pad)) / (voci.length - 1));
+  const y = (m) => base - ((m - min) / (max - min || 1)) * (base - top);
+  const pts = voci.map((v, i) => `${x(i).toFixed(1)},${y(v.media).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Media per campionato" class="giornate carriera">`
+    + (voci.length > 1 ? `<polyline points="${pts}" class="lineac"/>` : '')
+    + voci.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v.media).toFixed(1)}" r="5" class="puntoc"/>`
+      + `<text x="${x(i).toFixed(1)}" y="${(y(v.media) - 10).toFixed(1)}" text-anchor="middle" class="dl">${fmtMediaCamp(v.media)}</text>`
+      + `<text x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" class="gl">${v.etichetta}</text>`).join('')
+    + '</svg>';
+}
+
+/** Somma di tutti i campionati: sfide, punti, media, singoli e doppi (dove ci sono gli incontri). */
+function carrieraDi(campionati) {
+  const c = { campionati: campionati.length, sfide: 0, punti: 0, sg: 0, sv: 0, dg: 0, dv: 0, conIncontri: 0 };
+  for (const x of campionati) {
+    c.sfide += x.g.set;
+    c.punti += x.g.punti;
+    const b = bilancio(x.camp, x.g.nome);
+    if (b) { c.sg += b.sg; c.sv += b.sv; c.dg += b.dg; c.dv += b.dv; c.conIncontri += 1; }
+  }
+  c.media = c.sfide ? c.punti / c.sfide : 0;
+  return c;
+}
+
 /** Statistiche ufficiali del giocatore in ogni campionato in cui compare (il piu' recente per primo). */
 async function campionatiDi(tessera) {
   const elenco = await listCampionati();
@@ -70,6 +100,25 @@ export default async function view([paramId]) {
   if (!player) return { html: html`${topbar('Profilo', { back: '/classifica' })}${emptyState('Giocatore non trovato', '')}` };
   const campionati = await campionatiDi(player.tessera);
   const [attuale, ...passati] = campionati;
+  const carriera = carrieraDi(campionati);
+  const pagellini = playerStats(playerId, matches, cards); // tutti i pagellini, di ogni stagione
+  const perc = (v, g) => (g ? `${Math.round((v / g) * 100)}%` : '–');
+  const sezioneCarriera = campionati.length ? html`
+      <h2 class="section">Carriera</h2>
+      <div class="stats">
+        <div class="stat gold"><b>${fmtMediaCamp(carriera.media)}</b><span>Media</span></div>
+        <div class="stat"><b>${carriera.punti}</b><span>Punti</span></div>
+        <div class="stat"><b>${carriera.sfide}</b><span>Sfide</span></div>
+        <div class="stat"><b>${carriera.campionati}</b><span>${carriera.campionati === 1 ? 'Campionato' : 'Campionati'}</span></div>
+      </div>
+      ${carriera.conIncontri ? html`<div class="stats">
+        <div class="stat"><b>${carriera.sv}/${carriera.sg}</b><span>Singoli vinti</span></div>
+        <div class="stat"><b>${perc(carriera.sv, carriera.sg)}</b><span>Singoli</span></div>
+        <div class="stat"><b>${carriera.dv}/${carriera.dg}</b><span>Doppi vinti</span></div>
+        <div class="stat"><b>${perc(carriera.dv, carriera.dg)}</b><span>Doppi</span></div>
+      </div>` : ''}
+      <div class="card campgiornate">${raw(carrieraSvg([...campionati].reverse().map((x) => ({ media: x.g.media, etichetta: x.camp.breve || x.camp.nome }))))}</div>
+      <p class="muted small">Media = punti per sfida, campionato per campionato.${carriera.conIncontri && carriera.conIncontri < carriera.campionati ? ' Singoli e doppi: solo dei campionati di cui abbiamo gli incontri.' : ''}${pagellini.serate ? ` Voto medio dei pagellini Fanta Dart: ${fmtMedia(pagellini.media)} in ${pagellini.serate} serate.` : ''}</p>` : '';
   const sezioneCampionato = attuale ? html`
       <h2 class="section">Campionato · ${attuale.camp.nome}</h2>
       <div class="stats">
@@ -79,6 +128,7 @@ export default async function view([paramId]) {
         <div class="stat"><b>${attuale.pos}°/${attuale.tot}</b><span>In squadra</span></div>
       </div>
       ${attuale.g.giornate?.length ? html`<div class="card campgiornate">${raw(giornateSvg(attuale.g.giornate))}</div>` : ''}
+      ${bilancio(attuale.camp, attuale.g.nome) ? html`<p class="muted small">${fmtBilancio(bilancio(attuale.camp, attuale.g.nome))} vinti</p>` : ''}
       <p class="muted small">${attuale.squadra}${giornateGiocate(attuale.g) == null ? '' : ` · ${giornateGiocate(attuale.g)} giornate giocate`} · ${attuale.camp.chiuso ? 'campionato concluso' : `dati softdart.it aggiornati al ${fmtAggiornato(attuale.camp.aggiornato)}`}</p>
       ${passati.length ? html`<h2 class="section">Campionati passati</h2>
         <ul class="list">${passati.map((x) => html`<li><div class="card row"><div class="grow"><strong>${x.camp.nome}</strong>
@@ -136,6 +186,7 @@ export default async function view([paramId]) {
             ${player.foto ? html`<button type="button" class="btn small sec" id="fotoVia">Togli foto</button>` : ''}
           </div>` : ''}</div>
       </section>
+      ${sezioneCarriera}
       ${sezioneCampionato}
       <h2 class="section">Pagellini Fanta Dart</h2>
       ${season ? html`<div class="seg" role="tablist">

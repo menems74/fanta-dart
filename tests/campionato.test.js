@@ -54,8 +54,12 @@ test('incontri del Nazionale 2026: risultati e bilanci', () => {
   assert.equal(naz.incontri.length, 8);
   assert.deepEqual(risultatoIncontro(naz.incontri[0]), [5, 15]); // Glintelligenti - Bar Da Poldo
   const b = bilancio(naz, 'Ceni Remolo Rossano');
-  assert.equal(b.sg + b.dg, 42);
-  assert.equal(b.sv + b.dv, 21);
+  // le sfide trascritte coincidono con il "Set" ufficiale per tutta la squadra
+  for (const g of naz.squadre.find((s) => s.nome === 'Glintelligenti').giocatori) {
+    const x = bilancio(naz, g.nome);
+    assert.equal(x ? x.sg + x.dg : 0, g.set, g.nome);
+  }
+  assert.equal(b.sg + b.dg, 45);
   assert.equal(bilancio(naz, 'Nessuno'), null);
   assert.equal(bilancio({ squadre: [] }, 'Ceni Remolo Rossano'), null);
 });

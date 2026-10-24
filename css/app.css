@@ -1061,3 +1061,5 @@ a.pill-btn { text-decoration: none; }
 .sfide li b { font-variant-numeric: tabular-nums; padding: 2px 8px; border-radius: 8px; background: rgba(239, 68, 68, 0.15); color: var(--rd-tx); }
 .sfide li b.noi { background: rgba(16, 185, 129, 0.18); color: var(--gr-tx); }
 .seg.vista { display: flex; } .seg.vista button { flex: 1; } .seg.vista button[hidden] { display: none; }
+.giornate.carriera .lineac { fill: none; stroke: var(--gd); stroke-width: 2.5; stroke-linejoin: round; }
+.giornate.carriera .puntoc { fill: var(--gd); stroke: var(--bg); stroke-width: 1.5; }
