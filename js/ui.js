@@ -8,8 +8,12 @@ export const topbar = (title, { back, right } = {}) => html`
     ${right || ''}
   </header>`;
 
-export const avatar = (p, size = '') =>
-  html`<span class="avatar ${size}" aria-hidden="true">${initials(p)}</span>`;
+/** Cerchietto del giocatore: la sua foto se l'ha caricata, altrimenti le iniziali. */
+export const avatar = (p, size = '') => (p?.foto
+  ? html`<span class="avatar foto ${size}" aria-hidden="true"><img src="${p.foto}" alt=""></span>`
+  : html`<span class="avatar ${size}" aria-hidden="true">${initials(p)}</span>`);
+/** Solo il contenuto del cerchietto (per cerchi con stile proprio, come la figurina del pagellino). */
+export const faccia = (p) => (p?.foto ? html`<img src="${p.foto}" alt="">` : initials(p));
 
 export const votoBadge = (v) => html`<span class="voto ${votoClass(v)}">${v}</span>`;
 

@@ -1,5 +1,6 @@
 // Squadra: la sfida del sabato e la lista dei giocatori con Skill e pollice. Toccando un nome si vedono i suoi progressi.
-import { html, fmtDate, todayIso, fullName, initials } from '../util.js';
+import { html, fmtDate, todayIso, fullName } from '../util.js';
+import { faccia } from '../ui.js';
 import { session } from '../auth.js';
 import { listPlayers, listTutteSessioni } from '../db.js';
 import { gioco, skill, trendGiocatore, prossimoSabato, sfidaDel, classificaSfida, settimana } from './giochi.js';
@@ -45,7 +46,7 @@ export default async function squadraView() {
         </section>
         <h2 class="sezione">Giocatori</h2>
         <div class="team">${righe.map((r) => html`<a class="card player ${r.p.id === me ? 'me' : ''}" href="#/progressi${r.p.id === me ? '' : `/${r.p.id}`}">
-          <span class="av">${initials(r.p)}</span>
+          <span class="av ${r.p.foto ? 'foto' : ''}">${faccia(r.p)}</span>
           <span><b>${fullName(r.p)}${r.p.id === me ? ' (tu)' : ''}</b><br><span class="mu sm">${r.n} ${r.n === 1 ? 'sessione' : 'sessioni'} · ${r.sett} questa settimana</span></span>
           <span class="sk">${r.sk ?? '–'}</span>${pollice(r.t, true)}</a>`)}</div>
       </div>`,

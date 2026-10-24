@@ -61,6 +61,12 @@ service cloud.firestore {
     match /players/{id} {
       allow read: if hasAccount();
       allow write: if isAdmin();
+      // la propria foto profilo: solo il campo foto, un JPEG piccolo (o niente, per toglierla)
+      allow update: if hasAccount() && myPlayerId() == id
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['foto'])
+        && (!('foto' in request.resource.data)
+          || (request.resource.data.foto is string && request.resource.data.foto.size() < 60000
+            && request.resource.data.foto.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$')));
     }
 
     match /seasons/{id} {

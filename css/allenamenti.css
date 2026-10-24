@@ -361,3 +361,9 @@ svg.line text { fill: var(--mu); font-size: 16px; }
 
 /* la Skill nella figurina non e' un voto di pagella: niente cerchio di .voto (app.css) */
 .figurina .voto { width: auto; height: auto; border: 0; border-radius: 0; background: none; box-shadow: none; display: block; font-size: 64px; color: var(--gd); }
+
+/* foto profilo: squadra e figurina */
+.tr .player .av.foto { overflow: hidden; padding: 0; }
+.tr .player .av.foto img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+.figurina .chi { flex: 1; min-width: 0; }
+.figurina .ffoto { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gd); flex: none; }

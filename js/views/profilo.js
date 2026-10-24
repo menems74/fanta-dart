@@ -1,6 +1,7 @@
 import { html, $, $$, fmtDate, icon, fullName, toast, votoClass } from '../util.js';
 import { session, logout, changeOwnPin, PIN_RE, nomeRuolo } from '../auth.js';
-import { getPlayer, listCards, listMatches, listSeasons, setPin } from '../db.js';
+import { getPlayer, listCards, listMatches, listSeasons, setPin, setFoto } from '../db.js';
+import { preparaFoto } from '../foto.js';
 import { playerStats, gamesOf, fmtMedia, fmtPerc } from '../stats.js';
 import { topbar, avatar, votoBadge, emptyState } from '../ui.js';
 import { getSelectedSeason } from '../season.js';
@@ -80,7 +81,11 @@ export default async function view([paramId]) {
       })}
       <section class="hero">
         <span class="avatar-wrap" id="avwrap">${avatar(player, 'xl')}<span class="avatar-star" aria-hidden="true">${icon('star', 16)}</span></span>
-        <div><h2>${fullName(player)}</h2><p class="muted">Tessera ${player.tessera} · ${nomeRuolo(player.ruolo)}</p></div>
+        <div><h2>${fullName(player)}</h2><p class="muted">Tessera ${player.tessera} · ${nomeRuolo(player.ruolo)}</p>
+          ${own ? html`<div class="fotoazioni">
+            <label class="btn small sec">${player.foto ? 'Cambia foto' : 'Metti la tua foto'}<input type="file" accept="image/*" id="fotoIn" hidden></label>
+            ${player.foto ? html`<button type="button" class="btn small sec" id="fotoVia">Togli foto</button>` : ''}
+          </div>` : ''}</div>
       </section>
       ${season ? html`<div class="seg" role="tablist">
         <button data-s="stagione" role="tab">${season.nome}</button>
@@ -117,6 +122,25 @@ export default async function view([paramId]) {
         draw(root);
       });
       $(root, '#out')?.addEventListener('click', () => logout());
+      // foto profilo: ritagliata e rimpicciolita sul telefono, poi salvata nella scheda del giocatore
+      const aggiornaFoto = async (foto) => {
+        try {
+          await setFoto(playerId, foto);
+          player.foto = foto || undefined;
+          if (session.player?.id === playerId) session.player.foto = player.foto;
+          toast(foto ? 'Foto aggiornata' : 'Foto tolta');
+          window.dispatchEvent(new HashChangeEvent('hashchange'));
+        } catch (e2) {
+          console.error(e2);
+          toast('Salvataggio della foto non riuscito');
+        }
+      };
+      $(root, '#fotoIn')?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try { await aggiornaFoto(await preparaFoto(file)); } catch (e2) { toast(e2.message || 'Immagine non valida'); }
+      });
+      $(root, '#fotoVia')?.addEventListener('click', () => { if (confirm('Togliere la foto? Torneranno le iniziali.')) aggiornaFoto(null); });
       $(root, '#pinBtn')?.addEventListener('click', () => { const f = $(root, '#pinForm'); f.hidden = !f.hidden; f.pin.focus(); });
       $(root, '#pinForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();

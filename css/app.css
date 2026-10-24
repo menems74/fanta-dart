@@ -1029,3 +1029,9 @@ a.pill-btn { text-decoration: none; }
 .mappa-val b { color: var(--gd); font-size: 28px; }
 .firma .ver { text-transform: none; letter-spacing: .04em; }
 .app > .firma { margin-top: 24px; }
+
+/* Foto profilo al posto delle iniziali */
+.avatar.foto, .fig-avatar.foto { overflow: hidden; padding: 0; }
+.avatar.foto img, .fig-avatar.foto img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+.fotoazioni { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.fotoazioni .btn.small { cursor: pointer; }

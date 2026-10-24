@@ -1,7 +1,7 @@
 import { db } from './firebase.js';
 import { normalizzaSessione } from './training/giochi.js';
 import {
-  collection, doc, getDoc, getDocs, setDoc, deleteDoc, query, where, writeBatch,
+  collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteField, deleteDoc, query, where, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 const list = async (q) => (await getDocs(q)).docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -25,6 +25,8 @@ export const listPlayers = async () =>
   (await list(collection(db, 'players'))).sort(
     (a, b) => a.cognome.localeCompare(b.cognome, 'it') || a.nome.localeCompare(b.nome, 'it'));
 export const savePlayer = (id, data) => setDoc(doc(db, 'players', id), data, { merge: true });
+/** Foto del profilo (data URL) o null per toglierla. Ognuno puo' cambiare solo la propria. */
+export const setFoto = (id, foto) => updateDoc(doc(db, 'players', id), { foto: foto ?? deleteField() });
 
 // ---------- PIN (visibile solo agli admin, scelta voluta dall'utente) ----------
 export const getPin = async (playerId) => (await one(doc(db, 'pins', playerId)))?.pin ?? null;

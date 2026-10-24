@@ -30,7 +30,8 @@ export default async function homeView() {
         <aside class="side">
           <section class="figurina">
             <div class="head"><div class="voto">${sk ?? '–'}</div>
-              <div><p class="lbl">Skill giocatore</p><p class="nome">${nomeGiocatore()}</p></div></div>
+              <div class="chi"><p class="lbl">Skill giocatore</p><p class="nome">${nomeGiocatore()}</p></div>
+              ${session.player?.foto ? html`<img class="ffoto" src="${session.player.foto}" alt="">` : ''}</div>
             <div class="attr">${GIOCHI.map((g) => html`<div><span>${g.nome}</span><b>${votoGioco(mie, g.id) ?? '–'}</b></div>`)}</div>
           </section>
           <nav class="menu">
