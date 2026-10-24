@@ -1,41 +1,59 @@
 // Legge il PDF delle statistiche di un campionato softdart.it e lo trasforma in JSON per l'app.
-// Uso: node scripts/campionato.mjs <id> <url-o-file-pdf> "<nome del campionato>" [--chiuso]
-//   es. node scripts/campionato.mjs 2026bis-lombardia-as4 https://www.softdart.it/pdf/campionati/2026bis/lombardia/as4.pdf "Lombardia AS4 · 2026 bis"
-// Scrive dati/campionati/<id>.json e aggiorna dati/campionati/indice.json (elenco dei campionati, il piu' recente per primo).
+// Uso:
+//   node scripts/campionato.mjs <id> <url-o-file-pdf> "<nome del campionato>" [--chiuso]
+//     es. node scripts/campionato.mjs 2026bis-lombardia-as4 https://www.softdart.it/pdf/campionati/2026bis/lombardia/as4.pdf "Lombardia AS4 · 2026 bis"
+//   node scripts/campionato.mjs --tutti
+//     aggiorna tutti i campionati non conclusi dell'indice, dal loro PDF (lo usa l'aggiornamento automatico notturno).
+// Scrive dati/campionati/<id>.json e aggiorna dati/campionati/indice.json (il piu' recente per primo).
+// Se i dati non sono cambiati non tocca i file, cosi' "aggiornato" resta la data dell'ultima novita'.
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { inflateSync } from 'node:zlib';
 import { analizzaPdf } from '../js/campionato-pdf.js';
 
-const [id, sorgente, nome, ...resto] = process.argv.slice(2);
-if (!id || !sorgente || !nome) {
-  console.error('Uso: node scripts/campionato.mjs <id> <url-o-file-pdf> "<nome>" [--chiuso]');
-  process.exit(1);
-}
-const chiuso = resto.includes('--chiuso');
-
-const pdf = /^https?:/.test(sorgente)
-  ? new Uint8Array(await (await fetch(`${sorgente}${sorgente.includes('?') ? '&' : '?'}v=${Date.now()}`)).arrayBuffer())
-  : new Uint8Array(await readFile(sorgente));
-
-const squadre = analizzaPdf(pdf, (b) => inflateSync(b));
-const giocatori = squadre.reduce((n, s) => n + s.giocatori.length, 0);
-if (!giocatori) { console.error('Nessun giocatore trovato: il PDF ha cambiato formato?'); process.exit(2); }
-
 const dir = new URL('../dati/campionati/', import.meta.url);
-await mkdir(dir, { recursive: true });
-const dati = {
-  id, nome, chiuso,
-  fonte: /^https?:/.test(sorgente) ? sorgente.replace(/\?.*$/, '') : null,
-  aggiornato: new Date().toISOString(),
-  squadre,
-};
-await writeFile(new URL(`${id}.json`, dir), `${JSON.stringify(dati)}\n`);
-
 const fileIndice = new URL('indice.json', dir);
-let indice = [];
-try { indice = JSON.parse(await readFile(fileIndice, 'utf8')); } catch { /* primo campionato */ }
-const voce = { id, nome, chiuso, fonte: dati.fonte, aggiornato: dati.aggiornato };
-const i = indice.findIndex((x) => x.id === id);
-if (i >= 0) indice[i] = voce; else indice.unshift(voce);
-await writeFile(fileIndice, `${JSON.stringify(indice, null, 2)}\n`);
-console.log(`${nome}: ${squadre.length} squadre, ${giocatori} giocatori`);
+const leggiJson = async (url, vuoto) => { try { return JSON.parse(await readFile(url, 'utf8')); } catch { return vuoto; } };
+
+async function scaricaPdf(sorgente) {
+  if (!/^https?:/.test(sorgente)) return new Uint8Array(await readFile(sorgente));
+  const r = await fetch(`${sorgente}${sorgente.includes('?') ? '&' : '?'}v=${Date.now()}`);
+  if (!r.ok) throw new Error(`PDF non scaricato (${r.status}): ${sorgente}`);
+  return new Uint8Array(await r.arrayBuffer());
+}
+
+async function aggiorna(id, sorgente, nome, chiuso) {
+  const squadre = analizzaPdf(await scaricaPdf(sorgente), (b) => inflateSync(b));
+  const giocatori = squadre.reduce((n, s) => n + s.giocatori.length, 0);
+  if (!giocatori) throw new Error(`${nome}: nessun giocatore trovato, il PDF ha cambiato formato?`);
+
+  const fileCamp = new URL(`${id}.json`, dir);
+  const prima = await leggiJson(fileCamp, null);
+  const fonte = /^https?:/.test(sorgente) ? sorgente.replace(/\?.*$/, '') : (prima?.fonte ?? null);
+  const uguale = prima && prima.nome === nome && prima.chiuso === chiuso && JSON.stringify(prima.squadre) === JSON.stringify(squadre);
+  if (uguale) { console.log(`${nome}: nessuna novita'`); return false; }
+
+  const dati = { id, nome, chiuso, fonte, aggiornato: new Date().toISOString(), squadre };
+  await writeFile(fileCamp, `${JSON.stringify(dati)}\n`);
+  const indice = await leggiJson(fileIndice, []);
+  const voce = { id, nome, chiuso, fonte, aggiornato: dati.aggiornato };
+  const i = indice.findIndex((x) => x.id === id);
+  if (i >= 0) indice[i] = voce; else indice.unshift(voce);
+  await writeFile(fileIndice, `${JSON.stringify(indice, null, 2)}\n`);
+  console.log(`${nome}: ${squadre.length} squadre, ${giocatori} giocatori (aggiornato)`);
+  return true;
+}
+
+await mkdir(dir, { recursive: true });
+const args = process.argv.slice(2);
+if (args[0] === '--tutti') {
+  const aperti = (await leggiJson(fileIndice, [])).filter((c) => !c.chiuso && c.fonte);
+  if (!aperti.length) console.log('Nessun campionato in corso da aggiornare');
+  for (const c of aperti) await aggiorna(c.id, c.fonte, c.nome, false);
+} else {
+  const [id, sorgente, nome, ...resto] = args;
+  if (!id || !sorgente || !nome) {
+    console.error('Uso: node scripts/campionato.mjs <id> <url-o-file-pdf> "<nome>" [--chiuso]  oppure  --tutti');
+    process.exit(1);
+  }
+  await aggiorna(id, sorgente, nome, resto.includes('--chiuso'));
+}

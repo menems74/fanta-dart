@@ -1,0 +1,54 @@
+# Aggiornamento automatico dei dati del campionato: ogni notte scarica il PDF delle statistiche da softdart.it,
+# lo legge e, se ci sono novita', aggiorna dati/campionati e pubblica il sito. Si puo' lanciare anche a mano
+# da GitHub: Actions > Aggiorna campionato > Run workflow.
+name: Aggiorna campionato
+
+on:
+  schedule:
+    - cron: '0 1 * * *' # 01:00 UTC = le 3 di notte in Italia con l'ora legale (le 2 con l'ora solare)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: campionato
+  cancel-in-progress: false
+
+jobs:
+  aggiorna:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Scarica e leggi il PDF
+        run: node scripts/campionato.mjs --tutti
+
+      - name: Salva le novita'
+        id: salva
+        run: |
+          if git diff --quiet -- dati/campionati; then
+            echo "Nessuna novita' nel campionato"
+            echo "cambiato=no" >> "$GITHUB_OUTPUT"
+          else
+            git config user.name "Aggiornamento automatico"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add dati/campionati
+            git commit -m "Campionato: dati aggiornati da softdart.it"
+            git push
+            echo "cambiato=si" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Chiede a GitHub Pages di ripubblicare il sito con i dati nuovi
+      - name: Pubblica il sito
+        if: steps.salva.outputs.cambiato == 'si'
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages/builds" || echo "Pubblicazione gia' avviata dal push"
