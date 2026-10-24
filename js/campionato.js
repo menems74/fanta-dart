@@ -57,3 +57,29 @@ export function ordina(giocatori, criterio = 'punti') {
 
 export const fmtMediaCamp = (m) => (Number.isFinite(m) ? m.toFixed(2).replace('.', ',') : '–');
 export const fmtAggiornato = (iso) => (iso ? new Date(iso).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
+
+// ---------- incontri (sfide singole e doppie), quando il campionato li ha ----------
+/** Sfide vinte dalla casa e dall'ospite in un incontro (una sfida si vince con 2 set). */
+export function risultatoIncontro(inc) {
+  return inc.giochi.reduce(([c, o], g) => (g.set[0] > g.set[1] ? [c + 1, o] : [c, o + 1]), [0, 0]);
+}
+
+/** Bilancio di un giocatore negli incontri: singoli e doppi giocati e vinti, set vinti e persi. Null se non ci sono incontri. */
+export function bilancio(camp, nome) {
+  if (!camp?.incontri?.length) return null;
+  const b = { sg: 0, sv: 0, dg: 0, dv: 0, setV: 0, setP: 0 };
+  for (const inc of camp.incontri) {
+    for (const g of inc.giochi) {
+      const lato = g.casa.includes(nome) ? 0 : g.ospite.includes(nome) ? 1 : -1;
+      if (lato < 0) continue;
+      const doppio = g.casa.length > 1;
+      const vinto = g.set[lato] > g.set[1 - lato];
+      b[doppio ? 'dg' : 'sg'] += 1;
+      if (vinto) b[doppio ? 'dv' : 'sv'] += 1;
+      b.setV += g.set[lato];
+      b.setP += g.set[1 - lato];
+    }
+  }
+  return b.sg + b.dg ? b : null;
+}
+export const fmtBilancio = (b) => (b ? `singoli ${b.sv}/${b.sg} · doppi ${b.dv}/${b.dg}` : '');

@@ -47,3 +47,15 @@ test('campionati salvati: indice e classifica finale del Nazionale 2026', () => 
   assert.equal(nostraSquadra(naz, ['08/4272', '08/4149']), 'Glintelligenti');
   assert.equal(giornateGiocate(tutti[0]), null); // niente dettaglio per giornata
 });
+
+import { bilancio, risultatoIncontro } from '../js/campionato.js';
+test('incontri del Nazionale 2026: risultati e bilanci', () => {
+  const naz = JSON.parse(readFileSync(new URL('../dati/campionati/2026-lombardia-a09.json', import.meta.url), 'utf8'));
+  assert.equal(naz.incontri.length, 8);
+  assert.deepEqual(risultatoIncontro(naz.incontri[0]), [5, 15]); // Glintelligenti - Bar Da Poldo
+  const b = bilancio(naz, 'Ceni Remolo Rossano');
+  assert.equal(b.sg + b.dg, 42);
+  assert.equal(b.sv + b.dv, 21);
+  assert.equal(bilancio(naz, 'Nessuno'), null);
+  assert.equal(bilancio({ squadre: [] }, 'Ceni Remolo Rossano'), null);
+});

@@ -6,7 +6,7 @@ import { playerStats, gamesOf, fmtMedia, fmtPerc } from '../stats.js';
 import { topbar, avatar, votoBadge, emptyState } from '../ui.js';
 import { getSelectedSeason } from '../season.js';
 import { firma } from '../versione.js';
-import { listCampionati, getCampionato, giornateGiocate, ordina, fmtMediaCamp, fmtAggiornato } from '../campionato.js';
+import { listCampionati, getCampionato, giornateGiocate, ordina, fmtMediaCamp, fmtAggiornato, bilancio, fmtBilancio } from '../campionato.js';
 
 const starIcon = icon('star', 22).s;
 
@@ -82,7 +82,7 @@ export default async function view([paramId]) {
       <p class="muted small">${attuale.squadra}${giornateGiocate(attuale.g) == null ? '' : ` · ${giornateGiocate(attuale.g)} giornate giocate`} · ${attuale.camp.chiuso ? 'campionato concluso' : `dati softdart.it aggiornati al ${fmtAggiornato(attuale.camp.aggiornato)}`}</p>
       ${passati.length ? html`<h2 class="section">Campionati passati</h2>
         <ul class="list">${passati.map((x) => html`<li><div class="card row"><div class="grow"><strong>${x.camp.nome}</strong>
-          <span class="muted small">${x.squadra} · ${x.g.set} set · ${x.pos}° in squadra</span></div>
+          <span class="muted small">${x.squadra} · ${x.pos}° in squadra${bilancio(x.camp, x.g.nome) ? ` · ${fmtBilancio(bilancio(x.camp, x.g.nome))}` : ` · ${x.g.set} set`}</span></div>
           <div class="valore"><b class="media">${x.g.punti}</b><span class="muted small">media ${fmtMediaCamp(x.g.media)}</span></div></div></li>`)}</ul>` : ''}` : '';
 
   const season = seasons.length ? getSelectedSeason(seasons) : null;

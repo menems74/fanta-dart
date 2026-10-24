@@ -1049,3 +1049,15 @@ a.pill-btn { text-decoration: none; }
 .giornate .dl { fill: var(--tx); font-size: 11px; font-weight: 700; }
 .giornate .nd { fill: var(--mu); font-size: 12px; }
 .giornate .gl { fill: var(--mu); font-size: 10px; }
+.incontro summary { display: flex; align-items: center; gap: 12px; cursor: pointer; list-style: none; }
+.incontro summary::-webkit-details-marker { display: none; }
+.incontro summary .grow { display: grid; }
+.incontro.vinto { border-color: rgba(16, 185, 129, 0.55); }
+.incontro.perso { border-color: rgba(239, 68, 68, 0.4); }
+.sfide { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 4px; }
+.sfide li { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; font-size: 14px; padding: 6px 0; border-top: 1px solid var(--ln); }
+.sfide li span:last-child { text-align: right; }
+.sfide li.doppio { color: var(--gd); }
+.sfide li b { font-variant-numeric: tabular-nums; padding: 2px 8px; border-radius: 8px; background: rgba(239, 68, 68, 0.15); color: var(--rd-tx); }
+.sfide li b.noi { background: rgba(16, 185, 129, 0.18); color: var(--gr-tx); }
+.seg.vista { display: flex; } .seg.vista button { flex: 1; } .seg.vista button[hidden] { display: none; }
