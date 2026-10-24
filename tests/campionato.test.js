@@ -35,3 +35,15 @@ test('nostra squadra, ordine e giornate giocate', () => {
   assert.equal(o.at(-1).set, 0); // chi non ha giocato in fondo
   assert.equal(giornateGiocate(squadre[1].giocatori[0]), 4);
 });
+
+test('campionati salvati: indice e classifica finale del Nazionale 2026', () => {
+  const indice = JSON.parse(readFileSync(new URL('../dati/campionati/indice.json', import.meta.url), 'utf8'));
+  assert.deepEqual(indice.map((c) => c.id), ['2026bis-lombardia-as4', '2026-lombardia-a09']);
+  const naz = JSON.parse(readFileSync(new URL('../dati/campionati/2026-lombardia-a09.json', import.meta.url), 'utf8'));
+  assert.equal(naz.chiuso, true);
+  const tutti = naz.squadre.flatMap((s) => s.giocatori);
+  assert.equal(tutti.length, 44);
+  for (const g of tutti) if (g.set) assert.ok(Math.abs(g.punti / g.set - g.media) < 0.006, g.nome);
+  assert.equal(nostraSquadra(naz, ['08/4272', '08/4149']), 'Glintelligenti');
+  assert.equal(giornateGiocate(tutti[0]), null); // niente dettaglio per giornata
+});

@@ -78,8 +78,8 @@ export default async function view([paramId]) {
         <div class="stat"><b>${attuale.g.set}</b><span>Set</span></div>
         <div class="stat"><b>${attuale.pos}°/${attuale.tot}</b><span>In squadra</span></div>
       </div>
-      <div class="card campgiornate">${raw(giornateSvg(attuale.g.giornate))}</div>
-      <p class="muted small">${attuale.squadra} · ${giornateGiocate(attuale.g)} giornate giocate · ${attuale.camp.chiuso ? 'campionato concluso' : `dati softdart.it aggiornati al ${fmtAggiornato(attuale.camp.aggiornato)}`}</p>
+      ${attuale.g.giornate?.length ? html`<div class="card campgiornate">${raw(giornateSvg(attuale.g.giornate))}</div>` : ''}
+      <p class="muted small">${attuale.squadra}${giornateGiocate(attuale.g) == null ? '' : ` · ${giornateGiocate(attuale.g)} giornate giocate`} · ${attuale.camp.chiuso ? 'campionato concluso' : `dati softdart.it aggiornati al ${fmtAggiornato(attuale.camp.aggiornato)}`}</p>
       ${passati.length ? html`<h2 class="section">Campionati passati</h2>
         <ul class="list">${passati.map((x) => html`<li><div class="card row"><div class="grow"><strong>${x.camp.nome}</strong>
           <span class="muted small">${x.squadra} · ${x.g.set} set · ${x.pos}° in squadra</span></div>

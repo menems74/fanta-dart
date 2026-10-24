@@ -29,7 +29,7 @@ export default async function view() {
     const st = p ? voti.get(p.id) : null;
     const sotto = [
       vista === 'girone' ? g.squadra : null,
-      `${giornateGiocate(g)} ${giornateGiocate(g) === 1 ? 'giornata' : 'giornate'} · ${g.set} set`,
+      giornateGiocate(g) == null ? `${g.set} set` : `${giornateGiocate(g)} ${giornateGiocate(g) === 1 ? 'giornata' : 'giornate'} · ${g.set} set`,
       st?.serate ? `pagellini ${fmtMedia(st.media)}` : null,
     ].filter(Boolean).join(' · ');
     const principale = criterio === 'punti' ? String(g.punti) : fmtMediaCamp(g.media);

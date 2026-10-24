@@ -45,8 +45,8 @@ export function nostraSquadra(camp, tessere) {
   return migliore;
 }
 
-/** Giornate giocate (con almeno un set). */
-export const giornateGiocate = (g) => g.giornate.filter(([set]) => set > 0).length;
+/** Giornate giocate (con almeno un set); null se il campionato non ha il dettaglio per giornata. */
+export const giornateGiocate = (g) => (g.giornate?.length ? g.giornate.filter(([set]) => set > 0).length : null);
 
 /** Ordina per punti (poi media) o per media (poi punti); chi non ha giocato va in fondo. */
 export function ordina(giocatori, criterio = 'punti') {
