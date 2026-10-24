@@ -1,54 +1,93 @@
-import { html, $, $$, icon, fullName } from '../util.js';
-import { listPlayers, listCards, listMatches, listSeasons } from '../db.js';
-import { ranking, fmtMedia } from '../stats.js';
+// Classifica con i dati ufficiali del campionato (softdart.it): la nostra squadra o tutto il girone,
+// per punti o per media. Il voto medio dei pagellini resta come informazione accanto al nome.
+import { html, $, $$, fullName } from '../util.js';
+import { listPlayers, listCards, listMatches } from '../db.js';
+import { playerStats, fmtMedia } from '../stats.js';
 import { topbar, avatar, emptyState } from '../ui.js';
-import { getSelectedSeason } from '../season.js';
+import {
+  listCampionati, getCampionato, campionatoScelto, scegliCampionato, giocatoriDi, nostraSquadra, giornateGiocate,
+  ordina, fmtMediaCamp, fmtAggiornato,
+} from '../campionato.js';
+
+const iniziali = (nome) => nome.split(/\s+/).slice(0, 2).map((p) => p[0] || '').join('').toUpperCase();
 
 export default async function view() {
-  const [seasons, players, cards, matches] = await Promise.all([
-    listSeasons(),
-    listPlayers(),
-    listCards({}, { onlyPublished: true }),
-    listMatches(null, { onlyPublished: true }),
+  const [elenco, players, cards, matches] = await Promise.all([
+    listCampionati(), listPlayers(), listCards({}, { onlyPublished: true }), listMatches(null, { onlyPublished: true }),
   ]);
-  if (!seasons.length) return { html: html`${topbar('Classifica')}${emptyState('Nessuna stagione', 'La classifica comparirà dopo le prime serate.')}` };
-  const season = getSelectedSeason(seasons);
-  let scope = 'stagione';
+  if (!elenco.length) {
+    return { html: html`${topbar('Classifica')}${emptyState('Nessun campionato', 'La classifica comparirà quando saranno caricati i dati del campionato.')}` };
+  }
+  const perTessera = new Map(players.map((p) => [p.tessera, p]));
+  const voti = new Map(players.map((p) => [p.id, playerStats(p.id, matches, cards)])); // pagellini di tutta la carriera
+  let camp = await getCampionato(campionatoScelto(elenco).id);
+  let vista = 'squadra'; // squadra | girone
+  let criterio = 'punti';
+
+  const riga = (g, i) => {
+    const p = perTessera.get(g.tessera);
+    const st = p ? voti.get(p.id) : null;
+    const sotto = [
+      vista === 'girone' ? g.squadra : null,
+      `${giornateGiocate(g)} ${giornateGiocate(g) === 1 ? 'giornata' : 'giornate'} · ${g.set} set`,
+      st?.serate ? `pagellini ${fmtMedia(st.media)}` : null,
+    ].filter(Boolean).join(' · ');
+    const principale = criterio === 'punti' ? String(g.punti) : fmtMediaCamp(g.media);
+    const secondario = criterio === 'punti' ? `media ${fmtMediaCamp(g.media)}` : `${g.punti} punti`;
+    const corpo = html`
+      <span class="pos">${i + 1}</span>
+      ${p ? avatar(p) : html`<span class="avatar" aria-hidden="true">${iniziali(g.nome)}</span>`}
+      <div class="grow"><strong>${p ? fullName(p) : g.nome}</strong><span class="muted small">${sotto}</span></div>
+      <div class="valore"><b class="media">${principale}</b><span class="muted small">${secondario}</span></div>`;
+    return p
+      ? html`<li><a class="card row rank" href="#/profilo/${p.id}">${corpo}</a></li>`
+      : html`<li><div class="card row rank esterno">${corpo}</div></li>`;
+  };
 
   const draw = (root) => {
-    const inScope = (x) => scope === 'carriera' || x.seasonId === season.id;
-    const pool = scope === 'carriera' ? players : players.filter((p) => season.playerIds?.includes(p.id));
-    const rows = ranking(pool, matches.filter(inScope), cards.filter(inScope))
-      .filter((r) => scope === 'stagione' || r.serate > 0);
-    $(root, '#rows').innerHTML = rows.length
-      ? rows.map((r, i) => html`
-        <li><a class="card row rank" href="#/profilo/${r.player.id}">
-          <span class="pos">${i + 1}</span>
-          ${avatar(r.player)}
-          <div class="grow"><strong>${fullName(r.player)}</strong>
-            <span class="muted small">${r.serate} serate · ${r.vinte}/${r.giocate} vinte</span></div>
-          <span class="mvpcount" title="MVP">${icon('star', 14)} ${r.mvp}</span>
-          <b class="media">${fmtMedia(r.media)}</b>
-        </a></li>`.s).join('')
-      : '<li class="muted">Nessun dato ancora.</li>';
-    $$(root, '.seg button').forEach((b) => b.classList.toggle('sel', b.dataset.s === scope));
+    const tutti = giocatoriDi(camp);
+    const nostra = nostraSquadra(camp, players.map((p) => p.tessera));
+    const lista = ordina(vista === 'squadra' ? tutti.filter((g) => g.squadra === nostra) : tutti, criterio);
+    $(root, '#rows').innerHTML = lista.length ? lista.map((g, i) => riga(g, i).s).join('') : '<li class="muted">Nessun dato.</li>';
+    $(root, '#info').textContent = `${camp.chiuso ? 'Campionato concluso' : `Aggiornata al ${fmtAggiornato(camp.aggiornato)}`} · dati ufficiali softdart.it.`
+      + ` Media = punti per set. ${vista === 'squadra' && nostra ? `Squadra: ${nostra}.` : ''}`;
+    $$(root, '.seg.vista button').forEach((b) => {
+      b.classList.toggle('sel', b.dataset.v === vista);
+      if (b.dataset.v === 'squadra') b.textContent = nostra || 'La squadra';
+    });
+    $$(root, '.seg.criterio button').forEach((b) => b.classList.toggle('sel', b.dataset.c === criterio));
   };
 
   return {
     html: html`
       ${topbar('Classifica')}
-      <div class="seg" role="tablist">
-        <button data-s="stagione" role="tab">${season.nome}</button>
-        <button data-s="carriera" role="tab">Carriera</button>
+      <div id="clas">
+      ${elenco.length > 1 ? html`<label class="field camp">Campionato
+        <select id="camp">${elenco.map((c) => html`<option value="${c.id}" ${c.id === camp.id ? 'selected' : ''}>${c.nome}${c.chiuso ? ' · concluso' : ''}</option>`)}</select>
+      </label>` : html`<p class="campnome">${camp.nome}</p>`}
+      <div class="seg vista" role="tablist">
+        <button data-v="squadra" role="tab">La squadra</button>
+        <button data-v="girone" role="tab">Tutto il girone</button>
       </div>
-      <p class="muted small record">Ordinata per media voto, poi partite vinte. L'MVP è solo un badge. Contano solo le serate pubblicate.</p>
-      <ul class="list" id="rows"></ul>`,
+      <div class="seg criterio small" role="tablist">
+        <button data-c="punti" role="tab">Punti</button>
+        <button data-c="media" role="tab">Media</button>
+      </div>
+      <p class="muted small record" id="info"></p>
+      <ul class="list" id="rows"></ul>
+      </div>`,
     mount(root) {
       draw(root);
-      $(root, '.seg').addEventListener('click', (e) => {
-        const b = e.target.closest('button[data-s]');
+      $(root, '#clas').addEventListener('click', (e) => {
+        const b = e.target.closest('button[data-v], button[data-c]');
         if (!b) return;
-        scope = b.dataset.s;
+        if (b.dataset.v) vista = b.dataset.v;
+        if (b.dataset.c) criterio = b.dataset.c;
+        draw(root);
+      });
+      $(root, '#camp')?.addEventListener('change', async (e) => {
+        scegliCampionato(e.target.value);
+        camp = await getCampionato(e.target.value);
         draw(root);
       });
     },

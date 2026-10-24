@@ -1035,3 +1035,17 @@ a.pill-btn { text-decoration: none; }
 .avatar.foto img, .fig-avatar.foto img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
 .fotoazioni { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .fotoazioni .btn.small { cursor: pointer; }
+
+/* Classifica e profilo con i dati del campionato */
+.campnome { font-weight: 800; font-size: 18px; margin: 4px 0 10px; }
+.field.camp select { width: 100%; }
+.seg.small button { font-size: 14px; padding-top: 6px; padding-bottom: 6px; }
+.seg + .seg { margin-top: 8px; }
+.rank .valore { display: grid; justify-items: end; text-align: right; gap: 2px; flex: none; }
+.rank.esterno { opacity: .85; }
+.campgiornate { padding: 10px 8px 4px; }
+.giornate { width: 100%; height: auto; display: block; }
+.giornate .bar { fill: var(--gd); }
+.giornate .dl { fill: var(--tx); font-size: 11px; font-weight: 700; }
+.giornate .nd { fill: var(--mu); font-size: 12px; }
+.giornate .gl { fill: var(--mu); font-size: 10px; }

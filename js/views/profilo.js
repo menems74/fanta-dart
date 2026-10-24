@@ -1,4 +1,4 @@
-import { html, $, $$, fmtDate, icon, fullName, toast, votoClass } from '../util.js';
+import { html, raw, $, $$, fmtDate, icon, fullName, toast, votoClass } from '../util.js';
 import { session, logout, changeOwnPin, PIN_RE, nomeRuolo } from '../auth.js';
 import { getPlayer, listCards, listMatches, listSeasons, setPin, setFoto } from '../db.js';
 import { preparaFoto } from '../foto.js';
@@ -6,8 +6,41 @@ import { playerStats, gamesOf, fmtMedia, fmtPerc } from '../stats.js';
 import { topbar, avatar, votoBadge, emptyState } from '../ui.js';
 import { getSelectedSeason } from '../season.js';
 import { firma } from '../versione.js';
+import { listCampionati, getCampionato, giornateGiocate, ordina, fmtMediaCamp, fmtAggiornato } from '../campionato.js';
 
 const starIcon = icon('star', 22).s;
+
+/** Barre dei punti fatti in ogni giornata del campionato (una barra per giornata; vuota se non ha giocato). */
+function giornateSvg(giornate) {
+  const W = 300, H = 96, pad = 12, base = H - 18;
+  const max = Math.max(1, ...giornate.map(([, p]) => p));
+  const w = (W - 2 * pad) / giornate.length;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Punti per giornata" class="giornate">` + giornate.map(([set, punti], i) => {
+    const x = pad + i * w;
+    const h = set ? Math.max(3, (punti / max) * (base - 14)) : 0;
+    return (set ? `<rect x="${(x + w * 0.18).toFixed(1)}" y="${(base - h).toFixed(1)}" width="${(w * 0.64).toFixed(1)}" height="${h.toFixed(1)}" rx="3" class="bar"/>`
+      + `<text x="${(x + w / 2).toFixed(1)}" y="${(base - h - 4).toFixed(1)}" text-anchor="middle" class="dl">${punti}</text>`
+      : `<text x="${(x + w / 2).toFixed(1)}" y="${(base - 4).toFixed(1)}" text-anchor="middle" class="nd">–</text>`)
+      + `<text x="${(x + w / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" class="gl">${i + 1}ª</text>`;
+  }).join('') + '</svg>';
+}
+
+/** Statistiche ufficiali del giocatore in ogni campionato in cui compare (il piu' recente per primo). */
+async function campionatiDi(tessera) {
+  const elenco = await listCampionati();
+  const out = [];
+  for (const c of elenco) {
+    const camp = await getCampionato(c.id);
+    for (const s of camp?.squadre || []) {
+      const g = s.giocatori.find((x) => x.tessera === tessera);
+      if (g) {
+        const pos = ordina(s.giocatori).findIndex((x) => x.tessera === tessera) + 1;
+        out.push({ camp, squadra: s.nome, g, pos, tot: s.giocatori.length });
+      }
+    }
+  }
+  return out;
+}
 
 /** Grafico a linea degli ultimi voti (dal più vecchio al più recente). */
 function trendSvg(votes) {
@@ -35,6 +68,22 @@ export default async function view([paramId]) {
     listMatches(null, { onlyPublished: true }),
   ]);
   if (!player) return { html: html`${topbar('Profilo', { back: '/classifica' })}${emptyState('Giocatore non trovato', '')}` };
+  const campionati = await campionatiDi(player.tessera);
+  const [attuale, ...passati] = campionati;
+  const sezioneCampionato = attuale ? html`
+      <h2 class="section">Campionato · ${attuale.camp.nome}</h2>
+      <div class="stats">
+        <div class="stat gold"><b>${attuale.g.punti}</b><span>Punti</span></div>
+        <div class="stat"><b>${fmtMediaCamp(attuale.g.media)}</b><span>Media</span></div>
+        <div class="stat"><b>${attuale.g.set}</b><span>Set</span></div>
+        <div class="stat"><b>${attuale.pos}°/${attuale.tot}</b><span>In squadra</span></div>
+      </div>
+      <div class="card campgiornate">${raw(giornateSvg(attuale.g.giornate))}</div>
+      <p class="muted small">${attuale.squadra} · ${giornateGiocate(attuale.g)} giornate giocate · ${attuale.camp.chiuso ? 'campionato concluso' : `dati softdart.it aggiornati al ${fmtAggiornato(attuale.camp.aggiornato)}`}</p>
+      ${passati.length ? html`<h2 class="section">Campionati passati</h2>
+        <ul class="list">${passati.map((x) => html`<li><div class="card row"><div class="grow"><strong>${x.camp.nome}</strong>
+          <span class="muted small">${x.squadra} · ${x.g.set} set · ${x.pos}° in squadra</span></div>
+          <div class="valore"><b class="media">${x.g.punti}</b><span class="muted small">media ${fmtMediaCamp(x.g.media)}</span></div></div></li>`)}</ul>` : ''}` : '';
 
   const season = seasons.length ? getSelectedSeason(seasons) : null;
   const byMatch = new Map(matches.map((m) => [m.id, m]));
@@ -87,6 +136,8 @@ export default async function view([paramId]) {
             ${player.foto ? html`<button type="button" class="btn small sec" id="fotoVia">Togli foto</button>` : ''}
           </div>` : ''}</div>
       </section>
+      ${sezioneCampionato}
+      <h2 class="section">Pagellini Fanta Dart</h2>
       ${season ? html`<div class="seg" role="tablist">
         <button data-s="stagione" role="tab">${season.nome}</button>
         <button data-s="carriera" role="tab">Carriera</button>
