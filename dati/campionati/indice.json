@@ -1,16 +1,18 @@
 [
   {
     "id": "2026bis-lombardia-as4",
-    "nome": "Lombardia AS4 · 2026 bis",
+    "nome": "Invernale 2026",
     "chiuso": false,
     "fonte": "https://www.softdart.it/pdf/campionati/2026bis/lombardia/as4.pdf",
-    "aggiornato": "2026-10-24T20:21:30.559Z"
+    "aggiornato": "2026-10-24T20:21:30.559Z",
+    "nomeUfficiale": "Lombardia AS4 · 2026 bis"
   },
   {
     "id": "2026-lombardia-a09",
-    "nome": "Nazionale 2026 · Lombardia Cat. A Girone 09",
+    "nome": "Nazionale 2026",
     "chiuso": true,
     "fonte": "App FIGeST SoftDart (classifica finale)",
-    "aggiornato": "2026-10-24T21:00:00.000Z"
+    "aggiornato": "2026-10-24T21:00:00.000Z",
+    "nomeUfficiale": "Lombardia Cat. A Girone 09"
   }
 ]

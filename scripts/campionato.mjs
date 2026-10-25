@@ -33,10 +33,10 @@ async function aggiorna(id, sorgente, nome, chiuso) {
   if (uguale) { console.log(`${nome}: nessuna novita'`); return false; }
 
   // breve (nome corto nei grafici) e incontri si conservano: il PDF non li contiene
-  const dati = { id, nome, ...(prima?.breve ? { breve: prima.breve } : {}), chiuso, fonte, aggiornato: new Date().toISOString(), squadre, ...(prima?.incontri ? { incontri: prima.incontri } : {}) };
+  const dati = { id, nome, ...(prima?.breve ? { breve: prima.breve } : {}), ...(prima?.nomeUfficiale ? { nomeUfficiale: prima.nomeUfficiale } : {}), chiuso, fonte, aggiornato: new Date().toISOString(), squadre, ...(prima?.incontri ? { incontri: prima.incontri } : {}) };
   await writeFile(fileCamp, `${JSON.stringify(dati)}\n`);
   const indice = await leggiJson(fileIndice, []);
-  const voce = { id, nome, chiuso, fonte, aggiornato: dati.aggiornato };
+  const voce = { id, nome, ...(dati.nomeUfficiale ? { nomeUfficiale: dati.nomeUfficiale } : {}), chiuso, fonte, aggiornato: dati.aggiornato };
   const i = indice.findIndex((x) => x.id === id);
   if (i >= 0) indice[i] = voce; else indice.unshift(voce);
   await writeFile(fileIndice, `${JSON.stringify(indice, null, 2)}\n`);

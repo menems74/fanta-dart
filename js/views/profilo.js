@@ -191,7 +191,8 @@ export default async function view([paramId]) {
       </div>
       ${attuale.g.giornate?.length ? html`<div class="card campgiornate">${raw(giornateSvg(attuale.g.giornate))}</div>` : ''}
       ${bilancio(attuale.camp, attuale.g.nome) ? html`<p class="muted small">${fmtBilancio(bilancio(attuale.camp, attuale.g.nome))} vinti</p>` : ''}
-      <p class="muted small">${attuale.squadra}${giornateGiocate(attuale.g) == null ? '' : ` · ${giornateGiocate(attuale.g)} giornate giocate`} · ${attuale.camp.chiuso ? 'campionato concluso' : `dati softdart.it aggiornati al ${fmtAggiornato(attuale.camp.aggiornato)}`}</p>` : '';
+      ${attuale.g.giornate?.length ? html`<p class="muted small">Barre: punti fatti in ogni giornata. Per ogni sfida 3 punti se vinta 2-0, 2 se vinta 2-1, 1 se persa 1-2, 0 se persa 0-2 (6 sfide a serata, massimo 18).</p>` : ''}
+      <p class="muted small">${attuale.camp.nomeUfficiale ? `${attuale.camp.nomeUfficiale} · ` : ''}${attuale.squadra}${giornateGiocate(attuale.g) == null ? '' : ` · ${giornateGiocate(attuale.g)} giornate giocate`} · ${attuale.camp.chiuso ? 'campionato concluso' : `dati softdart.it aggiornati al ${fmtAggiornato(attuale.camp.aggiornato)}`}</p>` : '';
   const sezionePassati = passati.length ? html`<h2 class="section">Campionati passati</h2>
         <ul class="list">${passati.map((x) => html`<li><div class="card row"><div class="grow"><strong>${x.camp.nome}</strong>
           <span class="muted small">${x.squadra} · ${x.pos}° in squadra${bilancio(x.camp, x.g.nome) ? ` · ${fmtBilancio(bilancio(x.camp, x.g.nome))}` : ` · ${x.g.set} set`}</span></div>

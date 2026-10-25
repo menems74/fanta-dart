@@ -68,7 +68,7 @@ export default async function view() {
     const lista = ordina(vista === 'squadra' ? tutti.filter((g) => g.squadra === nostra) : tutti, criterio);
     $(root, '#rows').innerHTML = vista === 'incontri' ? incontri(nostra).map((x) => x.s).join('')
       : lista.length ? lista.map((g, i) => riga(g, i).s).join('') : '<li class="muted">Nessun dato.</li>';
-    $(root, '#info').textContent = `${camp.chiuso ? 'Campionato concluso' : `Aggiornata al ${fmtAggiornato(camp.aggiornato)}`} · dati ufficiali softdart.it.`
+    $(root, '#info').textContent = `${camp.nomeUfficiale ? `${camp.nomeUfficiale} · ` : ''}${camp.chiuso ? 'campionato concluso' : `aggiornata al ${fmtAggiornato(camp.aggiornato)}`} · dati ufficiali softdart.it.`
       + ` Media = punti per set. ${vista === 'squadra' && nostra ? `Squadra: ${nostra}.` : ''}`;
     $$(root, '.seg.vista button').forEach((b) => {
       b.classList.toggle('sel', b.dataset.v === vista);

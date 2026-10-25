@@ -63,3 +63,18 @@ test('incontri del Nazionale 2026: risultati e bilanci', () => {
   assert.equal(bilancio(naz, 'Nessuno'), null);
   assert.equal(bilancio({ squadre: [] }, 'Ceni Remolo Rossano'), null);
 });
+
+test('punti ufficiali: 3 per 2-0, 2 per 2-1, 1 per 1-2, 0 per 0-2', () => {
+  const naz = JSON.parse(readFileSync(new URL('../dati/campionati/2026-lombardia-a09.json', import.meta.url), 'utf8'));
+  const punti = { '2-0': 3, '2-1': 2, '1-2': 1, '0-2': 0 };
+  for (const g of naz.squadre.find((s) => s.nome === 'Glintelligenti').giocatori) {
+    let tot = 0;
+    for (const inc of naz.incontri) {
+      for (const s of inc.giochi) {
+        const l = s.casa.includes(g.nome) ? 0 : s.ospite.includes(g.nome) ? 1 : -1;
+        if (l >= 0) tot += punti[`${s.set[l]}-${s.set[1 - l]}`];
+      }
+    }
+    assert.equal(tot, g.punti, g.nome);
+  }
+});
