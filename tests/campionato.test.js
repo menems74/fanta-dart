@@ -78,3 +78,19 @@ test('punti ufficiali: 3 per 2-0, 2 per 2-1, 1 per 1-2, 0 per 0-2', () => {
     assert.equal(tot, g.punti, g.nome);
   }
 });
+
+import { dettaglioSfide, classificaBilanci } from '../js/campionato.js';
+test('dettaglio delle sfide: risultati, avversari e compagni', () => {
+  const naz = JSON.parse(readFileSync(new URL('../dati/campionati/2026-lombardia-a09.json', import.meta.url), 'utf8'));
+  const g = naz.squadre.find((s) => s.nome === 'Glintelligenti').giocatori.find((x) => x.tessera === '08/4272');
+  const d = dettaglioSfide([{ camp: naz, g }]);
+  assert.equal(d.sfide, 45);
+  assert.deepEqual(d.risultati, { '2-0': 18, '2-1': 6, '1-2': 9, '0-2': 12 });
+  assert.equal([...d.avversari.values()].reduce((t, x) => t + x.g, 0), 30); // singoli
+  assert.equal([...d.compagni.values()].reduce((t, x) => t + x.g, 0), 15); // doppi
+  const best = classificaBilanci(d.avversari);
+  assert.ok(best.length <= 3 && best.every((r) => r.g >= 2));
+  assert.ok(best[0].p >= best.at(-1).p);
+  const peggio = classificaBilanci(d.avversari, { peggiori: true });
+  assert.ok(peggio[0].p <= peggio.at(-1).p);
+});

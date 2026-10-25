@@ -6,7 +6,7 @@ import { playerStats, gamesOf, fmtMedia, fmtPerc } from '../stats.js';
 import { topbar, avatar, votoBadge, emptyState } from '../ui.js';
 import { getSelectedSeason } from '../season.js';
 import { firma } from '../versione.js';
-import { listCampionati, getCampionato, giornateGiocate, ordina, fmtMediaCamp, fmtAggiornato, bilancio, fmtBilancio } from '../campionato.js';
+import { listCampionati, getCampionato, giornateGiocate, ordina, fmtMediaCamp, fmtAggiornato, bilancio, fmtBilancio, dettaglioSfide, classificaBilanci } from '../campionato.js';
 
 const starIcon = icon('star', 22).s;
 
@@ -165,22 +165,59 @@ export default async function view([paramId]) {
   const carriera = carrieraDi(campionati);
   const pagellini = playerStats(playerId, matches, cards); // tutti i pagellini, di ogni stagione
   const perc = (v, g) => (g ? `${Math.round((v / g) * 100)}%` : '–');
+  const conIncontri = campionati.filter((x) => bilancio(x.camp, x.g.nome)).map((x) => x.camp.breve || x.camp.nome);
   const sezioneCarriera = campionati.length ? html`
       <h2 class="section">Carriera</h2>
+      <div class="carriera-tocca" id="carrieraBtn" role="button" tabindex="0" aria-label="Apri il dettaglio della carriera">
+      <p class="muted small etich">Tutti i campionati</p>
       <div class="stats">
         <div class="stat gold"><b>${fmtMediaCamp(carriera.media)}</b><span>Media</span></div>
         <div class="stat"><b>${carriera.punti}</b><span>Punti</span></div>
         <div class="stat"><b>${carriera.sfide}</b><span>Sfide</span></div>
         <div class="stat"><b>${carriera.campionati}</b><span>${carriera.campionati === 1 ? 'Campionato' : 'Campionati'}</span></div>
       </div>
-      ${carriera.conIncontri ? html`<div class="stats">
+      ${carriera.conIncontri ? html`<p class="muted small etich">Singoli e doppi · ${carriera.conIncontri < carriera.campionati ? `solo ${conIncontri.join(', ')}` : 'tutti i campionati'}</p>
+      <div class="stats">
         <div class="stat"><b>${carriera.sv}/${carriera.sg}</b><span>Singoli vinti</span></div>
         <div class="stat"><b>${perc(carriera.sv, carriera.sg)}</b><span>Singoli</span></div>
         <div class="stat"><b>${carriera.dv}/${carriera.dg}</b><span>Doppi vinti</span></div>
         <div class="stat"><b>${perc(carriera.dv, carriera.dg)}</b><span>Doppi</span></div>
       </div>` : ''}
+      <p class="tocca">Tocca per il dettaglio ›</p>
+      </div>
       <div class="card campgiornate">${raw(carrieraSvg([...campionati].reverse().map((x) => ({ media: x.g.media, etichetta: x.camp.breve || x.camp.nome }))))}</div>
-      <p class="muted small">Media = punti per sfida, campionato per campionato.${carriera.conIncontri && carriera.conIncontri < carriera.campionati ? ' Singoli e doppi: solo dei campionati di cui abbiamo gli incontri.' : ''}${pagellini.serate ? ` Voto medio dei pagellini Fanta Dart: ${fmtMedia(pagellini.media)} in ${pagellini.serate} serate.` : ''}</p>` : '';
+      <p class="muted small">Media = punti per sfida, campionato per campionato.${pagellini.serate ? ` Voto medio dei pagellini Fanta Dart: ${fmtMedia(pagellini.media)} in ${pagellini.serate} serate.` : ''}</p>` : '';
+  const dettaglioCarriera = () => {
+    const cron = [...campionati].reverse(); // dal piu' vecchio
+    const riga = (nome, x, b, pos) => html`<tr><th>${nome}</th><td>${x.set}</td><td>${x.punti}</td><td>${fmtMediaCamp(x.set ? x.punti / x.set : 0)}</td>
+      <td>${pos || '–'}</td><td>${b ? `${b.sv}/${b.sg}` : '–'}</td><td>${b ? `${b.dv}/${b.dg}` : '–'}</td></tr>`;
+    const tab = html`<div class="tabscorri"><table class="tabcarriera"><thead><tr><th></th><th>Sfide</th><th>Punti</th><th>Media</th><th>Pos.</th><th>Singoli</th><th>Doppi</th></tr></thead><tbody>
+      ${cron.map((x) => riga(x.camp.breve || x.camp.nome, x.g, bilancio(x.camp, x.g.nome), `${x.pos}°/${x.tot}`))}
+      ${cron.length > 1 ? riga('Totale', { set: carriera.sfide, punti: carriera.punti }, carriera.conIncontri ? carriera : null, '') : ''}
+    </tbody></table></div>`;
+    const d = dettaglioSfide(cron);
+    const fonte = conIncontri.length ? html`<p class="muted small">Dagli incontri di: ${conIncontri.join(', ')}.</p>` : '';
+    const lista = (righe, cls) => (righe.length ? html`<ul class="bilanci ${cls}">${righe.map((r) => html`<li><span>${r.nome}</span><b>${r.v}/${r.g}</b></li>`)}</ul>` : html`<p class="muted small">Nessun dato.</p>`);
+    const RIS = [['2-0', 'v2'], ['2-1', 'v1'], ['1-2', 'p1'], ['0-2', 'p2']];
+    const compagni = [...d.compagni].map(([nome, x]) => ({ nome, ...x })).sort((a, b) => b.g - a.g || b.v / b.g - a.v / a.g);
+    return html`<div class="modale" data-chiudi><div class="card modale-box" role="dialog" aria-label="Dettaglio carriera">
+      <header><h2>Dettaglio carriera</h2><button type="button" class="iconbtn" data-chiudi aria-label="Chiudi">✕</button></header>
+      <h3>Campionato per campionato</h3>
+      ${tab}
+      ${d.sfide ? html`
+        <h3>Come finiscono le tue sfide</h3>
+        <div class="barra-ris">${RIS.map(([k, cls]) => (d.risultati[k] ? html`<span class="${cls}" style="flex:${d.risultati[k]}">${d.risultati[k]}</span>` : ''))}</div>
+        <p class="legenda">${RIS.map(([k, cls]) => html`<i class="${cls}"></i> ${k === '2-0' || k === '2-1' ? 'vinte' : 'perse'} ${k} `)}</p>
+        <h3>Avversari (singoli)</h3>
+        <div class="due">
+          <div><p class="muted small">Con chi vinci di più</p>${lista(classificaBilanci(d.avversari), 'su')}</div>
+          <div><p class="muted small">Chi ti mette in difficoltà</p>${lista(classificaBilanci(d.avversari, { peggiori: true }), 'giu')}</div>
+        </div>
+        <h3>Compagni di doppio</h3>
+        ${lista(compagni, '')}
+        ${fonte}` : html`<p class="muted small">Il dettaglio delle sfide comparirà quando avremo gli incontri di un campionato.</p>`}
+    </div></div>`;
+  };
   const sezioneCampionato = attuale ? html`
       <h2 class="section">Campionato · ${attuale.camp.nome}</h2>
       <div class="stats">
@@ -294,6 +331,23 @@ export default async function view([paramId]) {
       ${firma()}`,
     mount(root) {
       draw(root);
+      // dettaglio della carriera in una finestra sopra il profilo
+      const apri = () => {
+        const el = document.createElement('div');
+        el.innerHTML = dettaglioCarriera().s;
+        const modale = el.firstElementChild;
+        document.body.append(modale);
+        const chiudi = () => { modale.remove(); document.removeEventListener('keydown', esc); window.removeEventListener('hashchange', chiudi); };
+        const esc = (e) => { if (e.key === 'Escape') chiudi(); };
+        modale.addEventListener('click', (e) => {
+          const c = e.target.closest('[data-chiudi]');
+          if (c && (c !== modale || e.target === modale)) chiudi();
+        });
+        document.addEventListener('keydown', esc);
+        window.addEventListener('hashchange', chiudi);
+      };
+      $(root, '#carrieraBtn')?.addEventListener('click', apri);
+      $(root, '#carrieraBtn')?.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); apri(); } });
       $(root, '.seg')?.addEventListener('click', (e) => {
         const b = e.target.closest('button[data-s]');
         if (!b) return;

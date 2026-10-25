@@ -1096,3 +1096,33 @@ a.pill-btn { text-decoration: none; }
 .legenda i.doppi { background: var(--gd); }
 .serate .uff { opacity: .6; stroke: var(--mu); stroke-width: 1; stroke-dasharray: 3 2; }
 .serate .nv { fill: var(--mu); font-size: 11px; font-weight: 700; }
+
+/* Profilo: riquadro della carriera toccabile e finestra di dettaglio */
+.carriera-tocca { cursor: pointer; border-radius: 16px; }
+.carriera-tocca:active { opacity: .85; }
+.carriera-tocca .etich { margin: 6px 2px 4px; }
+.carriera-tocca .tocca { text-align: right; color: var(--gd); font-size: 14px; font-weight: 700; margin: 6px 4px 0; }
+.modale { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 14px; background: rgba(3, 7, 15, 0.82); backdrop-filter: blur(6px); }
+.modale-box { width: min(560px, 100%); max-height: calc(100dvh - 28px); overflow-y: auto; display: grid; gap: 10px; padding: 18px 16px; }
+.modale-box header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.modale-box h2 { font-size: 20px; }
+.modale-box h3 { font-size: 15px; text-transform: uppercase; letter-spacing: .08em; color: var(--mu); margin-top: 8px; }
+.tabscorri { overflow-x: auto; }
+.tabcarriera { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.tabcarriera th, .tabcarriera td { padding: 7px 4px; text-align: right; border-bottom: 1px solid var(--ln); white-space: nowrap; }
+.tabcarriera thead th { color: var(--mu); font-weight: 600; font-size: 12px; }
+.tabcarriera tbody th { text-align: left; font-weight: 700; white-space: normal; line-height: 1.2; }
+.tabcarriera tbody tr:last-child th, .tabcarriera tbody tr:last-child td { color: var(--gd); font-weight: 800; border-bottom: 0; }
+.barra-ris { display: flex; height: 30px; border-radius: 10px; overflow: hidden; }
+.barra-ris span { display: grid; place-items: center; font-size: 13px; font-weight: 800; color: #fff; min-width: 22px; }
+.barra-ris .v2, .legenda i.v2 { background: #059669; }
+.barra-ris .v1, .legenda i.v1 { background: #34d399; }
+.barra-ris .p1, .legenda i.p1 { background: #f59e0b; }
+.barra-ris .p2, .legenda i.p2 { background: #ef4444; }
+.modale-box .due { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.bilanci { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 4px; }
+.bilanci li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 10px; background: var(--c2); font-size: 14px; }
+.bilanci li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bilanci.su li b { color: var(--gr-tx); }
+.bilanci.giu li b { color: var(--rd-tx); }
+@media (max-width: 420px) { .modale-box .due { grid-template-columns: 1fr; } }

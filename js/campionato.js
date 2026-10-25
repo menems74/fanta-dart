@@ -83,3 +83,38 @@ export function bilancio(camp, nome) {
   return b.sg + b.dg ? b : null;
 }
 export const fmtBilancio = (b) => (b ? `singoli ${b.sv}/${b.sg} · doppi ${b.dv}/${b.dg}` : '');
+
+/**
+ * Dettaglio delle sfide di un giocatore nei campionati con gli incontri: come finiscono (2-0, 2-1, 1-2, 0-2),
+ * bilancio contro ogni avversario (solo singoli) e con ogni compagno di doppio.
+ * voci: [{ camp, g }] dove g.nome e' il nome del giocatore in quel campionato.
+ */
+export function dettaglioSfide(voci) {
+  const risultati = { '2-0': 0, '2-1': 0, '1-2': 0, '0-2': 0 };
+  const avversari = new Map();
+  const compagni = new Map();
+  const conta = (m, k, vinto) => { const x = m.get(k) || { v: 0, g: 0 }; x.g += 1; if (vinto) x.v += 1; m.set(k, x); };
+  for (const { camp, g } of voci) {
+    for (const inc of camp?.incontri || []) {
+      for (const s of inc.giochi) {
+        const lato = s.casa.includes(g.nome) ? 0 : s.ospite.includes(g.nome) ? 1 : -1;
+        if (lato < 0) continue;
+        const [noi, loro] = lato === 0 ? [s.casa, s.ospite] : [s.ospite, s.casa];
+        const vinto = s.set[lato] > s.set[1 - lato];
+        const k = `${s.set[lato]}-${s.set[1 - lato]}`;
+        if (k in risultati) risultati[k] += 1;
+        if (noi.length === 1) conta(avversari, loro[0], vinto);
+        else conta(compagni, noi.find((n) => n !== g.nome), vinto);
+      }
+    }
+  }
+  return { risultati, avversari, compagni, sfide: Object.values(risultati).reduce((a, b) => a + b, 0) };
+}
+
+/** I migliori o i peggiori della mappa { nome: { v, g } } per percentuale di vittorie (a parita', chi ha giocato di piu'). */
+export function classificaBilanci(mappa, { peggiori = false, quanti = 3, minimo = 2 } = {}) {
+  let righe = [...mappa].map(([nome, x]) => ({ nome, ...x, p: x.v / x.g }));
+  if (righe.some((r) => r.g >= minimo)) righe = righe.filter((r) => r.g >= minimo);
+  righe.sort((a, b) => (peggiori ? a.p - b.p : b.p - a.p) || b.g - a.g || a.nome.localeCompare(b.nome, 'it'));
+  return righe.slice(0, quanti);
+}
