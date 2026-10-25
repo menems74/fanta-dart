@@ -79,28 +79,47 @@ const breveAvv = (s) => { const x = String(s || '').trim(); return x.length > 7 
  * Andamento serate: una barra per serata (dalla piu' vecchia), verde le sfide vinte e rossa le perse,
  * sopra il voto del pagellino (stella se MVP), sotto l'avversario. Con tante serate il grafico si scorre di lato.
  */
-function serateSvg(serate, playerId) {
+function serateSvg(serate) {
   if (!serate.length) return '<p class="muted small">Ancora nessuna serata.</p>';
   const passo = 52, pad = 10, H = 170, base = H - 34, top = 48;
   const W = Math.max(300, pad * 2 + serate.length * passo);
-  const max = Math.max(1, ...serate.map(({ c }) => gamesOf(c).giocate));
+  const max = Math.max(1, ...serate.map((s) => s.g.giocate));
   const h = (n) => (n / max) * (base - top);
-  const barre = serate.map(({ c, m }, i) => {
-    const g = gamesOf(c);
+  const barre = serate.map((s, i) => {
+    const { g } = s;
     const x = pad + i * passo + passo / 2;
     const hv = h(g.vinte), hp = h(g.giocate - g.vinte);
-    const mvp = m.mvpPlayerId === playerId;
-    return `<rect x="${x - 12}" y="${(base - hv).toFixed(1)}" width="24" height="${hv.toFixed(1)}" rx="3" class="vinte"/>`
-      + `<rect x="${x - 12}" y="${(base - hv - hp).toFixed(1)}" width="24" height="${hp.toFixed(1)}" rx="3" class="perse"/>`
+    const uff = s.ufficiale ? ' uff' : '';
+    return `<rect x="${x - 12}" y="${(base - hv).toFixed(1)}" width="24" height="${hv.toFixed(1)}" rx="3" class="vinte${uff}"/>`
+      + `<rect x="${x - 12}" y="${(base - hv - hp).toFixed(1)}" width="24" height="${hp.toFixed(1)}" rx="3" class="perse${uff}"/>`
       + `<text x="${x}" y="${(base - hv - hp - 6).toFixed(1)}" text-anchor="middle" class="vp">${g.vinte}/${g.giocate}</text>`
-      + `<circle cx="${x}" cy="18" r="13" class="voto ${votoClass(c.voto)}"/>`
-      + `<text x="${x}" y="23" text-anchor="middle" class="vv">${c.voto}</text>`
-      + (mvp ? `<text x="${x + 13}" y="11" text-anchor="middle" class="mvp">★</text>` : '')
-      + `<text x="${x}" y="${H - 18}" text-anchor="middle" class="avv">${escSvg(breveAvv(m.avversario))}</text>`
-      + `<text x="${x}" y="${H - 4}" text-anchor="middle" class="data">${escSvg(fmtDate(m.data).replace(/^\S+\s/, ''))}</text>`;
+      + (s.voto != null
+        ? `<circle cx="${x}" cy="18" r="13" class="voto ${votoClass(s.voto)}"/><text x="${x}" y="23" text-anchor="middle" class="vv">${s.voto}</text>`
+        : `<text x="${x}" y="23" text-anchor="middle" class="nv">uff.</text>`)
+      + (s.mvp ? `<text x="${x + 13}" y="11" text-anchor="middle" class="mvp">★</text>` : '')
+      + `<text x="${x}" y="${H - 18}" text-anchor="middle" class="avv">${escSvg(breveAvv(s.avversario))}</text>`
+      + `<text x="${x}" y="${H - 4}" text-anchor="middle" class="data">${escSvg(s.data)}</text>`;
   }).join('');
+  const conUff = serate.some((s) => s.ufficiale);
   return `<div class="scorri"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Sfide vinte e perse e voto, serata per serata" class="serate">${barre}</svg></div>`
-    + '<p class="legenda"><i class="vinte"></i> vinte <i class="perse"></i> perse · nel cerchio il voto · ★ MVP</p>';
+    + `<p class="legenda"><i class="vinte"></i> vinte <i class="perse"></i> perse · nel cerchio il voto · ★ MVP${conUff ? ' · "uff." = incontro del campionato ufficiale (senza voto)' : ''}</p>`;
+}
+
+/** Incontri ufficiali di un campionato come "serate": sfide vinte e perse del giocatore, avversario, nome corto del campionato. */
+function serateUfficiali(x) {
+  const corto = (x.camp.breve || x.camp.nome).replace(/^(\S{3})\S*\s+(?:\d\d)?(\d\d)\b.*$/, '$1. $2');
+  return (x.camp.incontri || []).map((inc) => {
+    const g = { sg: 0, sv: 0, dg: 0, dv: 0, giocate: 0, vinte: 0 };
+    for (const s of inc.giochi) {
+      const lato = s.casa.includes(x.g.nome) ? 0 : s.ospite.includes(x.g.nome) ? 1 : -1;
+      if (lato < 0) continue;
+      const k = s.casa.length > 1 ? 'd' : 's';
+      const vinto = s.set[lato] > s.set[1 - lato];
+      g[`${k}g`] += 1; g.giocate += 1;
+      if (vinto) { g[`${k}v`] += 1; g.vinte += 1; }
+    }
+    return g.giocate ? { g, voto: null, mvp: false, ufficiale: true, avversario: inc.casa === x.squadra ? inc.ospite : inc.casa, data: corto } : null;
+  }).filter(Boolean);
 }
 
 /** Percentuale di sfide vinte nel tempo (cumulata), una linea per i singoli e una per i doppi. */
@@ -112,7 +131,7 @@ function vittorieSvg(serate) {
   const y = (p) => base - (p / 100) * (base - top);
   const serie = (k) => {
     let v = 0, g = 0;
-    return serate.map(({ c }) => { const s = gamesOf(c); v += s[`${k}v`]; g += s[`${k}g`]; return g ? (v / g) * 100 : null; });
+    return serate.map(({ g: s }) => { v += s[`${k}v`]; g += s[`${k}g`]; return g ? (v / g) * 100 : null; });
   };
   const linea = (vals, cls) => {
     const pts = vals.map((p, i) => (p == null ? null : `${x(i).toFixed(1)},${y(p).toFixed(1)}`)).filter(Boolean);
@@ -201,8 +220,15 @@ export default async function view([paramId]) {
     $(root, '#badges').innerHTML = st.mvp > 0
       ? `<div class="medal" title="MVP della serata"><span class="medal-disc">${starIcon}</span><b>MVP</b><span>×${st.mvp}</span></div>`
       : "<p class=\"muted small\">Ancora nessun badge: il primo è l'MVP di una serata.</p>";
-    const cronologia = [...history].reverse(); // dalla serata piu' vecchia
-    $(root, '#serate').innerHTML = serateSvg(cronologia, playerId);
+    // dalla serata piu' vecchia; con Carriera prima gli incontri dei campionati ufficiali (dal piu' vecchio)
+    const pagellini = [...history].reverse().map(({ c, m }) => ({
+      g: gamesOf(c), voto: c.voto, mvp: m.mvpPlayerId === playerId, avversario: m.avversario, data: fmtDate(m.data).replace(/^\S+\s/, ''),
+    }));
+    const ufficiali = scope === 'carriera' ? [...campionati].reverse().filter((x) => x.camp.incontri?.length).flatMap(serateUfficiali) : [];
+    const cronologia = [...ufficiali, ...pagellini];
+    $(root, '#serate').innerHTML = serateSvg(cronologia);
+    const scorri = $(root, '#serate .scorri');
+    if (scorri) scorri.scrollLeft = scorri.scrollWidth; // si parte dalle serate piu' recenti
     $(root, '#vittorie').innerHTML = vittorieSvg(cronologia);
     $(root, '#split').textContent = st.giocate
       ? `Singoli ${st.sv}/${st.sg} (${fmtPerc(st.sv, st.sg)}) · Doppi ${st.dv}/${st.dg} (${fmtPerc(st.dv, st.dg)})`
