@@ -84,6 +84,7 @@ export default async function partita501View() {
       <header><span class="pnome">${nomeDi(i)}</span>${attivo ? html`<span class="pdot" aria-label="Tocca a lui"></span>` : ''}</header>
       <div class="presto">${s.fallito ? '✕' : s.finito ? '✓' : resto}</div>
       <dl>
+        <div><dt>Turno</dt><dd>${s.finito ? Math.ceil(s.frecce / 3) : Math.min(Math.floor(s.frecce / 3) + 1, LIMITE_501 / 3)}<small> / ${LIMITE_501 / 3}</small></dd></div>
         <div><dt>Media delle 3 frecce</dt><dd>${media}</dd></div>
         <div><dt>Ultimo punteggio</dt><dd>${s.visite.length ? s.visite.at(-1) : '–'}</dd></div>
         <div><dt>Frecce lanciate</dt><dd>${s.frecce}<small> / ${LIMITE_501}</small></dd></div>
