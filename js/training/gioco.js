@@ -9,7 +9,7 @@ import { keepAwake } from './awake.js';
 import { pausaMs, pausaSecondi, ritardoCambioTurno } from './pausa.js';
 import { onDardo, onStato, tavolaStato, scrivi } from './tavola.js';
 import { EFFETTI, comandoNumeri, comandoColpo, effettoTurno } from './led.js';
-import { suona, sbloccaAudio } from './suono.js';
+import { suona, sbloccaAudio, jingle } from './suono.js';
 import { visitaValida, applicaVisita } from './scorer.js';
 import { gioco, rigioca, numeriCheckout, record, migliora, varianteDi, nomeVariante, scelteDi, REGOLE } from './giochi.js';
 import { pannello, comandi } from './pannelli.js';
@@ -265,6 +265,7 @@ export default async function giocoView([id]) {
   }
 
   function ancora() {
+    jingle();
     scrivi(EFFETTI.inizio);
     illuminaBersaglio(2500);
     overlay().innerHTML = '';
@@ -281,7 +282,7 @@ export default async function giocoView([id]) {
     mount(el) {
       root = el;
       if (ripresa) toast('Partita ripresa da dove eri rimasto');
-      if (s) { scrivi(EFFETTI.inizio); illuminaBersaglio(2500); }
+      if (s) { if (!ripresa) jingle(); scrivi(EFFETTI.inizio); illuminaBersaglio(2500); }
       render();
       const sig = { signal: ac.signal };
       el.addEventListener('click', (e) => {
@@ -291,6 +292,7 @@ export default async function giocoView([id]) {
         if (d.modo) {
           st.opzioni = scelteDi(g, { [g.SCELTE[0].chiave]: d.modo });
           s = rigioca(g, st.opzioni, []);
+          jingle();
           scrivi(EFFETTI.inizio);
           illuminaBersaglio(2500);
           render();
@@ -300,6 +302,7 @@ export default async function giocoView([id]) {
         } else if (d.act === 'iniziascelte') {
           st.opzioni = { ...st.bozza };
           s = rigioca(g, st.opzioni, []);
+          jingle();
           scrivi(EFFETTI.inizio);
           illuminaBersaglio(2500);
           render();

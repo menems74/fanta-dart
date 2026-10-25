@@ -9,7 +9,7 @@ import { keepAwake } from './awake.js';
 import { pausaMs, pausaSecondi, ritardoCambioTurno } from './pausa.js';
 import { onDardo, onStato, tavolaStato, scrivi } from './tavola.js';
 import { EFFETTI, comandoNumeri, comandoColpo, effettoTurno } from './led.js';
-import { suona, sbloccaAudio } from './suono.js';
+import { suona, sbloccaAudio, jingle } from './suono.js';
 import { parla, sbloccaVoce } from './voce.js';
 import { visitaValida, applicaVisita, frecceChiusura } from './scorer.js';
 import { gioco, partita501, restoProvvisorio, record, migliora, giudizio501, LIMITE_501, REGOLE } from './giochi.js';
@@ -317,7 +317,7 @@ export default async function partita501View() {
         const d = b.dataset;
         if (d.n) { st.opzioni = { n: Number(d.n), avversario: d.n === '2' ? st.opzioni.avversario : null }; render(); }
         else if (d.avv) { st.opzioni.avversario = d.avv; render(); }
-        else if (d.act === 'inizia') { st.fase = 'gioco'; nuovaPartita(); scrivi(EFFETTI.inizio); render(); }
+        else if (d.act === 'inizia') { st.fase = 'gioco'; nuovaPartita(); jingle(); scrivi(EFFETTI.inizio); render(); }
         else if (d.k) tasto(d.k);
         else if (d.fr !== undefined) {
           const { s: v } = st.chiusura;
@@ -341,7 +341,7 @@ export default async function partita501View() {
         if (a === 'pronto') chiudiConto();
         else if (a === 'continua') { st.continua = true; persist(); overlay().innerHTML = ''; render(); }
         else if (a === 'termina') fine();
-        else if (a === 'ancora') { overlay().innerHTML = ''; nuovaPartita(); scrivi(EFFETTI.inizio); render(); }
+        else if (a === 'ancora') { overlay().innerHTML = ''; nuovaPartita(); jingle(); scrivi(EFFETTI.inizio); render(); }
       }, sig);
       offs = [
         onDardo((dd) => {

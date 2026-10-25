@@ -9,7 +9,7 @@ import { keepAwake } from './awake.js';
 import { pausaMs, pausaSecondi, ritardoCambioTurno } from './pausa.js';
 import { onDardo, onStato, tavolaStato, scrivi } from './tavola.js';
 import { EFFETTI, comandoNumeri, comandoColpo, effettoTurno } from './led.js';
-import { suona, sbloccaAudio } from './suono.js';
+import { suona, sbloccaAudio, jingle } from './suono.js';
 import { visitaValida } from './scorer.js';
 import { gioco, rigioca, record, migliora, REGOLE } from './giochi.js';
 import { barra, svg, nomeGiocatore } from './grafica.js';
@@ -216,6 +216,7 @@ export default async function partitaScoringView() {
     mount(el) {
       root = el;
       if (ripresa) toast('Partita ripresa da dove eri rimasto');
+      else jingle();
       scrivi(EFFETTI.inizio);
       render();
       const sig = { signal: ac.signal };
@@ -236,7 +237,7 @@ export default async function partitaScoringView() {
         const chiudi = e.target.closest('[data-act="chiudi"]');
         if (chiudi && !(chiudi.classList.contains('modal') && e.target.closest('[data-stop]'))) { overlay().innerHTML = ''; return; }
         if (b?.dataset.act === 'pronto') chiudiConto();
-        else if (b?.dataset.act === 'ancora') { overlay().innerHTML = ''; nuovaPartita(); scrivi(EFFETTI.inizio); render(); }
+        else if (b?.dataset.act === 'ancora') { overlay().innerHTML = ''; nuovaPartita(); jingle(); scrivi(EFFETTI.inizio); render(); }
       }, sig);
       offs = [
         onDardo((dd) => {

@@ -40,3 +40,12 @@ export function suona(tipo) {
     else nota(660, 0, 0.12);
   } catch { /* ignora */ }
 }
+
+/** Jingle di inizio partita o allenamento (rispetta l'interruttore dei suoni). */
+export function jingle() {
+  if (!attivo) return;
+  try {
+    const a = new Audio(new URL('../../assets/jingle.mp3', import.meta.url));
+    a.play().catch(() => { /* il browser non permette ancora l'audio */ });
+  } catch { /* nessun audio disponibile */ }
+}
