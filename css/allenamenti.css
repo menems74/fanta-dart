@@ -367,3 +367,13 @@ svg.line text { fill: var(--mu); font-size: 16px; }
 .tr .player .av.foto img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
 .figurina .chi { flex: 1; min-width: 0; }
 .figurina .ffoto { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gd); flex: none; }
+
+/* 501: limite di 60 frecce e giudizio a fine partita */
+.tr .pcard.fallito { border-color: var(--rd-tx); }
+.tr .pcard.fallito .presto, .tr .pcard.fallito .pchiuso { color: var(--rd-tx); }
+.tr .pcard dd small { color: var(--mu); font-weight: 600; }
+#overlay .fine .giudizio { font-size: 26px; font-weight: 800; margin: 2px 0; }
+#overlay .fine .giudizio.gbenissimo { color: var(--gr-tx); }
+#overlay .fine .giudizio.gbene { color: var(--gd); }
+#overlay .fine .giudizio.gaccettabile { color: var(--or); }
+#overlay .fine .giudizio.gmale { color: var(--rd-tx); }

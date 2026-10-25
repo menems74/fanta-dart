@@ -12,7 +12,7 @@ import { EFFETTI, comandoNumeri, comandoColpo, effettoTurno } from './led.js';
 import { suona, sbloccaAudio } from './suono.js';
 import { parla, sbloccaVoce } from './voce.js';
 import { visitaValida, applicaVisita, frecceChiusura } from './scorer.js';
-import { gioco, partita501, restoProvvisorio, record, migliora, REGOLE } from './giochi.js';
+import { gioco, partita501, restoProvvisorio, record, migliora, giudizio501, LIMITE_501, REGOLE } from './giochi.js';
 import { barra, svg, nomeGiocatore } from './grafica.js';
 
 const OSPITE = 'ospite';
@@ -80,15 +80,15 @@ export default async function partita501View() {
     const attivo = r.cur === i && !st.finito && !s.finito;
     const resto = attivo ? restoProvvisorio(s) : s.resto;
     const media = s.frecce ? ((501 - s.resto) / s.frecce * 3).toFixed(2) : '0.00';
-    return html`<section class="pcard ${attivo ? 'attivo' : ''} ${s.finito ? 'chiuso' : ''}">
+    return html`<section class="pcard ${attivo ? 'attivo' : ''} ${s.finito ? (s.fallito ? 'fallito' : 'chiuso') : ''}">
       <header><span class="pnome">${nomeDi(i)}</span>${attivo ? html`<span class="pdot" aria-label="Tocca a lui"></span>` : ''}</header>
-      <div class="presto">${s.finito ? '✓' : resto}</div>
+      <div class="presto">${s.fallito ? '✕' : s.finito ? '✓' : resto}</div>
       <dl>
         <div><dt>Media delle 3 frecce</dt><dd>${media}</dd></div>
         <div><dt>Ultimo punteggio</dt><dd>${s.visite.length ? s.visite.at(-1) : '–'}</dd></div>
-        <div><dt>Frecce lanciate</dt><dd>${s.frecce}</dd></div>
+        <div><dt>Frecce lanciate</dt><dd>${s.frecce}<small> / ${LIMITE_501}</small></dd></div>
       </dl>
-      ${s.finito ? html`<p class="pchiuso">Chiuso in ${s.frecce} frecce</p>` : ''}
+      ${s.fallito ? html`<p class="pchiuso">Non riuscito: ${LIMITE_501} frecce</p>` : s.finito ? html`<p class="pchiuso">Chiuso in ${s.frecce} frecce · ${giudizio501(s.frecce)}</p>` : ''}
     </section>`;
   };
 
@@ -154,7 +154,8 @@ export default async function partita501View() {
     persist();
     render();
     if (s.fineTurno || s.finito) annuncia(p);
-    if (s.finito) lampeggio(); // chiusura: tutta la tavola lampeggia
+    if (s.finito && !s.fallito) lampeggio(); // chiusura: tutta la tavola lampeggia
+    if (s.fallito && !r.tuttiChiusi) toast(`${st.opzioni.n === 2 ? `${nomeDi(p)}: ` : ''}${LIMITE_501} frecce, partita non riuscita`);
     if (r.tuttiChiusi) { setTimeout(fine, 700); return; }
     // in due: il primo che chiude vince, l'altro puo' continuare da solo
     if (r.vincitore !== null && vincitorePrima === null) { setTimeout(vittoria, 700); return; }
@@ -165,6 +166,7 @@ export default async function partita501View() {
   function annuncia(p) {
     const s = r.stati[p];
     const nome = st.opzioni.n === 2 ? `${nomeDi(p)}, ` : '';
+    if (s.fallito) { parla(`${nome}${LIMITE_501} frecce. Partita non riuscita`); return; }
     if (s.finito) { parla(`${nome}chiuso in ${s.frecce} frecce!`); return; }
     const punti = s.visite.at(-1);
     const sballo = punti === 0 && s.ultimo.some((id) => id !== 'X');
@@ -252,7 +254,7 @@ export default async function partita501View() {
     const avversario = st.opzioni.n === 2 ? st.opzioni.avversario : null;
     const salva = (playerId, s, contro) => {
       const nuovo = {
-        playerId, gioco: 'x501', valore: s.frecce, voto: Math.round(g.voto(s.frecce)), data: todayIso(), ts: Date.now(),
+        playerId, gioco: 'x501', valore: s.frecce, voto: s.fallito ? 0 : Math.round(g.voto(s.frecce)), ...(s.fallito ? { fallito: true } : {}), data: todayIso(), ts: Date.now(),
         opzioni: { avversario: contro }, dati: g.dati(s), durataMin, ...(playerId !== pid ? { inseritoDa: pid } : {}),
       };
       saveSessione(JSON.parse(JSON.stringify(nuovo))).fatto.catch((e) => { console.error(e); toast('Salvataggio non riuscito: controlla la connessione'); });
@@ -263,10 +265,14 @@ export default async function partita501View() {
     const suo = avversario && avversario !== OSPITE && r.stati[1].finito;
     if (suo) salva(avversario, r.stati[1], pid);
     clearDraft(pid, 'gioco');
-    const righe = Array.from({ length: st.opzioni.n }, (_, i) => html`<li><span>${nomeDi(i)}</span><b>${r.stati[i].finito ? `${r.stati[i].frecce} frecce` : `a ${r.stati[i].resto}`}</b></li>`);
+    const righe = Array.from({ length: st.opzioni.n }, (_, i) => html`<li><span>${nomeDi(i)}</span><b>${r.stati[i].fallito ? 'non riuscito' : r.stati[i].finito ? `${r.stati[i].frecce} frecce` : `a ${r.stati[i].resto}`}</b></li>`);
     overlay().innerHTML = html`<div class="fine"><div class="card">
       <p class="mu">501${st.opzioni.n === 2 ? ' · in due' : ''}</p>
-      ${mio ? html`<div class="big">${mio.valore}<small> frecce</small></div>
+      ${mio?.fallito ? html`<div class="big">Non riuscito</div>
+        <p class="esito">${LIMITE_501} frecce senza chiudere: a ${r.stati[0].resto}.</p>
+        <p class="mu">Voto 0 su 100${precedente != null ? ` · il tuo record è ${precedente}` : ''}</p>`
+      : mio ? html`<div class="big">${mio.valore}<small> frecce</small></div>
+        <p class="giudizio g${giudizio501(mio.valore).toLowerCase()}">${giudizio501(mio.valore)}</p>
         <p class="esito">${precedente == null ? 'Primo risultato: da qui si migliora.' : migliora(g, mio.valore, precedente) ? `Nuovo record! Il precedente era ${precedente}.` : `Il tuo record è ${precedente}.`}</p>
         <p class="mu">Voto ${mio.voto} su 100</p>` : html`<p class="esito">Non hai chiuso: questa partita non entra nei tuoi progressi.</p>`}
       ${st.opzioni.n === 2 ? html`<ul class="riep501">${righe}</ul>` : ''}

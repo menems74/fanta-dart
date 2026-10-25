@@ -49,7 +49,7 @@ export default async function progressiView([altro]) {
       <p class="mu">${lista.length} ${lista.length === 1 ? 'sessione' : 'sessioni'} · ${g.unitGrafico || g.unit}${g.basso ? ' · meno è meglio: in alto c\'è il risultato migliore' : ''}</p>
       ${linea(lista.map((x) => valoreGrafico(g, x)), { w: 800, h: 300, colore: COLORE[t], basso: g.basso, assi: true })}
       <ul class="storico">${[...sessioni.filter((x) => x.gioco === id)].reverse().slice(0, 30).map((x) => html`<li>
-        <span>${fmtDate(x.data)}${etichettaVariante(g, x)}</span><b>${x.valore}</b><span class="mu">voto ${x.voto}</span>
+        <span>${fmtDate(x.data)}${etichettaVariante(g, x)}</span><b>${x.fallito ? 'non chiuso' : x.valore}</b><span class="mu">voto ${x.voto}</span>
         ${mia && x.id ? html`<button type="button" class="iconbtn piccolo" data-del="${x.id}" aria-label="Elimina">${svg('cestino')}</button>` : html`<span></span>`}
       </li>`)}</ul>
       ${mia ? html`<a class="btn pri" href="#/gioco/${id}">Allenati ora</a>` : ''}

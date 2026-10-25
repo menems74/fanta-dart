@@ -27,9 +27,24 @@ function aggiungi(s, id, chiudi = false) {
 const base = () => ({ turno: [], ultimo: [], fineTurno: false, frecce: 0, finito: false });
 
 // ---------------------------------------------------------------- 501
+/** Oltre questo numero di frecce il 501 finisce come non riuscito. */
+export const LIMITE_501 = 60;
+// Fasce del 501: entro 24 frecce benissimo, entro 33 bene, entro 42 accettabile, poi male.
+const FASCE_501 = [[24, 'Benissimo'], [33, 'Bene'], [42, 'Accettabile'], [Infinity, 'Male']];
+export const giudizio501 = (frecce, fallito = false) => (fallito ? 'Non riuscito' : FASCE_501.find(([n]) => frecce <= n)[1]);
+// Voto per tratti: 12 frecce = 100, 24 = 80, 33 = 60, 42 = 40, 60 = 10 (non chiuso = 0).
+const PUNTI_501 = [[12, 100], [24, 80], [33, 60], [42, 40], [LIMITE_501, 10]];
+function voto501(v) {
+  if (v <= PUNTI_501[0][0]) return 100;
+  for (let i = 1; i < PUNTI_501.length; i++) {
+    const [x0, y0] = PUNTI_501[i - 1], [x1, y1] = PUNTI_501[i];
+    if (v <= x1) return y0 + ((v - x0) / (x1 - x0)) * (y1 - y0);
+  }
+  return 10;
+}
 const x501 = {
   id: 'x501', nome: '501', desc: 'Un leg da solo, double out', unit: 'frecce', basso: true,
-  voto: (v) => lineare(v, 45, 12),
+  voto: voto501,
   crea: () => ({ ...base(), resto: 501, visite: [], max: 0 }),
   passo(s, ev) {
     if (ev.t === 'd') {
@@ -61,6 +76,7 @@ function chiudiVisita(s, punti, esito) {
   s.visite.push(esito === 'sballo' ? 0 : punti);
   if (esito !== 'sballo') { s.resto -= punti; s.max = Math.max(s.max, punti); }
   if (esito === 'chiuso') { s.resto = 0; s.finito = true; }
+  else if (s.frecce >= LIMITE_501) { s.finito = true; s.fallito = true; } // 60 frecce senza chiudere: non riuscito
 }
 export const restoProvvisorio = (s) => (s.turno.length ? elaboraTurno(s.resto, s.turno.map(dardo)).resto : s.resto);
 
@@ -366,7 +382,7 @@ export const nomeGruppo = (g, v) => g.SCELTE?.find((c) => c.chiave === g.GRUPPO)
 /** Record: il valore migliore, nella stessa variante se indicata (Rotation in triplo, Target su 5 serie...). */
 export function record(sessioni, id, variante = null) {
   const g = gioco(id);
-  const v = sessioni.filter((x) => x.gioco === id && (variante == null || String(varianteDi(g, x.opzioni)) === String(variante))).map((x) => x.valore);
+  const v = sessioni.filter((x) => x.gioco === id && !x.fallito && (variante == null || String(varianteDi(g, x.opzioni)) === String(variante))).map((x) => x.valore);
   if (!v.length) return null;
   return g.basso ? Math.min(...v) : Math.max(...v);
 }
@@ -381,7 +397,7 @@ const lunedi = (iso) => {
 export const settimana = (sessioni, oggi) => sessioni.filter((x) => lunedi(x.data) === lunedi(oggi)).length;
 
 const migliore = (sessioni, id, f = () => true) => {
-  const v = sessioni.filter((x) => x.gioco === id && f(x)).map((x) => x.valore);
+  const v = sessioni.filter((x) => x.gioco === id && !x.fallito && f(x)).map((x) => x.valore);
   return v.length ? (gioco(id).basso ? Math.min(...v) : Math.max(...v)) : null;
 };
 const almeno = (v, n) => v != null && v >= n;
@@ -427,7 +443,7 @@ export function classificaSfida(sessioni, sabato) {
   const g = gioco(id);
   const best = new Map();
   // nel Target la sfida e' al 20 su 10 serie
-  const valida = (y) => g.id !== 'target' || varianteDi(g, y.opzioni) === '20|10';
+  const valida = (y) => !y.fallito && (g.id !== 'target' || varianteDi(g, y.opzioni) === '20|10');
   for (const x of sessioni.filter((y) => y.gioco === id && y.data === sabato && valida(y))) {
     const b = best.get(x.playerId);
     if (b == null || (g.basso ? x.valore < b : x.valore > b)) best.set(x.playerId, x.valore);
@@ -442,7 +458,8 @@ export const REGOLE = {
     'In due si tira a turno e inizi tu: vince chi chiude per primo, e l\'altro può continuare da solo per chiudere.',
     'Si chiude solo con una doppia (vale anche il Bull 50).',
     'Sballo: se superi lo zero, resti a 1 o arrivi a zero senza doppia, il turno non conta e valgono comunque 3 frecce.',
-    'Il risultato è il numero di frecce usate: meno è meglio.',
+    'Il risultato è il numero di frecce usate: meno è meglio. Entro 24 frecce benissimo, entro 33 bene, entro 42 accettabile, oltre male.',
+    'Limite di 60 frecce: se non hai ancora chiuso, la partita finisce come non riuscita (voto 0).',
   ],
   target: [
     'All\'inizio scegli il bersaglio e 10 o 5 serie da 9 frecce.',
@@ -496,7 +513,7 @@ export function partita501(n, eventi) {
   let vincitore = null;
   for (const { p, ...ev } of eventi) {
     stati[p] = g.passo(stati[p], ev);
-    if (stati[p].finito && vincitore === null) vincitore = p;
+    if (stati[p].finito && !stati[p].fallito && vincitore === null) vincitore = p;
     if (stati[p].fineTurno || stati[p].finito) {
       const altro = (p + 1) % n;
       cur = !stati[altro].finito ? altro : p;

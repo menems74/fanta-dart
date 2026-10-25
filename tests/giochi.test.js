@@ -263,3 +263,25 @@ test('Target su 5 o 10 serie: fine, voto sulla media a serie, record e sfida', (
   ], sab);
   assert.deepEqual(cl, [{ playerId: 'a', valore: 100 }]);
 });
+
+import { LIMITE_501, giudizio501, partita501 as p501 } from '../js/training/giochi.js';
+test('501: fasce, voto e limite di 60 frecce', () => {
+  const g = gioco('x501');
+  assert.deepEqual([24, 25, 33, 34, 42, 43].map((n) => giudizio501(n)), ['Benissimo', 'Bene', 'Bene', 'Accettabile', 'Accettabile', 'Male']);
+  assert.equal(giudizio501(60, true), 'Non riuscito');
+  assert.deepEqual([9, 12, 24, 33, 42, 60].map((n) => Math.round(g.voto(n))), [100, 100, 80, 60, 40, 10]);
+  // 20 turni da 20 punti: 60 frecce senza chiudere
+  const venti = Array.from({ length: 20 }, () => ({ t: 'turno', s: 20 }));
+  let s = gioca('x501', venti.slice(0, 19));
+  assert.equal(s.finito, false);
+  s = gioca('x501', venti);
+  assert.deepEqual([s.frecce, s.finito, s.fallito, s.resto], [LIMITE_501, true, true, 101]);
+  // in due: chi arriva al limite non vince, l'altro continua da solo
+  const r = p501(2, venti.flatMap((e) => [{ p: 0, ...e }, { p: 1, t: 'turno', s: 0 }]).slice(0, 39));
+  assert.equal(r.vincitore, null);
+  assert.equal(r.stati[0].fallito, true);
+  assert.equal(r.cur, 1);
+  // record e sfida ignorano le partite non riuscite
+  assert.equal(record([{ gioco: 'x501', valore: 60, fallito: true }, { gioco: 'x501', valore: 45 }], 'x501'), 45);
+  assert.equal(record([{ gioco: 'x501', valore: 60, fallito: true }], 'x501'), null);
+});
