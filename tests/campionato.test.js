@@ -94,3 +94,22 @@ test('dettaglio delle sfide: risultati, avversari e compagni', () => {
   const peggio = classificaBilanci(d.avversari, { peggiori: true });
   assert.ok(peggio[0].p <= peggio.at(-1).p);
 });
+
+test('incontri dell\'Invernale 2026: sfide e punti coincidono con le giornate ufficiali', () => {
+  const inv = JSON.parse(readFileSync(new URL('../dati/campionati/2026bis-lombardia-as4.json', import.meta.url), 'utf8'));
+  const punti = { '2-0': 3, '2-1': 2, '1-2': 1, '0-2': 0 };
+  assert.equal(inv.incontri.length, 4);
+  inv.incontri.forEach((inc, i) => {
+    assert.equal(inc.giochi.length, 20);
+    for (const sq of inv.squadre.filter((s) => s.nome === inc.casa || s.nome === inc.ospite)) {
+      for (const g of sq.giocatori) {
+        let set = 0, tot = 0;
+        for (const s of inc.giochi) {
+          const l = s.casa.includes(g.nome) ? 0 : s.ospite.includes(g.nome) ? 1 : -1;
+          if (l >= 0) { set += 1; tot += punti[`${s.set[l]}-${s.set[1 - l]}`]; }
+        }
+        assert.deepEqual([set, tot], g.giornate[i], `giornata ${i + 1}, ${g.nome}`);
+      }
+    }
+  });
+});
