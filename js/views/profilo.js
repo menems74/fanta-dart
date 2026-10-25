@@ -106,7 +106,7 @@ function serateSvg(serate, playerId) {
 /** Percentuale di sfide vinte nel tempo (cumulata), una linea per i singoli e una per i doppi. */
 function vittorieSvg(serate) {
   if (!serate.length) return '<p class="muted small">Ancora nessuna serata.</p>';
-  const W = 300, H = 130, padL = 30, padR = 34, top = 12, base = H - 22;
+  const W = 300, H = 130, padL = 40, padR = 36, top = 12, base = H - 22;
   const n = serate.length;
   const x = (i) => (n === 1 ? (padL + W - padR) / 2 : padL + (i * (W - padL - padR)) / (n - 1));
   const y = (p) => base - (p / 100) * (base - top);
@@ -240,6 +240,7 @@ export default async function view([paramId]) {
         <button data-s="stagione" role="tab">${season.nome}</button>
         <button data-s="carriera" role="tab">Carriera</button>
       </div>` : ''}
+      ${seasons.length === 1 ? html`<p class="muted small center">C'è una sola stagione: per ora stagione e carriera mostrano gli stessi numeri.</p>` : ''}
       <div class="stats" id="stats"></div>
       <p class="muted small split" id="split"></p>
       <h2 class="section">Andamento serate</h2>
