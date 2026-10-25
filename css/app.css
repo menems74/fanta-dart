@@ -1063,3 +1063,33 @@ a.pill-btn { text-decoration: none; }
 .seg.vista { display: flex; } .seg.vista button { flex: 1; } .seg.vista button[hidden] { display: none; }
 .giornate.carriera .lineac { fill: none; stroke: var(--gd); stroke-width: 2.5; stroke-linejoin: round; }
 .giornate.carriera .puntoc { fill: var(--gd); stroke: var(--bg); stroke-width: 1.5; }
+
+/* Profilo: andamento serate e vittorie nel tempo */
+.card.grafico { padding: 12px 10px 8px; }
+.scorri { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.serate { display: block; min-width: 100%; height: auto; }
+.serate .vinte { fill: var(--gr); }
+.serate .perse { fill: rgba(239, 68, 68, 0.75); }
+.serate .vp { fill: var(--mu); font-size: 11px; font-weight: 700; }
+.serate circle.voto { fill: rgba(16, 185, 129, 0.18); stroke: var(--gr); stroke-width: 2; }
+.serate circle.voto.mid { fill: rgba(251, 191, 36, 0.18); stroke: var(--gd); }
+.serate circle.voto.low { fill: rgba(239, 68, 68, 0.18); stroke: var(--rd); }
+.serate .vv { fill: var(--tx); font-size: 13px; font-weight: 800; }
+.serate .mvp { fill: var(--gd); font-size: 13px; }
+.serate .avv { fill: var(--tx); font-size: 10px; font-weight: 600; }
+.serate .data { fill: var(--mu); font-size: 10px; }
+.vittorie { width: 100%; height: auto; display: block; }
+.vittorie .asse { stroke: var(--ln); stroke-width: 1; }
+.vittorie .meta { stroke: rgba(59, 130, 246, 0.4); stroke-dasharray: 4 4; }
+.vittorie .ass { fill: var(--mu); font-size: 10px; }
+.vittorie polyline { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.vittorie .singoli { stroke: #60a5fa; fill: #60a5fa; }
+.vittorie .doppi { stroke: var(--gd); fill: var(--gd); }
+.vittorie polyline.singoli, .vittorie polyline.doppi { fill: none; }
+.vittorie .fine { font-size: 11px; font-weight: 800; stroke: none; }
+.legenda { margin: 6px 4px 0; font-size: 12px; color: var(--mu); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.legenda i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.legenda i.vinte { background: var(--gr); }
+.legenda i.perse { background: rgba(239, 68, 68, 0.75); }
+.legenda i.singoli { background: #60a5fa; }
+.legenda i.doppi { background: var(--gd); }

@@ -72,20 +72,63 @@ async function campionatiDi(tessera) {
   return out;
 }
 
-/** Grafico a linea degli ultimi voti (dal più vecchio al più recente). */
-function trendSvg(votes) {
-  const v = votes.slice(-8);
-  if (v.length < 2) return "<p class=\"muted small\">Servono almeno due serate per vedere l'andamento.</p>";
-  const W = 300, H = 90, pad = 14;
-  const x = (i) => pad + (i * (W - 2 * pad)) / (v.length - 1);
-  const y = (n) => H - pad - ((n - 1) / 9) * (H - 2 * pad);
-  const pts = v.map((n, i) => `${x(i).toFixed(1)},${y(n).toFixed(1)}`).join(' ');
-  const dots = v.map((n, i) =>
-    `<circle cx="${x(i).toFixed(1)}" cy="${y(n).toFixed(1)}" r="4.5" class="dot ${votoClass(n)}"/>` +
-    `<text x="${x(i).toFixed(1)}" y="${(y(n) - 9).toFixed(1)}" text-anchor="middle" class="dl">${n}</text>`).join('');
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ultimi voti: ${v.join(', ')}" class="spark">` +
-    `<line x1="${pad}" x2="${W - pad}" y1="${y(6).toFixed(1)}" y2="${y(6).toFixed(1)}" class="sufficienza"/>` +
-    `<polyline points="${pts}" class="line"/>${dots}</svg>`;
+const escSvg = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const breveAvv = (s) => { const x = String(s || '').trim(); return x.length > 7 ? `${x.slice(0, 6)}.` : x; };
+
+/**
+ * Andamento serate: una barra per serata (dalla piu' vecchia), verde le sfide vinte e rossa le perse,
+ * sopra il voto del pagellino (stella se MVP), sotto l'avversario. Con tante serate il grafico si scorre di lato.
+ */
+function serateSvg(serate, playerId) {
+  if (!serate.length) return '<p class="muted small">Ancora nessuna serata.</p>';
+  const passo = 52, pad = 10, H = 170, base = H - 34, top = 48;
+  const W = Math.max(300, pad * 2 + serate.length * passo);
+  const max = Math.max(1, ...serate.map(({ c }) => gamesOf(c).giocate));
+  const h = (n) => (n / max) * (base - top);
+  const barre = serate.map(({ c, m }, i) => {
+    const g = gamesOf(c);
+    const x = pad + i * passo + passo / 2;
+    const hv = h(g.vinte), hp = h(g.giocate - g.vinte);
+    const mvp = m.mvpPlayerId === playerId;
+    return `<rect x="${x - 12}" y="${(base - hv).toFixed(1)}" width="24" height="${hv.toFixed(1)}" rx="3" class="vinte"/>`
+      + `<rect x="${x - 12}" y="${(base - hv - hp).toFixed(1)}" width="24" height="${hp.toFixed(1)}" rx="3" class="perse"/>`
+      + `<text x="${x}" y="${(base - hv - hp - 6).toFixed(1)}" text-anchor="middle" class="vp">${g.vinte}/${g.giocate}</text>`
+      + `<circle cx="${x}" cy="18" r="13" class="voto ${votoClass(c.voto)}"/>`
+      + `<text x="${x}" y="23" text-anchor="middle" class="vv">${c.voto}</text>`
+      + (mvp ? `<text x="${x + 13}" y="11" text-anchor="middle" class="mvp">★</text>` : '')
+      + `<text x="${x}" y="${H - 18}" text-anchor="middle" class="avv">${escSvg(breveAvv(m.avversario))}</text>`
+      + `<text x="${x}" y="${H - 4}" text-anchor="middle" class="data">${escSvg(fmtDate(m.data).replace(/^\S+\s/, ''))}</text>`;
+  }).join('');
+  return `<div class="scorri"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Sfide vinte e perse e voto, serata per serata" class="serate">${barre}</svg></div>`
+    + '<p class="legenda"><i class="vinte"></i> vinte <i class="perse"></i> perse · nel cerchio il voto · ★ MVP</p>';
+}
+
+/** Percentuale di sfide vinte nel tempo (cumulata), una linea per i singoli e una per i doppi. */
+function vittorieSvg(serate) {
+  if (!serate.length) return '<p class="muted small">Ancora nessuna serata.</p>';
+  const W = 300, H = 130, padL = 30, padR = 34, top = 12, base = H - 22;
+  const n = serate.length;
+  const x = (i) => (n === 1 ? (padL + W - padR) / 2 : padL + (i * (W - padL - padR)) / (n - 1));
+  const y = (p) => base - (p / 100) * (base - top);
+  const serie = (k) => {
+    let v = 0, g = 0;
+    return serate.map(({ c }) => { const s = gamesOf(c); v += s[`${k}v`]; g += s[`${k}g`]; return g ? (v / g) * 100 : null; });
+  };
+  const linea = (vals, cls) => {
+    const pts = vals.map((p, i) => (p == null ? null : `${x(i).toFixed(1)},${y(p).toFixed(1)}`)).filter(Boolean);
+    const ultimo = [...vals].reverse().find((p) => p != null);
+    if (!pts.length) return '';
+    const [lx, ly] = pts.at(-1).split(',');
+    return (pts.length > 1 ? `<polyline points="${pts.join(' ')}" class="${cls}"/>` : '')
+      + `<circle cx="${lx}" cy="${ly}" r="4" class="${cls} punto"/>`
+      + `<text x="${(+lx + 6).toFixed(1)}" y="${(+ly + 4).toFixed(1)}" class="fine ${cls}">${Math.round(ultimo)}%</text>`;
+  };
+  const griglia = [0, 50, 100].map((p) => `<line x1="${padL}" x2="${W - padR}" y1="${y(p)}" y2="${y(p)}" class="${p === 50 ? 'meta' : 'asse'}"/>`
+    + `<text x="${padL - 6}" y="${y(p) + 4}" text-anchor="end" class="ass">${p}%</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Percentuale di sfide vinte nel tempo" class="vittorie">${griglia}`
+    + `${linea(serie('s'), 'singoli')}${linea(serie('d'), 'doppi')}`
+    + `<text x="${padL}" y="${H - 4}" class="ass">prima serata</text><text x="${W - padR}" y="${H - 4}" text-anchor="end" class="ass">ultima</text></svg>`
+    + '<p class="legenda"><i class="singoli"></i> singoli <i class="doppi"></i> doppi · percentuale vinte, serata dopo serata</p>';
 }
 
 export default async function view([paramId]) {
@@ -158,7 +201,9 @@ export default async function view([paramId]) {
     $(root, '#badges').innerHTML = st.mvp > 0
       ? `<div class="medal" title="MVP della serata"><span class="medal-disc">${starIcon}</span><b>MVP</b><span>×${st.mvp}</span></div>`
       : "<p class=\"muted small\">Ancora nessun badge: il primo è l'MVP di una serata.</p>";
-    $(root, '#trend').innerHTML = trendSvg(history.map((x) => x.c.voto).reverse());
+    const cronologia = [...history].reverse(); // dalla serata piu' vecchia
+    $(root, '#serate').innerHTML = serateSvg(cronologia, playerId);
+    $(root, '#vittorie').innerHTML = vittorieSvg(cronologia);
     $(root, '#split').textContent = st.giocate
       ? `Singoli ${st.sv}/${st.sg} (${fmtPerc(st.sv, st.sg)}) · Doppi ${st.dv}/${st.dg} (${fmtPerc(st.dv, st.dg)})`
       : '';
@@ -197,8 +242,10 @@ export default async function view([paramId]) {
       </div>` : ''}
       <div class="stats" id="stats"></div>
       <p class="muted small split" id="split"></p>
-      <h2 class="section">Andamento voti</h2>
-      <div class="card trend" id="trend"></div>
+      <h2 class="section">Andamento serate</h2>
+      <div class="card grafico" id="serate"></div>
+      <h2 class="section">Vittorie nel tempo</h2>
+      <div class="card grafico" id="vittorie"></div>
       <h2 class="section">Badge</h2>
       <div class="badges" id="badges"></div>
       <h2 class="section">Storico pagellini</h2>
