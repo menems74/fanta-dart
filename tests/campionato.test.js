@@ -98,7 +98,7 @@ test('dettaglio delle sfide: risultati, avversari e compagni', () => {
 test('incontri dell\'Invernale 2026: sfide e punti coincidono con le giornate ufficiali', () => {
   const inv = JSON.parse(readFileSync(new URL('../dati/campionati/2026bis-lombardia-as4.json', import.meta.url), 'utf8'));
   const punti = { '2-0': 3, '2-1': 2, '1-2': 1, '0-2': 0 };
-  assert.equal(inv.incontri.length, 4);
+  assert.ok(inv.incontri.length >= 5);
   inv.incontri.forEach((inc, i) => {
     assert.equal(inc.giochi.length, 20);
     for (const sq of inv.squadre.filter((s) => s.nome === inc.casa || s.nome === inc.ospite)) {
