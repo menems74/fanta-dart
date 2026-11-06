@@ -13,6 +13,7 @@ import { suona, sbloccaAudio, jingle } from './suono.js';
 import { visitaValida } from './scorer.js';
 import { gioco, rigioca, record, migliora, REGOLE } from './giochi.js';
 import { barra, svg, nomeGiocatore } from './grafica.js';
+import { caricaSfida, boxSfida, esitoSfida } from './sfida.js';
 
 const TURNI = 6;
 const overlay = () => document.getElementById('overlay');
@@ -21,7 +22,7 @@ const somma = (a) => a.reduce((t, v) => t + v, 0);
 
 export default async function partitaScoringView() {
   const pid = session.account.playerId;
-  const mie = await listSessioni(pid);
+  const [mie, sf] = await Promise.all([listSessioni(pid), caricaSfida('scoring')]);
   const draft = loadDraft(pid, 'gioco');
   const ripresa = !!(draft && draft.gioco === 'scoring' && draft.eventi?.length);
 
@@ -95,6 +96,7 @@ export default async function partitaScoringView() {
           <p class="turno">${s.finito ? 'Finito!' : `Turno ${Math.min(s.visite.length + 1, TURNI)} di ${TURNI}`}</p>
           ${s.finito ? '' : tastierino()}
           <div class="azioni"><button type="button" class="btn" data-act="abbandona">Abbandona</button></div>
+          ${boxSfida(sf, pid)}
         </div>
       </div>`.s;
   };
@@ -188,6 +190,7 @@ export default async function partitaScoringView() {
       <div class="big">${valore}<small> punti</small></div>
       <p class="esito">${precedente == null ? 'Primo risultato: da qui si migliora.' : migliora(g, valore, precedente) ? `Nuovo record! Il precedente era ${precedente}.` : `Il tuo record è ${precedente}.`}</p>
       <p class="mu">Media del turno ${(valore / TURNI).toFixed(1)} · voto ${voto} su 100</p>
+      ${esitoSfida(sf, pid, [nuovo])}
       <div class="azioni"><a class="btn" href="#/">Torna agli allenamenti</a><button type="button" class="btn pri" data-act="ancora">Gioca ancora</button></div>
     </div></div>`.s;
   }

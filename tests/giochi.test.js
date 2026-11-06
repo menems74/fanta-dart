@@ -200,7 +200,20 @@ test('badge, settimana e sfida del sabato', () => {
     { playerId: 'b', gioco: id, valore: 11, data: '2026-10-24' }, { playerId: 'c', gioco: id, valore: 99, data: '2026-10-23' },
   ], '2026-10-24');
   assert.equal(cl.length, 2);
-  assert.deepEqual(cl[0], gioco(id).basso ? { playerId: 'a', valore: 10 } : { playerId: 'a', valore: 12 });
+  assert.deepEqual(cl[0], gioco(id).basso ? { playerId: 'a', valore: 10, partite: 2 } : { playerId: 'a', valore: 12, partite: 2 });
+  assert.deepEqual(cl[1], { playerId: 'b', valore: 11, partite: 1 });
+});
+
+test('sfida del sabato: le partite non riuscite contano tra le partite ma non nel migliore', () => {
+  const sab = ['2026-10-24', '2026-10-31', '2026-11-07', '2026-11-14', '2026-11-21'].find((x) => sfidaDel(x) === 'x501');
+  const cl = classificaSfida([
+    { playerId: 'a', gioco: 'x501', valore: 60, fallito: true, data: sab },
+    { playerId: 'b', gioco: 'x501', valore: 40, data: sab }, { playerId: 'b', gioco: 'x501', valore: 60, fallito: true, data: sab },
+    { playerId: 'c', gioco: 'x501', valore: 30, data: sab },
+  ], sab);
+  assert.deepEqual(cl, [
+    { playerId: 'c', valore: 30, partite: 1 }, { playerId: 'b', valore: 40, partite: 2 }, { playerId: 'a', valore: null, partite: 1 },
+  ]);
 });
 
 import { REGOLE } from '../js/training/giochi.js';
@@ -261,7 +274,7 @@ test('Target su 5 o 10 serie: fine, voto sulla media a serie, record e sfida', (
     { playerId: 'b', gioco: 'target', valore: 90, data: sab, opzioni: { mira: '20', serie: 5 } },
     { playerId: 'c', gioco: 'target', valore: 150, data: sab, opzioni: { mira: 'bull', serie: 10 } },
   ], sab);
-  assert.deepEqual(cl, [{ playerId: 'a', valore: 100 }]);
+  assert.deepEqual(cl, [{ playerId: 'a', valore: 100, partite: 1 }]);
 });
 
 import { LIMITE_501, giudizio501, partita501 as p501 } from '../js/training/giochi.js';

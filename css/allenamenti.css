@@ -209,6 +209,14 @@ svg.line text { fill: var(--mu); font-size: 16px; }
 .tr .classifica li { display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; background: var(--c2); }
 .tr .classifica li.me { border: 1px solid var(--gd); }
 .tr .classifica .pos { font-weight: 800; color: var(--gd); }
+.tr .classifica .cn { display: grid; line-height: 1.25; min-width: 0; }
+.tr .classifica .cn small { color: var(--mu); font-size: 14px; }
+/* Sfida del sabato dentro al gioco e a fine partita */
+.tr .sfidagioco { display: grid; gap: 8px; padding: 12px; border-radius: 14px; border: 1px solid var(--gd); background: rgba(251, 191, 36, 0.06); }
+.tr .sfidagioco header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.tr .sfidagioco header b { color: var(--gd); }
+.tr .sfidagioco .classifica li { padding: 6px 10px; }
+.tr .sfidaesito { color: var(--gd); font-weight: 600; }
 .tr .team { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
 .tr .player { display: grid; grid-template-columns: 54px 1fr auto auto; align-items: center; gap: 14px; }
 .tr .player.me { border-color: var(--gd); }

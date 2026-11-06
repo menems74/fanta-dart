@@ -14,6 +14,7 @@ import { parla, sbloccaVoce } from './voce.js';
 import { visitaValida, applicaVisita, frecceChiusura } from './scorer.js';
 import { gioco, partita501, restoProvvisorio, record, migliora, giudizio501, LIMITE_501, REGOLE } from './giochi.js';
 import { barra, svg, nomeGiocatore } from './grafica.js';
+import { caricaSfida, boxSfida, esitoSfida } from './sfida.js';
 
 const OSPITE = 'ospite';
 const overlay = () => document.getElementById('overlay');
@@ -22,6 +23,7 @@ const g = gioco('x501');
 export default async function partita501View() {
   const pid = session.account.playerId;
   const [mie, players] = await Promise.all([listSessioni(pid), listPlayers()]);
+  const sf = await caricaSfida('x501', players);
   const compagni = players.filter((p) => p.id !== pid && p.attivo !== false);
   const draft = loadDraft(pid, 'gioco');
   const ripresa = !!(draft && draft.gioco === 'x501' && draft.opzioni?.n && draft.eventi?.length);
@@ -127,6 +129,7 @@ export default async function partita501View() {
       <div class="ctrl">
         ${st.chiusura ? chiusura() : html`<p class="turno">${chi}</p>${tastierino(s)}`}
         <div class="azioni"><button type="button" class="btn" data-act="abbandona">Abbandona</button></div>
+        ${boxSfida(sf, pid)}
       </div>
     </div>`;
   };
@@ -264,7 +267,7 @@ export default async function partita501View() {
     const mio = r.stati[0].finito ? salva(pid, r.stati[0], avversario) : null;
     if (mio) mie.push(mio);
     const suo = avversario && avversario !== OSPITE && r.stati[1].finito;
-    if (suo) salva(avversario, r.stati[1], pid);
+    const suaSess = suo ? salva(avversario, r.stati[1], pid) : null;
     clearDraft(pid, 'gioco');
     const righe = Array.from({ length: st.opzioni.n }, (_, i) => html`<li><span>${nomeDi(i)}</span><b>${r.stati[i].fallito ? 'non riuscito' : r.stati[i].finito ? `${r.stati[i].frecce} frecce` : `a ${r.stati[i].resto}`}</b></li>`);
     overlay().innerHTML = html`<div class="fine"><div class="card">
@@ -278,6 +281,7 @@ export default async function partita501View() {
         <p class="mu">Voto ${mio.voto} su 100</p>` : html`<p class="esito">Non hai chiuso: questa partita non entra nei tuoi progressi.</p>`}
       ${st.opzioni.n === 2 ? html`<ul class="riep501">${righe}</ul>` : ''}
       ${suo ? html`<p class="mu sm">Salvato anche nei progressi di ${nomeDi(1)}.</p>` : ''}
+      ${esitoSfida(sf, pid, [mio, suaSess].filter(Boolean))}
       <div class="azioni"><a class="btn" href="#/">Torna agli allenamenti</a><button type="button" class="btn pri" data-act="ancora">Gioca ancora</button></div>
     </div></div>`.s;
   }

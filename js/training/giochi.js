@@ -437,18 +437,24 @@ export function sfidaDel(sabato) {
   const settimane = Math.round((new Date(`${sabato}T12:00:00`) - new Date('2026-01-03T12:00:00')) / (7 * 864e5));
   return SFIDA[((settimane % SFIDA.length) + SFIDA.length) % SFIDA.length];
 }
-/** Classifica della sfida: il miglior risultato di ognuno in quel sabato, nel gioco della sfida. */
+/** La sessione vale per la sfida? Nel Target la sfida e' al 20 su 10 serie. */
+export const valeSfida = (g, opzioni) => g.id !== 'target' || varianteDi(g, opzioni) === '20|10';
+/**
+ * Classifica della sfida: chi l'ha giocata quel sabato, quante partite ha fatto nel gioco della sfida
+ * e il suo miglior risultato (null se non ne ha ancora chiusa nessuna, in fondo alla classifica).
+ */
 export function classificaSfida(sessioni, sabato) {
   const id = sfidaDel(sabato);
   const g = gioco(id);
-  const best = new Map();
-  // nel Target la sfida e' al 20 su 10 serie
-  const valida = (y) => !y.fallito && (g.id !== 'target' || varianteDi(g, y.opzioni) === '20|10');
-  for (const x of sessioni.filter((y) => y.gioco === id && y.data === sabato && valida(y))) {
-    const b = best.get(x.playerId);
-    if (b == null || (g.basso ? x.valore < b : x.valore > b)) best.set(x.playerId, x.valore);
+  const chi = new Map();
+  for (const x of sessioni.filter((y) => y.gioco === id && y.data === sabato && valeSfida(g, y.opzioni))) {
+    const c = chi.get(x.playerId) || { playerId: x.playerId, valore: null, partite: 0 };
+    c.partite += 1;
+    if (!x.fallito && (c.valore == null || (g.basso ? x.valore < c.valore : x.valore > c.valore))) c.valore = x.valore;
+    chi.set(x.playerId, c);
   }
-  return [...best].map(([playerId, valore]) => ({ playerId, valore })).sort((a, b) => (g.basso ? a.valore - b.valore : b.valore - a.valore));
+  return [...chi.values()].sort((a, b) => (a.valore == null) - (b.valore == null)
+    || (g.basso ? a.valore - b.valore : b.valore - a.valore) || b.partite - a.partite);
 }
 
 // Regole spiegate nel riquadro "i" di ogni gioco.

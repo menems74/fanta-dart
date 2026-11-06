@@ -5,6 +5,7 @@ import { session } from '../auth.js';
 import { listPlayers, listTutteSessioni } from '../db.js';
 import { gioco, skill, trendGiocatore, prossimoSabato, sfidaDel, classificaSfida, settimana } from './giochi.js';
 import { barra, pollice } from './grafica.js';
+import { righeSfida, riepilogoSfida } from './sfida.js';
 
 const sabatoScorso = (oggi) => {
   const d = new Date(`${prossimoSabato(oggi)}T12:00:00`);
@@ -40,8 +41,7 @@ export default async function squadraView() {
           <p class="mu">${fmtDate(sabato, true)} · ${gProssimo.descSfida || gProssimo.desc}. Conta il miglior risultato fatto quel giorno: puoi sfidare la squadra o solo te stesso.</p>
           ${inCorso ? html`<a class="btn pri" href="#/gioco/${gProssimo.id}">Gioca la sfida</a>` : ''}
           <h3>${inCorso ? 'Classifica di oggi' : `Sabato scorso · ${gMostrato.nomeSfida || gMostrato.nome}`}</h3>
-          ${classifica.length ? html`<ol class="classifica">${classifica.map((r, i) => html`<li class="${r.playerId === me ? 'me' : ''}">
-            <span class="pos">${i + 1}</span><span>${byId.get(r.playerId) ? fullName(byId.get(r.playerId)) : 'Giocatore'}</span><b>${r.valore} ${gMostrato.unit}</b></li>`)}</ol>`
+          ${classifica.length ? html`<p class="mu sm">${riepilogoSfida(classifica)} · per ognuno il miglior risultato</p>${righeSfida(classifica, gMostrato, me, byId)}`
             : html`<p class="mu sm">Nessun risultato${inCorso ? ' per ora: inizia tu!' : '.'}</p>`}
         </section>
         <h2 class="sezione">Giocatori</h2>

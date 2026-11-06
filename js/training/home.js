@@ -8,6 +8,7 @@ import {
   GIOCHI, gioco, varianteDi, votoGioco, skill, trendGioco, record, settimana, prossimoSabato, sfidaDel, classificaSfida, badgePresi, BADGES,
 } from './giochi.js';
 import { barra, pollice, linea, COLORE, nomeGiocatore } from './grafica.js';
+import { riepilogoSfida } from './sfida.js';
 import { PAUSE, pausaSecondi, impostaPausa, etichettaPausa } from './pausa.js';
 
 export default async function homeView() {
@@ -39,7 +40,7 @@ export default async function homeView() {
             <a href="#/squadra"><b>Squadra</b><span>Skill e progressi di tutti</span></a>
             <a class="sfida ${sabato === oggi ? 'oggi' : ''}" href="${sabato === oggi ? `#/gioco/${sfida.id}` : '#/squadra'}">
               <b>Sfida del sabato · ${sfida.nomeSfida || sfida.nome}${sabato === oggi ? ' · oggi!' : ''}</b>
-              <span>${fmtDate(sabato)}${recSfida != null ? ` · il tuo record ${recSfida}` : ''}${classifica.length ? ` · in testa con ${classifica[0].valore}` : ''}</span></a>
+              <span>${fmtDate(sabato)}${recSfida != null ? ` · il tuo record ${recSfida}` : ''}${classifica[0]?.valore != null ? ` · in testa con ${classifica[0].valore}` : ''}${sabato === oggi && classifica.length ? ` · ${riepilogoSfida(classifica)}` : ''}</span></a>
           </nav>
           <button type="button" class="pausa" data-act="pausa">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
