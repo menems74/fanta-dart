@@ -16,6 +16,7 @@ import { pannello, comandi } from './pannelli.js';
 import partita501View from './partita501.js';
 import partitaScoringView from './partitaScoring.js';
 import { barra, bersaglio, svg } from './grafica.js';
+import { caricaSfida, boxSfida, esitoSfida } from './sfida.js';
 
 const overlay = () => document.getElementById('overlay');
 
@@ -33,7 +34,7 @@ export default async function giocoView([id]) {
   const g = gioco(id);
   if (!g) { location.replace('#/'); return { html: html`` }; }
   const pid = session.account.playerId;
-  const mie = await listSessioni(pid);
+  const [mie, sf] = await Promise.all([listSessioni(pid), caricaSfida(id)]);
   const draft = loadDraft(pid, 'gioco');
   const ripresa = !!(draft && draft.gioco === id && draft.opzioni && draft.eventi?.length);
 
@@ -102,6 +103,7 @@ export default async function giocoView([id]) {
         <div class="bersaglio" id="board">${bersaglio(s.finito ? [] : g.bersagli(s))}</div>
         <div class="panel">
           ${pannello(g, s, { rec: rec() })}
+          ${boxSfida(sf, pid, st.opzioni)}
           ${mostraComandi ? comandi(g, s, st) : html`<p class="mu sm">Tira: le frecce si segnano da sole. Puoi anche toccare il bersaglio.</p>`}
           <div class="azioni">
             <button type="button" class="btn" data-act="annulla" ${st.eventi.length || st.chiusura ? '' : 'disabled'}>Annulla</button>
@@ -249,6 +251,7 @@ export default async function giocoView([id]) {
       <div class="big">${valore}<small> ${g.unit}</small></div>
       <p class="esito">${precedente == null ? 'Primo risultato: da qui si migliora.' : record_ ? `Nuovo record! Il precedente era ${precedente}.` : `Il tuo record è ${precedente}.`}</p>
       <p class="mu">Voto ${voto} su 100</p>
+      ${esitoSfida(sf, pid, [nuovo])}
       <div class="azioni"><a class="btn" href="#/">Torna agli allenamenti</a><button type="button" class="btn pri" data-act="ancora">Gioca ancora</button></div>
     </div></div>`.s;
   }
