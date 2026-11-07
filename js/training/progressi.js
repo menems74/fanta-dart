@@ -1,7 +1,7 @@
 // Progressi di un giocatore (i miei, o di un compagno dalla pagina Squadra): numeri, dove migliorare, grafici, badge.
 import { html, fmtDate, todayIso, toast, fullName } from '../util.js';
-import { session } from '../auth.js';
-import { listSessioni, deleteSessione, getPlayer } from '../db.js';
+import { getPlayer } from '../db.js';
+import { listSessioni, deleteSessione, pidCorrente, ospite } from './archivio.js';
 import {
   GIOCHI, gioco, votoGioco, skill, trendGioco, record, settimana, BADGES, badgePresi, varianteDi, nomeVariante, gruppoDi, nomeGruppo,
 } from './giochi.js';
@@ -25,7 +25,8 @@ const valoreGrafico = (g, x) => (g.grafico ? g.grafico(x) : x.valore);
 const etichettaVariante = (g, x) => (g.SCELTE ? ` · ${nomeVariante(g, varianteDi(g, x.opzioni))}` : '');
 
 export default async function progressiView([altro]) {
-  const mio = session.account.playerId;
+  if (altro && ospite()) { location.replace('#/progressi'); return { html: html`` }; } // i compagni si vedono solo con l'accesso
+  const mio = pidCorrente();
   const pid = altro || mio;
   const [sessioni, giocatore] = await Promise.all([listSessioni(pid), altro ? getPlayer(altro) : null]);
   const mia = pid === mio;

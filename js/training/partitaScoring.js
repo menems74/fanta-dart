@@ -2,7 +2,7 @@
 // Senza Granboard si scrive la somma delle 3 frecce; con il Granboard le frecce si segnano da sole.
 import { html, toast, todayIso } from '../util.js';
 import { session } from '../auth.js';
-import { listSessioni, saveSessione } from '../db.js';
+import { listSessioni, saveSessione, pidCorrente } from './archivio.js';
 import { etichettaDardo } from '../dartboard.js';
 import { loadDraft, saveDraft, clearDraft } from './store.js';
 import { keepAwake } from './awake.js';
@@ -20,7 +20,7 @@ const g = gioco('scoring');
 const somma = (a) => a.reduce((t, v) => t + v, 0);
 
 export default async function partitaScoringView() {
-  const pid = session.account.playerId;
+  const pid = pidCorrente();
   const mie = await listSessioni(pid);
   const draft = loadDraft(pid, 'gioco');
   const ripresa = !!(draft && draft.gioco === 'scoring' && draft.eventi?.length);

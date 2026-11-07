@@ -2,7 +2,7 @@
 import { html, fmtDate, todayIso } from '../util.js';
 import { session } from '../auth.js';
 import { firma } from '../versione.js';
-import { listTutteSessioni } from '../db.js';
+import { listTutteSessioni, pidCorrente, ospite } from './archivio.js';
 import { tavolaDisponibile, tavolaStato } from './tavola.js';
 import {
   GIOCHI, gioco, varianteDi, votoGioco, skill, trendGioco, record, settimana, prossimoSabato, sfidaDel, classificaSfida, badgePresi, BADGES,
@@ -11,7 +11,8 @@ import { barra, pollice, linea, COLORE, nomeGiocatore } from './grafica.js';
 import { PAUSE, pausaSecondi, impostaPausa, etichettaPausa } from './pausa.js';
 
 export default async function homeView() {
-  const pid = session.account.playerId;
+  const pid = pidCorrente();
+  const anonimo = ospite();
   const tutte = await listTutteSessioni();
   const mie = tutte.filter((x) => x.playerId === pid);
   const oggi = todayIso();
@@ -30,16 +31,18 @@ export default async function homeView() {
         <aside class="side">
           <section class="figurina">
             <div class="head"><div class="voto">${sk ?? '–'}</div>
-              <div class="chi"><p class="lbl">Skill giocatore</p><p class="nome">${nomeGiocatore()}</p></div>
+              <div class="chi"><p class="lbl">Skill giocatore</p><p class="nome">${anonimo ? 'Ospite' : nomeGiocatore()}</p></div>
               ${session.player?.foto ? html`<img class="ffoto" src="${session.player.foto}" alt="">` : ''}</div>
             <div class="attr">${GIOCHI.map((g) => html`<div><span>${g.nome}</span><b>${votoGioco(mie, g.id) ?? '–'}</b></div>`)}</div>
           </section>
           <nav class="menu">
             <a href="#/progressi"><b>I miei progressi</b><span>${mie.length} ${mie.length === 1 ? 'sessione' : 'sessioni'} · ${settimana(mie, oggi)} questa settimana · ${badgePresi(mie).size}/${BADGES.length} badge</span></a>
-            <a href="#/squadra"><b>Squadra</b><span>Skill e progressi di tutti</span></a>
-            <a class="sfida ${sabato === oggi ? 'oggi' : ''}" href="${sabato === oggi ? `#/gioco/${sfida.id}` : '#/squadra'}">
+            ${anonimo
+              ? html`<a href="./#/login/allenamenti"><b>Accedi con la tessera</b><span>Per salvare i risultati nella squadra e vedere i compagni</span></a>`
+              : html`<a href="#/squadra"><b>Squadra</b><span>Skill e progressi di tutti</span></a>`}
+            <a class="sfida ${sabato === oggi ? 'oggi' : ''}" href="${sabato === oggi || anonimo ? `#/gioco/${sfida.id}` : '#/squadra'}">
               <b>Sfida del sabato · ${sfida.nomeSfida || sfida.nome}${sabato === oggi ? ' · oggi!' : ''}</b>
-              <span>${fmtDate(sabato)}${recSfida != null ? ` · il tuo record ${recSfida}` : ''}${classifica.length ? ` · in testa con ${classifica[0].valore}` : ''}</span></a>
+              <span>${fmtDate(sabato)}${recSfida != null ? ` · il tuo record ${recSfida}` : ''}${!anonimo && classifica.length ? ` · in testa con ${classifica[0].valore}` : ''}</span></a>
           </nav>
           <button type="button" class="pausa" data-act="pausa">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
@@ -49,6 +52,8 @@ export default async function homeView() {
           ${firma()}
         </aside>
         <section class="giochi">
+          ${anonimo ? html`<div class="card ospite"><div><b>Modalità ospite</b><p class="mu sm">I risultati restano solo su questo dispositivo. Accedi con la tessera per salvarli nella squadra.</p></div>
+            <a class="btn" href="./#/login/allenamenti">Accedi</a></div>` : ''}
           ${collega ? html`<div class="card collega"><div><b>Hai il Granboard?</b><p class="mu sm">Collegalo ora: resta attivo in tutti i giochi e segna le frecce da solo. Senza, inserisci a mano.</p></div>
             <button type="button" class="btn pri" data-act="tavola">Collega</button></div>` : ''}
           ${GIOCHI.map((g) => {

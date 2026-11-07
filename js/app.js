@@ -1,5 +1,6 @@
 import { watchSession, session } from './auth.js';
 import { html, icon } from './util.js';
+import home from './views/home.js';
 import login from './views/login.js';
 import partite from './views/partite.js';
 import partita from './views/partita.js';
@@ -13,7 +14,8 @@ import stagione from './views/stagione.js';
 import giocatore from './views/giocatore.js';
 
 const routes = [
-  [/^\/login$/, login, { public: true }],
+  [/^\/$/, home, { public: true }],
+  [/^\/login(?:\/allenamenti)?$/, login, { public: true }],
   [/^\/partite$/, partite],
   [/^\/partita\/nuova$/, partitaForm, { admin: true }],
   [/^\/partita\/([^/]+)\/modifica$/, partitaForm, { admin: true }],
@@ -33,6 +35,7 @@ let ready = false;
 let token = 0;
 
 const tabs = () => [
+  ['/', 'home', 'Home'],
   ['/partite', 'calendar', 'Partite'],
   ['/classifica', 'trophy', 'Classifica'],
   ['/profilo', 'user', 'Profilo'],
@@ -40,6 +43,7 @@ const tabs = () => [
 ];
 
 const SECTIONS = {
+  '/': /^\/$/,
   '/partite': /^\/(partit|pagellino)/,
   '/classifica': /^\/classifica/,
   '/profilo': /^\/profilo/,
@@ -47,7 +51,7 @@ const SECTIONS = {
 };
 
 function renderNav(path) {
-  if (!session.user) { nav.hidden = true; return; }
+  if (!session.user || path === '/') { nav.hidden = true; nav.innerHTML = ''; return; } // la home ha gia' le sue scelte
   nav.hidden = false;
   nav.innerHTML = tabs().map(([href, ic, label]) => html`
     <a href="#${href}" class="${SECTIONS[href].test(path) ? 'on' : ''}">${icon(ic, 22)}<span>${label}</span></a>`.s).join('');
@@ -56,10 +60,10 @@ function renderNav(path) {
 async function navigate() {
   if (!ready) return;
   const my = ++token;
-  let path = decodeURI(location.hash.slice(1)) || '/partite';
-  if (!session.user && path !== '/login') { location.replace('#/login'); return; }
-  if (session.soloAllenamenti) { location.replace('allenamenti.html'); return; } // vede solo gli allenamenti
-  if (session.user && path === '/login') { location.replace('#/partite'); return; }
+  const path = decodeURI(location.hash.slice(1)) || '/';
+  const isLogin = path.startsWith('/login');
+  // dopo l'accesso chiesto dagli allenamenti si torna li'
+  if (session.user && isLogin) { if (path === '/login/allenamenti') location.replace('allenamenti.html'); else location.replace(session.soloAllenamenti ? '#/' : '#/partite'); return; }
 
   let route = null;
   let params = [];
@@ -67,7 +71,10 @@ async function navigate() {
     const m = path.match(r[0]);
     if (m) { route = r; params = m.slice(1).map((x) => x && decodeURIComponent(x)); break; }
   }
-  if (!route) { location.replace('#/partite'); return; }
+  if (!route) { location.replace('#/'); return; }
+  if (!route[2]?.public && !session.user) { location.replace('#/login'); return; }
+  // il campionato e' solo per le tessere della squadra: chi fa solo allenamenti resta sulla home
+  if (!route[2]?.public && session.soloAllenamenti) { location.replace('#/'); return; }
   if (route[2]?.admin && !session.isAdmin) { location.replace('#/partite'); return; }
 
   renderNav(path);

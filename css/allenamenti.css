@@ -63,6 +63,9 @@
 .tr .collega { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; border-color: var(--gr); }
 .tr .collega div { flex: 1; }
 .tr .collega .btn { flex: none; min-width: 140px; }
+.tr .ospite { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; border-color: var(--gd); }
+.tr .ospite div { flex: 1; }
+.tr .ospite .btn { flex: none; width: auto; min-width: 140px; text-decoration: none; }
 .tr .gioco { position: relative; display: grid; grid-template-rows: auto auto 1fr auto; gap: 6px; padding: 16px; min-height: 178px;
   border-radius: var(--r); background: var(--c1); border: 1px solid var(--ln); transition: transform .12s, border-color .12s; }
 .tr .gioco:active { transform: scale(.98); border-color: var(--gd); }
