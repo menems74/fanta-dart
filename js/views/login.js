@@ -1,4 +1,4 @@
-import { html, $, formatTessera } from '../util.js';
+import { html, $, icon, formatTessera } from '../util.js';
 import { firma } from '../versione.js';
 import { login, session, normalizeTessera, TESSERA_RE, PIN_RE, orphanMessage } from '../auth.js';
 
@@ -30,6 +30,7 @@ export default async function view() {
           <button class="btn primary" id="go">Entra</button>
         </form>
         <p class="muted small">Non hai il PIN? Chiedilo a un admin.</p>
+        <a class="btn sec" href="#/">${icon('back', 18)} Torna alla home</a>
         ${firma()}
       </section>`,
     mount(root) {

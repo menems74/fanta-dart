@@ -1,4 +1,5 @@
-// Pagina "Allenamenti": si apre in una scheda a parte (allenamenti.html) e condivide l'accesso con l'app.
+// Pagina "Allenamenti" (allenamenti.html): aperta a tutti. Con l'accesso le sessioni vanno su Firestore,
+// senza (ospite) restano sul dispositivo: vedi training/archivio.js.
 // Pensata per tablet in orizzontale. Giochi liberi (js/training/giochi.js), Granboard collegato una volta per tutti.
 import { watchSession, session } from './auth.js';
 import { html, toast } from './util.js';
@@ -24,10 +25,11 @@ let token = 0;
 let unmount = null;
 
 const loginNeeded = () => html`
-  ${topbar('Allenamenti')}
+  ${topbar('Squadra', { back: '/' })}
   ${emptyState('Accedi per continuare',
-    'Gli allenamenti sono riservati ai giocatori della squadra.',
-    html`<a class="btn primary" href="./#/login">Vai all'accesso</a>`)}`;
+    'La pagina della squadra è riservata ai giocatori con la tessera.',
+    html`<a class="btn primary" href="./#/login/allenamenti">Vai all'accesso</a>`)}`;
+const soloConAccesso = new Set([squadra]);
 
 async function navigate() {
   if (!ready) return;
@@ -37,10 +39,6 @@ async function navigate() {
   const path = decodeURI(location.hash.slice(1)) || '/';
   root.setAttribute('aria-busy', 'true');
   try {
-    if (!session.user) {
-      root.innerHTML = loginNeeded().s;
-      return;
-    }
     let route = null;
     let params = [];
     for (const r of routes) {
@@ -48,6 +46,10 @@ async function navigate() {
       if (m) { route = r[1]; params = m.slice(1).map((x) => x && decodeURIComponent(x)); break; }
     }
     if (!route) { location.replace('#/'); return; }
+    if (!session.user && soloConAccesso.has(route)) {
+      root.innerHTML = loginNeeded().s;
+      return;
+    }
     const out = await route(params);
     if (my !== token) { out.unmount?.(); return; }
     root.innerHTML = out.html.s;

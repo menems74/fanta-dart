@@ -354,7 +354,7 @@ export default async function view([paramId]) {
         scope = b.dataset.s;
         draw(root);
       });
-      $(root, '#out')?.addEventListener('click', () => logout());
+      $(root, '#out')?.addEventListener('click', () => logout().then(() => location.replace('#/')));
       // foto profilo: ritagliata e rimpicciolita sul telefono, poi salvata nella scheda del giocatore
       const aggiornaFoto = async (foto) => {
         try {

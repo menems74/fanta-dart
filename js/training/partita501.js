@@ -2,7 +2,7 @@
 // Senza Granboard si scrive la somma delle 3 frecce; con il Granboard le frecce si segnano da sole.
 import { html, toast, todayIso, fullName } from '../util.js';
 import { session } from '../auth.js';
-import { listSessioni, listPlayers, saveSessione } from '../db.js';
+import { listSessioni, listPlayers, saveSessione, pidCorrente } from './archivio.js';
 import { etichettaDardo } from '../dartboard.js';
 import { loadDraft, saveDraft, clearDraft } from './store.js';
 import { keepAwake } from './awake.js';
@@ -20,7 +20,7 @@ const overlay = () => document.getElementById('overlay');
 const g = gioco('x501');
 
 export default async function partita501View() {
-  const pid = session.account.playerId;
+  const pid = pidCorrente();
   const [mie, players] = await Promise.all([listSessioni(pid), listPlayers()]);
   const compagni = players.filter((p) => p.id !== pid && p.attivo !== false);
   const draft = loadDraft(pid, 'gioco');
@@ -63,14 +63,14 @@ export default async function partita501View() {
       <h2>Come vuoi giocare?</h2>
       <div class="scelta2">
         <button type="button" class="card modo ${!due ? 'sel' : ''}" data-n="1"><b>Da solo</b><span class="mu sm">Conta con quante frecce chiudi</span></button>
-        <button type="button" class="card modo ${due ? 'sel' : ''}" data-n="2"><b>In due</b><span class="mu sm">Contro un compagno o un ospite</span></button>
+        <button type="button" class="card modo ${due ? 'sel' : ''}" data-n="2"><b>In due</b><span class="mu sm">${compagni.length ? 'Contro un compagno o un ospite' : 'Contro un ospite'}</span></button>
       </div>
       ${due ? html`<h2>Contro chi?</h2>
         <div class="avv">
           <button type="button" class="${sel === OSPITE ? 'sel' : ''}" data-avv="${OSPITE}"><b>OSPITE</b></button>
           ${compagni.map((p) => html`<button type="button" class="${sel === p.id ? 'sel' : ''}" data-avv="${p.id}">${fullName(p)}</button>`)}
         </div>
-        <p class="mu sm">Inizi tu. Se giochi contro un compagno, il suo risultato si salva anche nei suoi allenamenti.</p>` : ''}
+        <p class="mu sm">Inizi tu.${compagni.length ? ' Se giochi contro un compagno, il suo risultato si salva anche nei suoi allenamenti.' : ''}</p>` : ''}
       <button type="button" class="btn pri grande" data-act="inizia" ${due && !sel ? 'disabled' : ''}>Inizia la partita</button>
     </div>`;
   };

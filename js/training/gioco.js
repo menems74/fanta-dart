@@ -1,8 +1,7 @@
 // Schermata di gioco, uguale per tutti i giochi: bersaglio a sinistra (o sopra), pannello a destra (o sotto).
 // Le frecce arrivano dal Granboard, dal tocco sul bersaglio o dai pulsanti rapidi; il gioco e' in giochi.js.
 import { html, $, toast, todayIso } from '../util.js';
-import { session } from '../auth.js';
-import { listSessioni, saveSessione } from '../db.js';
+import { listSessioni, saveSessione, pidCorrente } from './archivio.js';
 import { segmento, etichettaDardo } from '../dartboard.js';
 import { loadDraft, saveDraft, clearDraft } from './store.js';
 import { keepAwake } from './awake.js';
@@ -32,7 +31,7 @@ export default async function giocoView([id]) {
   if (id === 'scoring') return partitaScoringView();
   const g = gioco(id);
   if (!g) { location.replace('#/'); return { html: html`` }; }
-  const pid = session.account.playerId;
+  const pid = pidCorrente();
   const mie = await listSessioni(pid);
   const draft = loadDraft(pid, 'gioco');
   const ripresa = !!(draft && draft.gioco === id && draft.opzioni && draft.eventi?.length);
