@@ -3,6 +3,8 @@ import { html } from '../util.js';
 import { etichettaDardo } from '../dartboard.js';
 import { restoProvvisorio, bersagliRotation } from './giochi.js';
 import { frecceChiusura } from './scorer.js';
+import { suggerimento } from './chiusure.js';
+import { boxChiusura } from './grafica.js';
 
 const somma = (a) => a.reduce((t, v) => t + v, 0);
 const ev = (o) => JSON.stringify(o);
@@ -40,6 +42,7 @@ const PANNELLI = {
   checkout: (g, s, { rec }) => html`
     ${testa(s.finito ? '—' : s.resto, s.finito ? 'Finito' : `Chiusura ${s.idx + 1} di 16 · parti da ${s.numeri[s.idx]}`,
       html`<p class="mu sm">Chiuse</p><b>${g.valore(s)}</b><p class="mu sm">${rec == null ? 'primo risultato' : `record ${rec}`}</p>`)}
+    ${s.finito ? '' : boxChiusura(suggerimento(s.numeri[s.idx], s.turno))}
     <div class="pallini">${s.numeri.map((n, i) => html`<span class="${i < s.esiti.length ? (s.esiti[i] ? 'ok' : 'ko') : i === s.idx ? 'ora' : ''}">${n}</span>`)}</div>
     ${turno(s)}`,
 

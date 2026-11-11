@@ -80,6 +80,17 @@ export function bersaglio(bersagli = []) {
   return raw(`<svg viewBox="-118 -118 236 236" role="img" aria-label="Bersaglio: tocca dove hai colpito"><circle class="miss" data-id="X" r="118"/>${paths}${numeri}</svg>`);
 }
 
+/** Riquadro "Chiusura consigliata" (da suggerimento() di chiusure.js). Niente se non si chiude. */
+export function boxChiusura(sug) {
+  if (!sug) return '';
+  const quante = sug.frecce === 3 ? '3 frecce' : sug.frecce === 1 ? '1 freccia rimasta' : `${sug.frecce} frecce rimaste`;
+  return html`<div class="chiusura" aria-label="Chiusura consigliata: ${sug.strada.slice(sug.fatte).join(', ')}">
+    <div class="lbl">Chiusura consigliata<small>${quante}</small></div>
+    <div class="strada">${sug.strada.map((e, i) => html`<span class="${[
+      i < sug.fatte ? 'fatto' : '', i === sug.fatte ? 'ora' : '', i === sug.strada.length - 1 ? 'd' : ''].filter(Boolean).join(' ')}">${e}</span>`)}</div>
+  </div>`;
+}
+
 /** Schermo intero (e orizzontale, dove il telefono lo permette). */
 export function schermoIntero() {
   if (document.fullscreenElement) { document.exitFullscreen?.(); return; }
