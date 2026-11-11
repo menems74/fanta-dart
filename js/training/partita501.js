@@ -13,7 +13,8 @@ import { suona, sbloccaAudio, jingle } from './suono.js';
 import { parla, sbloccaVoce } from './voce.js';
 import { visitaValida, applicaVisita, frecceChiusura } from './scorer.js';
 import { gioco, partita501, restoProvvisorio, record, migliora, giudizio501, LIMITE_501, REGOLE } from './giochi.js';
-import { barra, svg, nomeGiocatore } from './grafica.js';
+import { barra, svg, nomeGiocatore, boxChiusura } from './grafica.js';
+import { suggerimento } from './chiusure.js';
 
 const OSPITE = 'ospite';
 const overlay = () => document.getElementById('overlay');
@@ -83,6 +84,7 @@ export default async function partita501View() {
     return html`<section class="pcard ${attivo ? 'attivo' : ''} ${s.finito ? (s.fallito ? 'fallito' : 'chiuso') : ''}">
       <header><span class="pnome">${nomeDi(i)}</span>${attivo ? html`<span class="pdot" aria-label="Tocca a lui"></span>` : ''}</header>
       <div class="presto">${s.fallito ? '✕' : s.finito ? '✓' : resto}</div>
+      ${attivo ? boxChiusura(suggerimento(s.resto, s.turno)) : ''}
       <dl>
         <div><dt>Turno</dt><dd>${s.finito ? Math.ceil(s.frecce / 3) : Math.min(Math.floor(s.frecce / 3) + 1, LIMITE_501 / 3)}<small> / ${LIMITE_501 / 3}</small></dd></div>
         <div><dt>Media delle 3 frecce</dt><dd>${media}</dd></div>
