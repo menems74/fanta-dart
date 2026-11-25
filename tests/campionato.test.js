@@ -99,20 +99,26 @@ test('incontri dell\'Invernale 2026: sfide e punti coincidono con le giornate uf
   const inv = JSON.parse(readFileSync(new URL('../dati/campionati/2026bis-lombardia-as4.json', import.meta.url), 'utf8'));
   const punti = { '2-0': 3, '2-1': 2, '1-2': 1, '0-2': 0 };
   assert.ok(inv.incontri.length >= 5);
+  const NOI = 'La Piazzetta';
+  const conto = (inc, nome) => {
+    let set = 0, tot = 0;
+    for (const s of inc.giochi) {
+      const l = s.casa.includes(nome) ? 0 : s.ospite.includes(nome) ? 1 : -1;
+      if (l >= 0) { set += 1; tot += punti[`${s.set[l]}-${s.set[1 - l]}`]; }
+    }
+    return [set, tot];
+  };
   inv.incontri.forEach((inc, i) => {
     assert.equal(inc.giochi.length, 20);
-    const squadre = inv.squadre.filter((s) => s.nome === inc.casa || s.nome === inc.ospite);
+    const noi = inv.squadre.find((s) => s.nome === NOI);
     // giornata gia' inserita dagli screenshot ma non ancora nel PDF ufficiale: si controlla al prossimo aggiornamento
-    if (squadre.every((s) => s.giocatori.every((g) => !g.giornate[i]?.[0]))) return;
-    for (const sq of squadre) {
-      for (const g of sq.giocatori) {
-        let set = 0, tot = 0;
-        for (const s of inc.giochi) {
-          const l = s.casa.includes(g.nome) ? 0 : s.ospite.includes(g.nome) ? 1 : -1;
-          if (l >= 0) { set += 1; tot += punti[`${s.set[l]}-${s.set[1 - l]}`]; }
-        }
-        assert.deepEqual([set, tot], g.giornate[i], `giornata ${i + 1}, ${g.nome}`);
-      }
-    }
+    if (noi.giocatori.every((g) => !g.giornate[i]?.[0])) return;
+    // la nostra squadra: la giornata e' la stessa dell'incontro
+    for (const g of noi.giocatori) assert.deepEqual(conto(inc, g.nome), g.giornate[i], `giornata ${i + 1}, ${g.nome}`);
+    // gli avversari possono avere giornate spostate (rinvii, recuperi in fondo): basta una colonna in cui tutto coincide
+    const avv = inv.squadre.find((s) => s.nome === (inc.casa === NOI ? inc.ospite : inc.casa));
+    const attesi = avv.giocatori.map((g) => conto(inc, g.nome));
+    const colonna = avv.giocatori[0].giornate.findIndex((_, j) => avv.giocatori.every((g, k) => g.giornate[j][0] === attesi[k][0] && g.giornate[j][1] === attesi[k][1]));
+    assert.ok(colonna >= 0, `giornata ${i + 1}: nessuna giornata di ${avv.nome} coincide con l'incontro`);
   });
 });
